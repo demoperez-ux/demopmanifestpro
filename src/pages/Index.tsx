@@ -12,10 +12,10 @@ import {
   processManifest 
 } from '@/lib/excelProcessor';
 import { loadConfig } from '@/lib/storage';
+import { ExtendedProcessingResult } from '@/lib/excelProcessor';
 import { 
   ManifestRow, 
   ProcessingConfig, 
-  ProcessingResult, 
   ColumnMapping,
   ProcessingWarning
 } from '@/types/manifest';
@@ -30,7 +30,7 @@ export default function Index() {
   const [mappedData, setMappedData] = useState<ManifestRow[]>([]);
   const [warnings, setWarnings] = useState<ProcessingWarning[]>([]);
   const [processingProgress, setProcessingProgress] = useState(0);
-  const [result, setResult] = useState<ProcessingResult | null>(null);
+  const [result, setResult] = useState<ExtendedProcessingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 

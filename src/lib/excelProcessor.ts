@@ -10,7 +10,16 @@ import {
   ProcessingWarning,
   ColumnMapping,
   BatchStats,
+  Consignee,
+  ConsigneeStats,
+  ConsolidatedDelivery,
 } from '@/types/manifest';
+import { 
+  groupByConsignee, 
+  calculateConsigneeStats, 
+  getConsolidatedDeliveries,
+  formatConsolidatedForExport 
+} from '@/lib/consigneeProcessor';
 
 export function parseExcelFile(file: File): Promise<{ headers: string[]; data: Record<string, unknown>[] }> {
   return new Promise((resolve, reject) => {
@@ -86,6 +95,11 @@ export function mapDataToManifest(
       weight,
       recipient: String(row[mapping.recipient] || ''),
       address: String(row[mapping.address] || ''),
+      province: mapping.province ? String(row[mapping.province] || '') : undefined,
+      city: mapping.city ? String(row[mapping.city] || '') : undefined,
+      district: mapping.district ? String(row[mapping.district] || '') : undefined,
+      phone: mapping.phone ? String(row[mapping.phone] || '') : undefined,
+      identification: mapping.identification ? String(row[mapping.identification] || '') : undefined,
       originalRowIndex: index,
     });
   });
@@ -112,28 +126,41 @@ export function classifyRow(row: ManifestRow, config: ProcessingConfig): Manifes
   };
 }
 
+export interface ExtendedProcessingResult extends ProcessingResult {
+  consigneeMap: Map<string, Consignee>;
+  consigneeStats: ConsigneeStats;
+  consolidatedDeliveries: ConsolidatedDelivery[];
+}
+
 export function processManifest(
   rows: ManifestRow[],
   config: ProcessingConfig,
   onProgress?: (progress: number) => void
-): ProcessingResult {
+): ExtendedProcessingResult {
   const warnings: ProcessingWarning[] = [];
   const duplicates: ManifestRow[] = [];
   
   // Classify all rows
   const classifiedRows = rows.map((row, index) => {
     if (onProgress) {
-      onProgress((index / rows.length) * 30);
+      onProgress((index / rows.length) * 20);
     }
     return classifyRow(row, config);
   });
+
+  // Group by consignee
+  if (onProgress) onProgress(25);
+  const consigneeMap = groupByConsignee(classifiedRows);
+  if (onProgress) onProgress(30);
+  const consigneeStats = calculateConsigneeStats(consigneeMap);
+  const consolidatedDeliveries = getConsolidatedDeliveries(consigneeMap, 2);
 
   // Group by value threshold and category
   const grouped: Record<string, ManifestRow[]> = {};
 
   classifiedRows.forEach((row, index) => {
     if (onProgress) {
-      onProgress(30 + (index / classifiedRows.length) * 30);
+      onProgress(35 + (index / classifiedRows.length) * 25);
     }
 
     const valueThreshold = config.valueTresholds.find(
@@ -155,7 +182,7 @@ export function processManifest(
 
   Object.entries(grouped).forEach(([groupKey, groupRows], groupIndex) => {
     if (onProgress) {
-      onProgress(60 + (groupIndex / Object.keys(grouped).length) * 40);
+      onProgress(60 + (groupIndex / Object.keys(grouped).length) * 35);
     }
 
     // Sort by value
@@ -202,7 +229,15 @@ export function processManifest(
       (summary.byProductCategory[batch.productCategory] || 0) + batch.rows.length;
   });
 
-  return { batches, summary, duplicates, warnings };
+  return { 
+    batches, 
+    summary, 
+    duplicates, 
+    warnings,
+    consigneeMap,
+    consigneeStats,
+    consolidatedDeliveries,
+  };
 }
 
 function calculateBatchStats(rows: ManifestRow[]): BatchStats {
