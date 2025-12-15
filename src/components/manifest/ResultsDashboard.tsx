@@ -8,15 +8,19 @@ import {
   Leaf,
   Stethoscope,
   PawPrint,
-  TrendingUp
+  TrendingUp,
+  Users
 } from 'lucide-react';
-import { ProcessingResult, ProcessingConfig } from '@/types/manifest';
+import { ProcessingConfig, Consignee, ConsigneeStats, ConsolidatedDelivery } from '@/types/manifest';
+import { ExtendedProcessingResult } from '@/lib/excelProcessor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { downloadBatch, exportAllBatchesAsZip } from '@/lib/excelProcessor';
+import { ConsigneeDashboard } from './ConsigneeDashboard';
 
 interface ResultsDashboardProps {
-  result: ProcessingResult;
+  result: ExtendedProcessingResult;
   config: ProcessingConfig;
   onReset: () => void;
 }
@@ -38,7 +42,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export function ResultsDashboard({ result, config, onReset }: ResultsDashboardProps) {
-  const { summary, batches } = result;
+  const { summary, batches, consigneeMap, consigneeStats, consolidatedDeliveries } = result;
 
   const handleDownloadAll = async () => {
     await exportAllBatchesAsZip(batches);
@@ -51,7 +55,7 @@ export function ResultsDashboard({ result, config, onReset }: ResultsDashboardPr
   return (
     <div className="space-y-6 animate-slide-up">
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="stat-card">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Package className="w-4 h-4" />
@@ -79,13 +83,44 @@ export function ResultsDashboard({ result, config, onReset }: ResultsDashboardPr
         <div className="stat-card">
           <div className="flex items-center gap-2 text-muted-foreground">
             <TrendingUp className="w-4 h-4" />
-            <span className="text-xs uppercase tracking-wide">Promedio por Item</span>
+            <span className="text-xs uppercase tracking-wide">Promedio/Item</span>
           </div>
           <p className="stat-value">
             ${(summary.totalValue / summary.totalRows).toFixed(2)}
           </p>
         </div>
+
+        <div className="stat-card">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Users className="w-4 h-4" />
+            <span className="text-xs uppercase tracking-wide">Consignatarios</span>
+          </div>
+          <p className="stat-value">{consigneeStats.totalConsignees.toLocaleString()}</p>
+          <p className="text-xs text-success">
+            {consigneeStats.consolidatableConsignees} consolidables
+          </p>
+        </div>
       </div>
+
+      {/* Tabs for different views */}
+      <Tabs defaultValue="batches" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="batches" className="gap-2">
+            <Layers className="w-4 h-4" />
+            Lotes por Categoría
+          </TabsTrigger>
+          <TabsTrigger value="consignees" className="gap-2">
+            <Users className="w-4 h-4" />
+            Consignatarios
+            {consigneeStats.consolidatableConsignees > 0 && (
+              <Badge variant="secondary" className="ml-1 bg-success/20 text-success">
+                {consigneeStats.consolidatableConsignees}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="batches" className="space-y-6">
 
       {/* Distribution by Category */}
       <div className="card-elevated p-6">
@@ -189,7 +224,17 @@ export function ResultsDashboard({ result, config, onReset }: ResultsDashboardPr
             );
           })}
         </div>
-      </div>
+        </div>
+        </TabsContent>
+
+        <TabsContent value="consignees">
+          <ConsigneeDashboard 
+            consigneeMap={consigneeMap}
+            stats={consigneeStats}
+            consolidatedDeliveries={consolidatedDeliveries}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Actions */}
       <div className="flex justify-center">

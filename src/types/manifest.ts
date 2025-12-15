@@ -8,6 +8,15 @@ export interface ManifestRow {
   address: string;
   category?: string;
   originalRowIndex: number;
+  // Geographic fields
+  province?: string;
+  city?: string;
+  district?: string;
+  // Consignee fields
+  consigneeId?: string;
+  normalizedRecipient?: string;
+  phone?: string;
+  identification?: string;
   [key: string]: string | number | undefined;
 }
 
@@ -81,6 +90,47 @@ export interface ColumnMapping {
   weight: string;
   recipient: string;
   address: string;
+  // Optional geographic columns
+  province?: string;
+  city?: string;
+  district?: string;
+  // Optional consignee columns
+  phone?: string;
+  identification?: string;
+}
+
+// Consignee types
+export interface Consignee {
+  id: string;
+  name: string;
+  normalizedName: string;
+  phone?: string;
+  identification?: string;
+  addresses: string[];
+  packages: ManifestRow[];
+  totalPackages: number;
+  totalWeight: number;
+  totalValue: number;
+  isConsolidatable: boolean;
+  provinces: string[];
+  cities: string[];
+}
+
+export interface ConsigneeStats {
+  totalConsignees: number;
+  consolidatableConsignees: number;
+  consolidatablePackages: number;
+  avgPackagesPerConsignee: number;
+  topConsignees: Consignee[];
+  consolidationSavings: number;
+}
+
+export interface ConsolidatedDelivery {
+  consignee: Consignee;
+  packages: ManifestRow[];
+  deliveryAddress: string;
+  province: string;
+  city: string;
 }
 
 export const DEFAULT_CATEGORIES: ProductCategory[] = [

@@ -16,12 +16,20 @@ interface ColumnMapperProps {
 }
 
 const REQUIRED_FIELDS = [
-  { key: 'trackingNumber', label: 'Número de Guía', suggestions: ['tracking', 'guia', 'guide', 'awb', 'numero'] },
-  { key: 'description', label: 'Descripción', suggestions: ['description', 'descripcion', 'product', 'producto', 'item'] },
-  { key: 'valueUSD', label: 'Valor USD', suggestions: ['value', 'valor', 'price', 'precio', 'usd', 'amount'] },
-  { key: 'weight', label: 'Peso', suggestions: ['weight', 'peso', 'kg', 'lbs'] },
-  { key: 'recipient', label: 'Destinatario', suggestions: ['recipient', 'destinatario', 'consignee', 'receiver', 'nombre'] },
-  { key: 'address', label: 'Dirección', suggestions: ['address', 'direccion', 'street', 'calle', 'domicilio'] },
+  { key: 'trackingNumber', label: 'Número de Guía', suggestions: ['tracking', 'guia', 'guide', 'awb', 'numero'], required: true },
+  { key: 'description', label: 'Descripción', suggestions: ['description', 'descripcion', 'product', 'producto', 'item'], required: true },
+  { key: 'valueUSD', label: 'Valor USD', suggestions: ['value', 'valor', 'price', 'precio', 'usd', 'amount'], required: true },
+  { key: 'weight', label: 'Peso', suggestions: ['weight', 'peso', 'kg', 'lbs'], required: true },
+  { key: 'recipient', label: 'Destinatario', suggestions: ['recipient', 'destinatario', 'consignee', 'receiver', 'nombre', 'consignatario'], required: true },
+  { key: 'address', label: 'Dirección', suggestions: ['address', 'direccion', 'street', 'calle', 'domicilio'], required: true },
+];
+
+const OPTIONAL_FIELDS = [
+  { key: 'province', label: 'Provincia', suggestions: ['province', 'provincia', 'state', 'estado', 'departamento'] },
+  { key: 'city', label: 'Ciudad', suggestions: ['city', 'ciudad', 'district', 'distrito', 'municipio'] },
+  { key: 'district', label: 'Barrio/Corregimiento', suggestions: ['barrio', 'corregimiento', 'neighborhood', 'sector', 'zona'] },
+  { key: 'phone', label: 'Teléfono', suggestions: ['phone', 'telefono', 'tel', 'celular', 'mobile', 'contacto'] },
+  { key: 'identification', label: 'Identificación', suggestions: ['identification', 'id', 'cedula', 'pasaporte', 'dni', 'ruc'] },
 ];
 
 export function ColumnMapper({ headers, onMapping }: ColumnMapperProps) {
@@ -31,7 +39,20 @@ export function ColumnMapper({ headers, onMapping }: ColumnMapperProps) {
   useEffect(() => {
     const autoMapping: Partial<ColumnMapping> = {};
     
+    // Auto-detect required fields
     REQUIRED_FIELDS.forEach(field => {
+      const matchedHeader = headers.find(header => 
+        field.suggestions.some(suggestion => 
+          header.toLowerCase().includes(suggestion.toLowerCase())
+        )
+      );
+      if (matchedHeader) {
+        autoMapping[field.key as keyof ColumnMapping] = matchedHeader;
+      }
+    });
+
+    // Auto-detect optional fields
+    OPTIONAL_FIELDS.forEach(field => {
       const matchedHeader = headers.find(header => 
         field.suggestions.some(suggestion => 
           header.toLowerCase().includes(suggestion.toLowerCase())
@@ -64,32 +85,75 @@ export function ColumnMapper({ headers, onMapping }: ColumnMapperProps) {
         Selecciona las columnas del archivo que corresponden a cada campo requerido.
       </p>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {REQUIRED_FIELDS.map(field => (
-          <div key={field.key} className="space-y-2">
-            <label className="text-sm font-medium text-foreground flex items-center gap-2">
-              {field.label}
-              {mapping[field.key as keyof ColumnMapping] && (
-                <CheckCircle2 className="w-4 h-4 text-success" />
-              )}
-            </label>
-            <Select
-              value={mapping[field.key as keyof ColumnMapping] || ''}
-              onValueChange={(value) => handleChange(field.key as keyof ColumnMapping, value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Seleccionar columna" />
-              </SelectTrigger>
-              <SelectContent>
-                {headers.map(header => (
-                  <SelectItem key={header} value={header}>
-                    {header}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        ))}
+      {/* Required Fields */}
+      <div className="mb-6">
+        <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-destructive"></span>
+          Campos Requeridos
+        </h4>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {REQUIRED_FIELDS.map(field => (
+            <div key={field.key} className="space-y-2">
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                {field.label}
+                {mapping[field.key as keyof ColumnMapping] && (
+                  <CheckCircle2 className="w-4 h-4 text-success" />
+                )}
+              </label>
+              <Select
+                value={mapping[field.key as keyof ColumnMapping] || ''}
+                onValueChange={(value) => handleChange(field.key as keyof ColumnMapping, value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccionar columna" />
+                </SelectTrigger>
+                <SelectContent>
+                  {headers.map(header => (
+                    <SelectItem key={header} value={header}>
+                      {header}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Optional Fields */}
+      <div className="mb-6">
+        <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-muted-foreground"></span>
+          Campos Opcionales (Geográficos y Consignatario)
+        </h4>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {OPTIONAL_FIELDS.map(field => (
+            <div key={field.key} className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                {field.label}
+                {mapping[field.key as keyof ColumnMapping] && (
+                  <CheckCircle2 className="w-4 h-4 text-success" />
+                )}
+              </label>
+              <Select
+                value={mapping[field.key as keyof ColumnMapping] || ''}
+                onValueChange={(value) => handleChange(field.key as keyof ColumnMapping, value === '_none_' ? '' : value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="No mapear" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none_">No mapear</SelectItem>
+                  {headers.map(header => (
+                    <SelectItem key={header} value={header}>
+                      {header}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="mt-6 flex justify-end">
