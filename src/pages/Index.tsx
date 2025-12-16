@@ -34,13 +34,9 @@ export default function Index() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mawbInfo, setMawbInfo] = useState<MAWBInfo | null>(null);
+  const [fileLoaded, setFileLoaded] = useState(false);
 
   const handleFileSelect = useCallback(async (file: File) => {
-    if (!mawbInfo?.isValid) {
-      toast.error('Por favor ingrese un número MAWB válido antes de cargar el archivo');
-      return;
-    }
-    
     setError(null);
     setIsLoading(true);
     
@@ -52,15 +48,20 @@ export default function Index() {
       }
 
       setRawData(data);
-      setStep('mapping');
-      toast.success(`Archivo cargado: ${data.data.length.toLocaleString()} registros`);
+      setFileLoaded(true);
+      toast.success(`Archivo cargado: ${data.data.length.toLocaleString()} registros - Presiona "Procesar" para continuar`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
       toast.error('Error al cargar el archivo');
     } finally {
       setIsLoading(false);
     }
-  }, [mawbInfo]);
+  }, []);
+
+  const handleStartProcessing = useCallback(() => {
+    if (!rawData) return;
+    setStep('mapping');
+  }, [rawData]);
 
   const handleMapping = useCallback((mapping: ColumnMapping) => {
     if (!rawData) return;
@@ -110,6 +111,7 @@ export default function Index() {
     setError(null);
     setProcessingProgress(0);
     setMawbInfo(null);
+    setFileLoaded(false);
   }, []);
 
   return (
@@ -184,15 +186,17 @@ export default function Index() {
                   Cargar Manifiesto de Carga
                 </h2>
                 <p className="text-muted-foreground">
-                  Ingresa el número MAWB y sube tu archivo Excel para comenzar el procesamiento
+                  Sube tu archivo Excel para comenzar el procesamiento
                 </p>
               </div>
               <FileUpload 
                 onFileSelect={handleFileSelect}
                 onMawbChange={setMawbInfo}
+                onProcess={handleStartProcessing}
                 mawbInfo={mawbInfo}
                 isLoading={isLoading}
                 error={error}
+                fileLoaded={fileLoaded}
               />
             </div>
           )}
@@ -228,7 +232,7 @@ export default function Index() {
             />
           )}
 
-        {step === 'results' && result && mawbInfo && (
+        {step === 'results' && result && (
           <VisualDashboard 
             result={result} 
             config={config}
@@ -246,18 +250,18 @@ export default function Index() {
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                   <span className="text-xl font-bold text-primary">1</span>
                 </div>
-                <h3 className="font-semibold text-foreground mb-1">Ingresa el MAWB</h3>
+                <h3 className="font-semibold text-foreground mb-1">Carga tu archivo</h3>
                 <p className="text-sm text-muted-foreground">
-                  El número MAWB identifica tu manifiesto de carga aérea
+                  Soportamos archivos Excel (.xlsx, .xls) con hasta 50,000 registros
                 </p>
               </div>
               <div className="p-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                   <span className="text-xl font-bold text-primary">2</span>
                 </div>
-                <h3 className="font-semibold text-foreground mb-1">Carga tu archivo</h3>
+                <h3 className="font-semibold text-foreground mb-1">MAWB (Opcional)</h3>
                 <p className="text-sm text-muted-foreground">
-                  Soportamos archivos Excel (.xlsx, .xls) con hasta 50,000 registros
+                  Ingresa el número MAWB para identificar tu manifiesto de carga aérea
                 </p>
               </div>
               <div className="p-4">
@@ -266,7 +270,7 @@ export default function Index() {
                 </div>
                 <h3 className="font-semibold text-foreground mb-1">Descarga tus archivos</h3>
                 <p className="text-sm text-muted-foreground">
-                  Obtén archivos separados por categoría con nomenclatura MAWB
+                  Obtén archivos separados por categoría listos para usar
                 </p>
               </div>
             </div>

@@ -63,7 +63,7 @@ interface MAWBInfo {
 interface VisualDashboardProps {
   result: ExtendedProcessingResult;
   config: ProcessingConfig;
-  mawbInfo: MAWBInfo;
+  mawbInfo: MAWBInfo | null;
   onReset: () => void;
 }
 
@@ -89,12 +89,17 @@ export function VisualDashboard({ result, config, mawbInfo, onReset }: VisualDas
   const { summary, consigneeMap, consigneeStats, consolidatedDeliveries } = result;
   const allRows = result.batches.flatMap(b => b.rows);
 
-  // Convert MAWBInfo to MAWBExportInfo
-  const mawbExportInfo: MAWBExportInfo = {
+  // Convert MAWBInfo to MAWBExportInfo (use default if no MAWB)
+  const mawbExportInfo: MAWBExportInfo = mawbInfo ? {
     mawb: mawbInfo.mawb,
     airlineCode: mawbInfo.airlineCode,
     airlineName: mawbInfo.airlineName,
     formatted: mawbInfo.formatted,
+  } : {
+    mawb: 'SIN-MAWB',
+    airlineCode: '000',
+    airlineName: 'No especificada',
+    formatted: 'SIN MAWB',
   };
 
   const [exportConfig, setExportConfig] = useState<ExportConfig>({
