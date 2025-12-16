@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { Upload, FileSpreadsheet, X, AlertCircle, Plane, Check } from 'lucide-react';
+import { Upload, FileSpreadsheet, X, AlertCircle, Plane, Check, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 // Common airline codes at Tocumen
 const AIRLINE_CODES: Record<string, string> = {
@@ -27,9 +28,11 @@ export interface MAWBInfo {
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
   onMawbChange: (mawb: MAWBInfo | null) => void;
+  onProcess: () => void;
   mawbInfo: MAWBInfo | null;
   isLoading?: boolean;
   error?: string | null;
+  fileLoaded?: boolean;
 }
 
 function parseMAWB(input: string): MAWBInfo | null {
@@ -70,7 +73,7 @@ function parseMAWB(input: string): MAWBInfo | null {
   };
 }
 
-export function FileUpload({ onFileSelect, onMawbChange, mawbInfo, isLoading, error }: FileUploadProps) {
+export function FileUpload({ onFileSelect, onMawbChange, onProcess, mawbInfo, isLoading, error, fileLoaded }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [mawbInput, setMawbInput] = useState('');
@@ -116,65 +119,6 @@ export function FileUpload({ onFileSelect, onMawbChange, mawbInfo, isLoading, er
 
   return (
     <div className="w-full space-y-6">
-      {/* MAWB Input Section */}
-      <div className="card-elevated p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Plane className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-foreground">Número MAWB (Master Air Waybill)</h3>
-          <span className="text-red-500">*</span>
-        </div>
-        
-        <div className="space-y-3">
-          <div>
-            <Label htmlFor="mawb-input" className="text-sm text-muted-foreground">
-              Formato: MAWB XXX-XXXXXXXX (ej: MAWB 230-67035953)
-            </Label>
-            <div className="relative mt-1">
-              <Input
-                id="mawb-input"
-                type="text"
-                placeholder="230-67035953"
-                value={mawbInput}
-                onChange={handleMawbInputChange}
-                className={cn(
-                  "text-lg font-mono",
-                  mawbInfo?.isValid && "border-green-500 focus:border-green-500"
-                )}
-              />
-              {mawbInfo?.isValid && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Check className="w-5 h-5 text-green-500" />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {mawbInfo && (
-            <div className={cn(
-              "p-3 rounded-lg text-sm",
-              mawbInfo.isValid 
-                ? "bg-green-50 border border-green-200 text-green-800"
-                : "bg-amber-50 border border-amber-200 text-amber-800"
-            )}>
-              {mawbInfo.isValid ? (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{mawbInfo.formatted}</p>
-                    <p className="text-xs mt-0.5">Aerolínea: {mawbInfo.airlineName} ({mawbInfo.airlineCode})</p>
-                  </div>
-                  <Check className="w-5 h-5 text-green-600" />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>Formato incorrecto. Use: XXX-XXXXXXXX</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* File Upload Section */}
       <div
         onDragOver={handleDragOver}
@@ -247,7 +191,7 @@ export function FileUpload({ onFileSelect, onMawbChange, mawbInfo, isLoading, er
           <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-xl">
             <div className="flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-muted-foreground">Procesando archivo...</p>
+              <p className="text-sm text-muted-foreground">Leyendo archivo...</p>
             </div>
           </div>
         )}
@@ -261,6 +205,79 @@ export function FileUpload({ onFileSelect, onMawbChange, mawbInfo, isLoading, er
             <p className="text-sm text-destructive/80 mt-1">{error}</p>
           </div>
         </div>
+      )}
+
+      {/* MAWB Input Section - Optional */}
+      {fileLoaded && (
+        <div className="card-elevated p-6 animate-fade-in">
+          <div className="flex items-center gap-2 mb-4">
+            <Plane className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground">Número MAWB (Master Air Waybill)</h3>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Opcional</span>
+          </div>
+          
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="mawb-input" className="text-sm text-muted-foreground">
+                Formato: MAWB XXX-XXXXXXXX (ej: MAWB 230-67035953)
+              </Label>
+              <div className="relative mt-1">
+                <Input
+                  id="mawb-input"
+                  type="text"
+                  placeholder="230-67035953"
+                  value={mawbInput}
+                  onChange={handleMawbInputChange}
+                  className={cn(
+                    "text-lg font-mono",
+                    mawbInfo?.isValid && "border-green-500 focus:border-green-500"
+                  )}
+                />
+                {mawbInfo?.isValid && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Check className="w-5 h-5 text-green-500" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {mawbInfo && (
+              <div className={cn(
+                "p-3 rounded-lg text-sm",
+                mawbInfo.isValid 
+                  ? "bg-green-50 border border-green-200 text-green-800"
+                  : "bg-amber-50 border border-amber-200 text-amber-800"
+              )}>
+                {mawbInfo.isValid ? (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{mawbInfo.formatted}</p>
+                      <p className="text-xs mt-0.5">Aerolínea: {mawbInfo.airlineName} ({mawbInfo.airlineCode})</p>
+                    </div>
+                    <Check className="w-5 h-5 text-green-600" />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Formato incorrecto. Use: XXX-XXXXXXXX</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Process Button */}
+      {fileLoaded && (
+        <Button 
+          onClick={onProcess}
+          size="lg"
+          className="w-full h-14 text-lg font-semibold animate-fade-in"
+        >
+          <Play className="w-5 h-5 mr-2" />
+          Procesar Manifiesto
+        </Button>
       )}
     </div>
   );
