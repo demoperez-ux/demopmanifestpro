@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { ManifestRow, ProcessingConfig, Consignee, ConsigneeStats } from '@/types/manifest';
 import { ExtendedProcessingResult } from './excelProcessor';
+import { COMPANY_INFO, DEVELOPER_INFO, REGULATORY_INFO, getComplianceDeclaration, getCompanyFooter } from './companyConfig';
 
 export interface ExportFile {
   id: string;
@@ -49,6 +50,17 @@ function formatDate(): string {
   const month = months[now.getMonth()];
   const year = now.getFullYear();
   return `${day}${month}${year}`;
+}
+
+function formatFullDateTime(): string {
+  return new Date().toLocaleString('es-PA', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
 }
 
 function calculateFileStats(rows: ManifestRow[], consigneeMap?: Map<string, Consignee>): FileStats {
@@ -275,8 +287,9 @@ export function generateExportFiles(
   return files;
 }
 
-function createExcelWorkbook(file: ExportFile, consigneeMap?: Map<string, Consignee>): XLSX.WorkBook {
+function createExcelWorkbook(file: ExportFile, consigneeMap?: Map<string, Consignee>, isFarma: boolean = false): XLSX.WorkBook {
   const workbook = XLSX.utils.book_new();
+  const now = formatFullDateTime();
 
   // Sheet 1: Paquetes (Main Data)
   const mainData = file.rows.map(row => {
@@ -301,12 +314,14 @@ function createExcelWorkbook(file: ExportFile, consigneeMap?: Map<string, Consig
   XLSX.utils.book_append_sheet(workbook, mainSheet, 'Paquetes');
 
   // Sheet 2: Resumen Ejecutivo
-  const now = new Date();
   const summaryData = [
     ['RESUMEN DEL LOTE'],
     [''],
+    ['Empresa:', COMPANY_INFO.name],
+    ['Ubicación:', COMPANY_INFO.location],
+    [''],
     ['Archivo:', `${file.name}.xlsx`],
-    ['Fecha Generación:', now.toLocaleString('es-PA')],
+    ['Fecha Generación:', now],
     ['Total de Guías:', file.stats.totalRows],
     ['Total Consignatarios:', file.stats.uniqueConsignees],
     ['Entregas Consolidadas:', file.stats.consolidatedCount],
@@ -323,6 +338,11 @@ function createExcelWorkbook(file: ExportFile, consigneeMap?: Map<string, Consig
     const pct = ((count / file.stats.totalRows) * 100).toFixed(1);
     summaryData.push([province, `${count} guías (${pct}%)`]);
   });
+  
+  // Add company footer to summary
+  summaryData.push([''], ['']);
+  getCompanyFooter().forEach(line => summaryData.push([line]));
+  
   const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
   XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen Ejecutivo');
 
@@ -368,11 +388,57 @@ function createExcelWorkbook(file: ExportFile, consigneeMap?: Map<string, Consig
     }
   }
 
+  // Sheet 5: Instrucciones (only for pharma files)
+  if (isFarma) {
+    const instructionsData = [
+      ['INSTRUCCIONES ESPECIALES - PRODUCTOS REGULADOS'],
+      [''],
+      ['Este archivo contiene productos que requieren trámites especiales'],
+      ['para su despacho aduanero en la República de Panamá.'],
+      [''],
+      ['REQUISITOS MINSA:'],
+      ['• Permiso de importación sanitaria vigente'],
+      ['• Inspección física obligatoria en aeropuerto'],
+      ['• Documentación de origen y certificados'],
+      [''],
+      ['PROCEDIMIENTO:'],
+      ['1. Presentar este listado ante ventanilla MINSA Tocumen'],
+      ['2. Coordinar hora de inspección con supervisor'],
+      ['3. Tener disponible certificados de análisis'],
+      ['4. Completar formulario de declaración sanitaria'],
+      [''],
+      ['CONTACTOS:'],
+      [`MINSA Tocumen: ${REGULATORY_INFO.authorities.minsa.phone}`],
+      [`Email: ${REGULATORY_INFO.authorities.minsa.email}`],
+      [''],
+      ['NOTA IMPORTANTE:'],
+      ['No proceder con despacho hasta obtener autorización'],
+      ['escrita del inspector sanitario asignado.'],
+      [''],
+      [''],
+      ...getComplianceDeclaration().map(line => [line]),
+    ];
+    const instructionsSheet = XLSX.utils.aoa_to_sheet(instructionsData);
+    XLSX.utils.book_append_sheet(workbook, instructionsSheet, 'Instrucciones');
+  }
+
+  // Sheet 6: Declaración de Cumplimiento (for all files)
+  const complianceData = [
+    ...getComplianceDeclaration().map(line => [line]),
+    [''],
+    [`Fecha de Generación: ${now}`],
+    [''],
+    ...getCompanyFooter().map(line => [line]),
+  ];
+  const complianceSheet = XLSX.utils.aoa_to_sheet(complianceData);
+  XLSX.utils.book_append_sheet(workbook, complianceSheet, 'Cumplimiento');
+
   return workbook;
 }
 
 export function exportFileToExcel(file: ExportFile, consigneeMap?: Map<string, Consignee>): Blob {
-  const workbook = createExcelWorkbook(file, consigneeMap);
+  const isFarma = file.id.includes('farma');
+  const workbook = createExcelWorkbook(file, consigneeMap, isFarma);
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
   return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
@@ -388,6 +454,7 @@ export async function downloadAllFilesAsZip(
 ): Promise<void> {
   const zip = new JSZip();
   const dateStr = formatDate();
+  const fullDateTime = formatFullDateTime();
 
   // Add Excel files
   files.forEach(file => {
@@ -397,14 +464,18 @@ export async function downloadAllFilesAsZip(
     }
   });
 
-  // Generate README.txt
-  const totalRows = files.reduce((sum, f) => sum + (f.generated ? f.stats.totalRows : 0), 0);
+  // Generate README.txt with company branding
   const totalValue = files.reduce((sum, f) => sum + (f.generated ? f.stats.totalValue : 0), 0);
   const totalWeight = files.reduce((sum, f) => sum + (f.generated ? f.stats.totalWeight : 0), 0);
   
-  let readme = `MANIFIESTO DE CARGA AÉREA - LOTE 1\n`;
-  readme += `Fecha de Proceso: ${new Date().toLocaleString('es-PA')}\n`;
+  let readme = `═══════════════════════════════════════════════════════════════\n`;
+  readme += `        MANIFIESTO DE CARGA AÉREA - LOTE 1\n`;
+  readme += `        ${COMPANY_INFO.name}\n`;
+  readme += `═══════════════════════════════════════════════════════════════\n\n`;
+  readme += `Fecha de Proceso: ${fullDateTime}\n`;
+  readme += `Ubicación: ${COMPANY_INFO.location}\n`;
   readme += `Total de Guías Procesadas: ${result.summary.totalRows.toLocaleString()}\n\n`;
+  
   readme += `ARCHIVOS INCLUIDOS:\n`;
   readme += `==================\n\n`;
 
@@ -419,10 +490,19 @@ export async function downloadAllFilesAsZip(
   readme += `- Tasa de Consolidación: ${((result.consigneeStats.consolidatablePackages / result.summary.totalRows) * 100).toFixed(1)}%\n`;
   readme += `- Valor Total: $${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
   readme += `- Peso Total: ${totalWeight.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} lb\n\n`;
-  readme += `Para más información, consulte la hoja "Resumen Ejecutivo" en cada archivo Excel.\n`;
+
+  readme += `\nINFORMACIÓN REGULATORIA:\n`;
+  readme += `========================\n`;
+  readme += `Los archivos "Farma_*" contienen productos regulados que requieren:\n`;
+  readme += `- Permiso MINSA previo (medicamentos)\n`;
+  readme += `- Notificación sanitaria (suplementos)\n`;
+  readme += `- Registro sanitario (productos médicos)\n`;
+  readme += `- Permiso MIDA (productos veterinarios)\n\n`;
+
+  readme += `\n${getCompanyFooter().join('\n')}\n`;
 
   zip.file('README.txt', readme);
 
   const content = await zip.generateAsync({ type: 'blob' });
-  saveAs(content, `Manifiesto_Lote1_${dateStr}.zip`);
+  saveAs(content, `${COMPANY_INFO.shortName.replace(/\s/g, '_')}_Manifiesto_Lote1_${dateStr}.zip`);
 }

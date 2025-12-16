@@ -18,10 +18,16 @@ import {
   Shield,
   ChevronDown,
   ChevronUp,
+  Phone,
+  Mail,
+  FileWarning,
+  AlertOctagon,
+  Info,
 } from 'lucide-react';
 import { ProcessingConfig } from '@/types/manifest';
 import { ExtendedProcessingResult } from '@/lib/excelProcessor';
 import { ExportFile, generateExportFiles, downloadExportFile, downloadAllFilesAsZip, ExportConfig } from '@/lib/exportService';
+import { COMPANY_INFO, REGULATORY_INFO, CONTACT_EMERGENCY, PHARMA_REQUIREMENTS } from '@/lib/companyConfig';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -143,6 +149,13 @@ export function VisualDashboard({ result, config, onReset }: VisualDashboardProp
   };
   const totalFarma = pharmaStats.medication + pharmaStats.supplements + pharmaStats.medical + pharmaStats.veterinary;
 
+  // High value alerts
+  const highValueCount = allRows.filter(r => r.valueUSD >= REGULATORY_INFO.thresholds.lowValue).length;
+  const veryHighValueCount = allRows.filter(r => r.valueUSD >= REGULATORY_INFO.thresholds.veryHighValue).length;
+  const missingIdCount = allRows.filter(r => !r.identification || r.identification.trim() === '').length;
+  const missingAddressCount = allRows.filter(r => !r.address || r.address.trim() === '').length;
+
+
   const handleDownloadAll = async () => {
     await downloadAllFilesAsZip(exportFiles, result);
   };
@@ -218,8 +231,16 @@ export function VisualDashboard({ result, config, onReset }: VisualDashboardProp
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
+          <TabsTrigger value="regulatory" className="gap-1">
+            🇵🇦 Regulatorio
+            {(pharmaStats.medication + highValueCount) > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 px-1.5">
+                {pharmaStats.medication + pharmaStats.supplements + pharmaStats.medical + pharmaStats.veterinary + highValueCount}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="pharma">
             Farma
             {totalFarma > 0 && (
@@ -381,6 +402,209 @@ export function VisualDashboard({ result, config, onReset }: VisualDashboardProp
                 </div>
               </div>
             )}
+          </div>
+        </TabsContent>
+
+        {/* Regulatory Tab */}
+        <TabsContent value="regulatory" className="space-y-6">
+          {/* Regulatory Header */}
+          <div className="card-elevated p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">
+                  🇵🇦
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900">Alertas Regulatorias Panamá</h3>
+                  <p className="text-sm text-blue-700">{COMPANY_INFO.location}</p>
+                </div>
+              </div>
+              <Badge variant="outline" className="bg-white border-blue-300 text-blue-700">
+                ANA • MINSA • MIDA
+              </Badge>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Critical Alerts */}
+            <div className="card-elevated p-6 border-red-200 bg-red-50/30">
+              <h4 className="font-semibold text-red-800 flex items-center gap-2 mb-4">
+                <AlertOctagon className="w-5 h-5" />
+                Productos Sujetos a Control MINSA
+              </h4>
+              <div className="space-y-3">
+                <AlertItem
+                  icon={<Pill className="w-4 h-4" />}
+                  label={`${pharmaStats.medication} medicamentos requieren permiso sanitario`}
+                  type="critical"
+                  visible={pharmaStats.medication > 0}
+                />
+                <AlertItem
+                  icon={<Leaf className="w-4 h-4" />}
+                  label={`${pharmaStats.supplements} suplementos requieren notificación`}
+                  type="warning"
+                  visible={pharmaStats.supplements > 0}
+                />
+                <AlertItem
+                  icon={<Stethoscope className="w-4 h-4" />}
+                  label={`${pharmaStats.medical} productos médicos requieren registro`}
+                  type="warning"
+                  visible={pharmaStats.medical > 0}
+                />
+                <AlertItem
+                  icon={<PawPrint className="w-4 h-4" />}
+                  label={`${pharmaStats.veterinary} productos veterinarios (permiso MIDA)`}
+                  type="warning"
+                  visible={pharmaStats.veterinary > 0}
+                />
+                {totalFarma === 0 && (
+                  <p className="text-sm text-green-700 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    Sin productos regulados en este lote
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Customs Alerts */}
+            <div className="card-elevated p-6 border-amber-200 bg-amber-50/30">
+              <h4 className="font-semibold text-amber-800 flex items-center gap-2 mb-4">
+                <FileWarning className="w-5 h-5" />
+                Verificación Aduanera
+              </h4>
+              <div className="space-y-3">
+                <AlertItem
+                  icon={<DollarSign className="w-4 h-4" />}
+                  label={`${highValueCount} paquetes ≥ USD ${REGULATORY_INFO.thresholds.lowValue} (declaración completa)`}
+                  type="warning"
+                  visible={highValueCount > 0}
+                />
+                <AlertItem
+                  icon={<Shield className="w-4 h-4" />}
+                  label={`${veryHighValueCount} paquetes > USD ${REGULATORY_INFO.thresholds.veryHighValue} (inspección probable)`}
+                  type="critical"
+                  visible={veryHighValueCount > 0}
+                />
+                <div className="pt-2 border-t border-amber-200 mt-2">
+                  <p className="text-sm text-green-700 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    {summary.totalRows - highValueCount} paquetes &lt; ${REGULATORY_INFO.thresholds.lowValue} (Fast Track)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Documentation Alerts */}
+            <div className="card-elevated p-6 border-blue-200 bg-blue-50/30">
+              <h4 className="font-semibold text-blue-800 flex items-center gap-2 mb-4">
+                <Info className="w-5 h-5" />
+                Documentación Pendiente
+              </h4>
+              <div className="space-y-3">
+                <AlertItem
+                  icon={<Users className="w-4 h-4" />}
+                  label={`${missingIdCount} guías sin número de identificación`}
+                  type={missingIdCount > 10 ? 'critical' : missingIdCount > 0 ? 'warning' : 'info'}
+                  visible={missingIdCount > 0}
+                />
+                <AlertItem
+                  icon={<MapPin className="w-4 h-4" />}
+                  label={`${missingAddressCount} direcciones requieren validación`}
+                  type={missingAddressCount > 0 ? 'warning' : 'info'}
+                  visible={missingAddressCount > 0}
+                />
+                {missingIdCount === 0 && missingAddressCount === 0 && (
+                  <p className="text-sm text-green-700 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    Documentación completa
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Emergency Contacts */}
+            <div className="card-elevated p-6">
+              <h4 className="font-semibold text-foreground flex items-center gap-2 mb-4">
+                <Phone className="w-5 h-5" />
+                Contactos de Emergencia Tocumen
+              </h4>
+              <div className="space-y-3 text-sm">
+                <ContactRow
+                  name={CONTACT_EMERGENCY.ana.name}
+                  phone={CONTACT_EMERGENCY.ana.phone}
+                  email={CONTACT_EMERGENCY.ana.email}
+                />
+                <ContactRow
+                  name={CONTACT_EMERGENCY.minsa.name}
+                  phone={CONTACT_EMERGENCY.minsa.phone}
+                  email={CONTACT_EMERGENCY.minsa.email}
+                />
+                <ContactRow
+                  name={CONTACT_EMERGENCY.security.name}
+                  phone={CONTACT_EMERGENCY.security.phone}
+                />
+                <div className="pt-2 border-t">
+                  <ContactRow
+                    name={COMPANY_INFO.name}
+                    phone={COMPANY_INFO.phone}
+                    email={COMPANY_INFO.email}
+                    highlight
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Table */}
+          <div className="card-elevated p-6">
+            <h4 className="font-semibold text-foreground mb-4">Resumen por Régimen de Despacho</h4>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-3">Régimen</th>
+                    <th className="text-right py-2 px-3">Guías</th>
+                    <th className="text-right py-2 px-3">%</th>
+                    <th className="text-left py-2 px-3">Procedimiento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b hover:bg-muted/30">
+                    <td className="py-2 px-3 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      Despacho Simplificado (&lt;$100)
+                    </td>
+                    <td className="text-right py-2 px-3 font-medium">{(summary.totalRows - highValueCount).toLocaleString()}</td>
+                    <td className="text-right py-2 px-3 text-muted-foreground">
+                      {(((summary.totalRows - highValueCount) / summary.totalRows) * 100).toFixed(1)}%
+                    </td>
+                    <td className="py-2 px-3 text-green-700">Fast Track ANA</td>
+                  </tr>
+                  <tr className="border-b hover:bg-muted/30">
+                    <td className="py-2 px-3 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      Declaración Completa (≥$100)
+                    </td>
+                    <td className="text-right py-2 px-3 font-medium">{highValueCount.toLocaleString()}</td>
+                    <td className="text-right py-2 px-3 text-muted-foreground">
+                      {((highValueCount / summary.totalRows) * 100).toFixed(1)}%
+                    </td>
+                    <td className="py-2 px-3 text-amber-700">DUA Completa</td>
+                  </tr>
+                  <tr className="border-b hover:bg-muted/30">
+                    <td className="py-2 px-3 flex items-center gap-2">
+                      <Pill className="w-4 h-4 text-red-500" />
+                      Productos Regulados (MINSA)
+                    </td>
+                    <td className="text-right py-2 px-3 font-medium">{totalFarma.toLocaleString()}</td>
+                    <td className="text-right py-2 px-3 text-muted-foreground">
+                      {((totalFarma / summary.totalRows) * 100).toFixed(1)}%
+                    </td>
+                    <td className="py-2 px-3 text-red-700">Inspección Sanitaria</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </TabsContent>
 
@@ -648,6 +872,63 @@ function FileRow({
         <FileDown className="w-4 h-4" />
         Descargar
       </Button>
+    </div>
+  );
+}
+
+function AlertItem({
+  icon,
+  label,
+  type,
+  visible = true,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  type: 'critical' | 'warning' | 'info';
+  visible?: boolean;
+}) {
+  if (!visible) return null;
+  
+  const typeClasses: Record<string, string> = {
+    critical: 'text-red-700 bg-red-100',
+    warning: 'text-amber-700 bg-amber-100',
+    info: 'text-blue-700 bg-blue-100',
+  };
+
+  return (
+    <div className={`flex items-center gap-2 p-2 rounded ${typeClasses[type]}`}>
+      {icon}
+      <span className="text-sm">{label}</span>
+    </div>
+  );
+}
+
+function ContactRow({
+  name,
+  phone,
+  email,
+  highlight = false,
+}: {
+  name: string;
+  phone: string;
+  email?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className={`flex items-center justify-between p-2 rounded ${highlight ? 'bg-primary/10 border border-primary/20' : ''}`}>
+      <span className={`font-medium ${highlight ? 'text-primary' : 'text-foreground'}`}>{name}</span>
+      <div className="flex items-center gap-3 text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Phone className="w-3 h-3" />
+          {phone}
+        </span>
+        {email && (
+          <span className="flex items-center gap-1">
+            <Mail className="w-3 h-3" />
+            {email}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
