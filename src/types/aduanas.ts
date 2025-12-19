@@ -103,6 +103,19 @@ export interface Liquidacion {
   aprobadaPor?: string;
   fechaAprobacion?: string;
   
+  // Transparencia (Corrección #6)
+  seguroTeorico?: boolean;
+  fundamentoLegal?: string;
+  observacionesValoracion?: string[];
+  
+  // Tarifas comerciales (Corrección #9)
+  comisionTributos?: number;
+  handlingFee?: number;
+  profitMargin?: number;
+  descuentoVolumen?: number;
+  porcentajeDescuento?: number;
+  aplicoMinimoCobro?: boolean;
+  
   // Metadata
   version: number;
 }
