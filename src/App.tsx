@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,10 +7,34 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Historial from "./pages/Historial";
 import NotFound from "./pages/NotFound";
+import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  // Inicializar sistema de encriptación al arrancar
+  useEffect(() => {
+    ProtectorDatos.inicializarSesion();
+    
+    return () => {
+      ProtectorDatos.limpiarSesion();
+    };
+  }, []);
+
+  // Limpiar al cerrar ventana/pestaña
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      ProtectorDatos.limpiarSesion();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -24,6 +49,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
