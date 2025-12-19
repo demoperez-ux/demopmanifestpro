@@ -230,11 +230,106 @@ async function procesarManifiesto(
     enviarProgreso('MAPEO', 100, `Mapeadas ${filasRaw.length} filas`);
 
     // ========================================
-    // FASE 4: Clasificación inteligente (continuará en PARTE 2)
+    // FASE 4: Clasificación inteligente
     // ========================================
-    // ... código de clasificación vendrá aquí
+    enviarProgreso('CLASIFICACION', 0, 'Clasificando productos...');
 
-    // Placeholder temporal para completar la estructura
+    const clasificador = ClasificadorInteligente;
+    const categoriasCount: Record<string, number> = {};
+    let requierenPermisos = 0;
+    let prohibidos = 0;
+
+    for (let i = 0; i < filasRaw.length; i++) {
+      if (cancelarProcesamiento) {
+        throw new Error('Procesamiento cancelado por el usuario');
+      }
+
+      const fila = filasRaw[i];
+      
+      if (config.clasificarProductos && fila.descripcion) {
+        const clasificacion = clasificador.clasificar(fila.descripcion, fila.valorUSD);
+        
+        fila.categoria = clasificacion.categoriaProducto;
+        fila.subcategoria = clasificacion.subcategoria;
+        fila.requierePermiso = clasificacion.requierePermiso;
+        fila.autoridades = clasificacion.autoridades;
+        fila.categoriaAduanera = clasificacion.categoriaAduanera;
+        fila.confianzaClasificacion = clasificacion.confianza;
+
+        // Contadores
+        categoriasCount[clasificacion.categoriaProducto] = (categoriasCount[clasificacion.categoriaProducto] || 0) + 1;
+        if (clasificacion.requierePermiso) requierenPermisos++;
+        if (clasificacion.esProhibido) {
+          prohibidos++;
+          fila.errores.push(`Producto posiblemente prohibido`);
+        }
+
+        // Advertencias de clasificación
+        if (clasificacion.advertencias && clasificacion.advertencias.length > 0) {
+          fila.advertencias.push(...clasificacion.advertencias);
+        }
+      }
+
+      // Actualizar progreso cada 50 filas
+      if (i % 50 === 0 || i === filasRaw.length - 1) {
+        const progreso = Math.round((i / filasRaw.length) * 100);
+        enviarProgreso('CLASIFICACION', progreso, `Clasificando ${i + 1} de ${filasRaw.length}`);
+      }
+    }
+
+    enviarProgreso('CLASIFICACION', 100, `Clasificados ${filasRaw.length} productos`);
+
+    // ========================================
+    // FASE 5: Validación de duplicados
+    // ========================================
+    if (config.validarDuplicados) {
+      enviarProgreso('DUPLICADOS', 0, 'Verificando duplicados...');
+      
+      const trackingVistos = new Map<string, number[]>();
+      
+      for (const fila of filasRaw) {
+        if (fila.tracking) {
+          const indices = trackingVistos.get(fila.tracking) || [];
+          indices.push(fila.indice);
+          trackingVistos.set(fila.tracking, indices);
+        }
+      }
+
+      // Marcar duplicados
+      let duplicadosEncontrados = 0;
+      for (const [tracking, indices] of trackingVistos) {
+        if (indices.length > 1) {
+          duplicadosEncontrados++;
+          for (const idx of indices) {
+            const fila = filasRaw.find(f => f.indice === idx);
+            if (fila) {
+              fila.advertencias.push(`Tracking duplicado (aparece ${indices.length} veces)`);
+            }
+          }
+        }
+      }
+
+      if (duplicadosEncontrados > 0) {
+        advertencias.push(`Se encontraron ${duplicadosEncontrados} tracking numbers duplicados`);
+      }
+
+      enviarProgreso('DUPLICADOS', 100, `Verificación completada: ${duplicadosEncontrados} duplicados`);
+    }
+
+    // ========================================
+    // FASE 6: Agrupación por consignatario
+    // ========================================
+    enviarProgreso('CONSIGNATARIOS', 0, 'Agrupando por consignatario...');
+
+    const consignatarios = agruparPorConsignatario(filasRaw);
+    
+    enviarProgreso('CONSIGNATARIOS', 100, `Agrupados ${Object.keys(consignatarios).length} consignatarios`);
+
+    // ========================================
+    // FASE 7: Generación de resumen final
+    // ========================================
+    enviarProgreso('RESUMEN', 0, 'Generando resumen...');
+
     const tiempoProcesamiento = performance.now() - inicioTiempo;
     
     const resultado: ResultadoProcesamiento = {
@@ -257,15 +352,17 @@ async function procesarManifiesto(
         )
       },
       clasificacion: {
-        categorias: {},
-        requierenPermisos: 0,
-        prohibidos: 0
+        categorias: categoriasCount,
+        requierenPermisos,
+        prohibidos
       },
       filas: filasRaw,
       resumen: calcularResumen(filasRaw, tiempoProcesamiento),
       errores,
       advertencias
     };
+
+    enviarProgreso('RESUMEN', 100, `Procesamiento completado en ${(tiempoProcesamiento / 1000).toFixed(2)}s`);
 
     return resultado;
 
@@ -389,6 +486,121 @@ function normalizarProvincia(valor: string): string {
 
   const valorNormalizado = valor.toLowerCase().trim();
   return provincias[valorNormalizado] || valor;
+}
+
+// ============================================
+// AGRUPACIÓN POR CONSIGNATARIO
+// ============================================
+
+interface ConsignatarioAgrupado {
+  nombre: string;
+  identificacion: string;
+  telefono: string;
+  direccion: string;
+  provincia: string;
+  paquetes: FilaProcesada[];
+  valorTotal: number;
+  pesoTotal: number;
+  cantidadPaquetes: number;
+}
+
+function agruparPorConsignatario(filas: FilaProcesada[]): Record<string, ConsignatarioAgrupado> {
+  const consignatarios: Record<string, ConsignatarioAgrupado> = {};
+
+  for (const fila of filas) {
+    // Usar identificación como clave, o nombre si no hay identificación
+    const clave = fila.identificacion || fila.destinatario || `SIN_ID_${fila.indice}`;
+    
+    if (!consignatarios[clave]) {
+      consignatarios[clave] = {
+        nombre: fila.destinatario,
+        identificacion: fila.identificacion,
+        telefono: fila.telefono,
+        direccion: fila.direccion,
+        provincia: fila.provincia,
+        paquetes: [],
+        valorTotal: 0,
+        pesoTotal: 0,
+        cantidadPaquetes: 0
+      };
+    }
+
+    consignatarios[clave].paquetes.push(fila);
+    consignatarios[clave].valorTotal += fila.valorUSD;
+    consignatarios[clave].pesoTotal += fila.peso;
+    consignatarios[clave].cantidadPaquetes++;
+  }
+
+  return consignatarios;
+}
+
+// ============================================
+// FUNCIONES AUXILIARES ADICIONALES
+// ============================================
+
+function detectarAerolinea(mawb: string): { codigo: string; nombre: string } {
+  const prefijos: Record<string, string> = {
+    '074': 'KLM Royal Dutch Airlines',
+    '006': 'Delta Air Lines',
+    '001': 'American Airlines',
+    '016': 'United Airlines',
+    '172': 'Copa Airlines',
+    '220': 'Lufthansa',
+    '057': 'Air France',
+    '083': 'Avianca',
+    '139': 'LATAM Airlines',
+    '045': 'Iberia',
+    '058': 'Cargolux',
+    '235': 'Turkish Airlines',
+    '180': 'Korean Air',
+    '157': 'Qatar Airways',
+    '176': 'Emirates'
+  };
+
+  const prefijo = mawb.substring(0, 3);
+  return {
+    codigo: prefijo,
+    nombre: prefijos[prefijo] || 'Aerolínea Desconocida'
+  };
+}
+
+function validarMAWB(mawb: string): { valido: boolean; mensaje: string } {
+  // Formato estándar: XXX-XXXXXXXX (3 dígitos prefijo + 8 dígitos)
+  const limpio = mawb.replace(/[-\s]/g, '');
+  
+  if (limpio.length !== 11) {
+    return { valido: false, mensaje: 'MAWB debe tener 11 dígitos' };
+  }
+
+  if (!/^\d+$/.test(limpio)) {
+    return { valido: false, mensaje: 'MAWB solo debe contener números' };
+  }
+
+  // Verificar dígito de control (módulo 7)
+  const sinControl = limpio.substring(0, 10);
+  const digitoControl = parseInt(limpio.substring(10, 11));
+  const calculado = parseInt(sinControl) % 7;
+
+  if (calculado !== digitoControl) {
+    return { valido: false, mensaje: 'Dígito de control inválido' };
+  }
+
+  return { valido: true, mensaje: 'MAWB válido' };
+}
+
+function formatearMoneda(valor: number): string {
+  return new Intl.NumberFormat('es-PA', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2
+  }).format(valor);
+}
+
+function formatearPeso(peso: number): string {
+  if (peso >= 1000) {
+    return `${(peso / 1000).toFixed(2)} kg`;
+  }
+  return `${peso.toFixed(2)} lbs`;
 }
 
 function calcularResumen(filas: FilaProcesada[], tiempoProcesamiento: number): ResumenProcesamiento {
