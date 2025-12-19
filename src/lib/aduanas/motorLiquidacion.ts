@@ -1,6 +1,7 @@
 // ============================================
 // MOTOR DE LIQUIDACIÓN ADUANERA
 // Calcula impuestos según normativa ANA Panamá
+// Incluye: Corrección #6 (Seguro OMC), #8 (Caché), #9 (Tarifas), #10 (Auditoría)
 // ============================================
 
 import { ManifestRow } from '@/types/manifest';
@@ -15,6 +16,9 @@ import {
 } from '@/types/aduanas';
 import { buscarArancelPorDescripcion, ARANCEL_GENERICO } from './arancelesData';
 import { verificarRestricciones } from './restriccionesData';
+import { CacheAranceles } from './cacheAranceles';
+import { CalculadorTarifas } from '@/lib/financiero/calculadorTarifas';
+import { GestorAuditoria } from '@/lib/auditoria/gestorAuditoria';
 
 // Generar ID único
 function generarId(): string {
@@ -69,6 +73,7 @@ function esDocumento(descripcion: string): boolean {
 
 // ============================================
 // NORMALIZACIÓN DE VALORES (FOB → CIF)
+// CORRECCIÓN #6: Seguro teórico según OMC
 // ============================================
 export function normalizarValoresCIF(
   valorDeclarado: number,
@@ -82,6 +87,7 @@ export function normalizarValoresCIF(
   moneda: string;
   tipoCambio: number;
   seguroTeorico: boolean;
+  fundamentoLegal?: string;
 } {
   let valorFOB: number;
   let valorFlete: number;
@@ -89,12 +95,12 @@ export function normalizarValoresCIF(
   let moneda = 'USD';
   let tipoCambio = 1.0;
   let seguroTeorico = false;
+  let fundamentoLegal: string | undefined;
   
   if (factura) {
-    // Si hay factura comercial, usar esos valores
+    // CASO 1: HAY FACTURA COMERCIAL
     valorFOB = factura.valorFOB;
     valorFlete = factura.valorFlete || 0;
-    valorSeguro = factura.valorSeguro || 0;
     moneda = factura.moneda;
     
     // Convertir a USD si es otra moneda
@@ -102,23 +108,70 @@ export function normalizarValoresCIF(
       tipoCambio = obtenerTipoCambioSync(moneda);
       valorFOB *= tipoCambio;
       valorFlete *= tipoCambio;
-      valorSeguro *= tipoCambio;
     }
     
-    // Aplicar seguro teórico si no hay seguro declarado
-    if (valorSeguro === 0) {
+    // ═══════════════════════════════════════════════════════
+    // LÓGICA CRÍTICA: SEGURO SEGÚN NORMATIVA OMC
+    // Artículo 8.2 del Acuerdo de Valoración Aduanera
+    // ═══════════════════════════════════════════════════════
+    
+    if (factura.valorSeguro !== undefined && factura.valorSeguro !== null) {
+      // CASO A: Seguro EXPLÍCITAMENTE declarado (incluso si es $0)
+      // Respetamos el valor declarado - puede ser $0 si:
+      // - El vendedor asume el seguro
+      // - Está incluido en el precio FOB
+      // - Cliente decidió no asegurar
+      valorSeguro = factura.valorSeguro;
+      
+      if (moneda !== 'USD') {
+        valorSeguro *= tipoCambio;
+      }
+      
+      if (valorSeguro === 0) {
+        console.log('Seguro declarado como $0 - Respetando declaración', {
+          razon: 'Seguro incluido en FOB o asumido por vendedor'
+        });
+      }
+      
+    } else {
+      // CASO B: Campo de seguro AUSENTE (undefined/null) → APLICAR TEÓRICO
+      // Solo aplicamos seguro teórico cuando NO existe el campo
       valorSeguro = valorFOB * (config.tasaSeguroTeorico / 100);
       seguroTeorico = true;
+      fundamentoLegal = 'Artículo 8.2 del Acuerdo de Valoración Aduanera OMC';
+      
+      console.warn('Seguro teórico aplicado (campo ausente en factura)', {
+        valorFOB,
+        tasaTeorica: config.tasaSeguroTeorico,
+        seguroCalculado: valorSeguro,
+        fundamentoLegal
+      });
     }
+    
   } else {
-    // Si no hay factura, asumir que valorDeclarado ≈ CIF
-    // Descomponer proporcionalmente: FOB 85%, Flete 12%, Seguro 3%
+    // CASO 2: NO HAY FACTURA - ESTIMAR DESDE VALOR DECLARADO
+    // Descomposición empírica basada en estadísticas
     valorFOB = valorDeclarado * 0.85;
     valorFlete = valorDeclarado * 0.12;
     valorSeguro = valorDeclarado * 0.03;
+    seguroTeorico = true;
+    fundamentoLegal = 'Estimación sin factura comercial';
+    
+    console.warn('Valores estimados (sin factura comercial)', {
+      valorCIFDeclarado: valorDeclarado,
+      valorFOBEstimado: valorFOB,
+      valorFleteEstimado: valorFlete,
+      valorSeguroEstimado: valorSeguro,
+      advertencia: 'Requiere validación con factura comercial real'
+    });
   }
   
   const valorCIF = redondear(valorFOB + valorFlete + valorSeguro);
+  
+  // Validación de coherencia
+  if (valorCIF <= 0) {
+    console.error(`Valor CIF inválido: ${valorCIF}`);
+  }
   
   return {
     valorFOB: redondear(valorFOB),
@@ -127,7 +180,8 @@ export function normalizarValoresCIF(
     valorCIF,
     moneda,
     tipoCambio,
-    seguroTeorico
+    seguroTeorico,
+    fundamentoLegal
   };
 }
 
@@ -198,10 +252,13 @@ function calcularCategoriaC(
   config: ConfiguracionLiquidacion
 ): Liquidacion {
   
-  const { valorFOB, valorFlete, valorSeguro, valorCIF, moneda, tipoCambio } = valores;
+  const { valorFOB, valorFlete, valorSeguro, valorCIF, moneda, tipoCambio, seguroTeorico, fundamentoLegal } = valores;
   
-  // Buscar arancel por descripción
-  const arancel = buscarArancelPorDescripcion(paquete.description) || ARANCEL_GENERICO;
+  // Buscar arancel usando caché O(1) (Corrección #8)
+  let arancel = CacheAranceles.buscarMejorCoincidencia(paquete.description);
+  if (!arancel) {
+    arancel = buscarArancelPorDescripcion(paquete.description) || ARANCEL_GENERICO;
+  }
   
   // Obtener porcentajes del arancel
   const percentDAI = arancel.daiPercent;
@@ -236,15 +293,22 @@ function calcularCategoriaC(
   // 8. Total tributos
   const totalTributos = redondear(montoDAI + montoISC + montoITBMS + tasaAduanera);
   
-  // 9. Total a pagar (CIF + Tributos)
-  const totalAPagar = redondear(valorCIF + totalTributos);
+  // ════════════════════════════════════════════
+  // TARIFAS COMERCIALES (Corrección #9)
+  // ════════════════════════════════════════════
+  
+  const tarifaCliente = CalculadorTarifas.calcularTotalCliente(
+    valorCIF,
+    totalTributos,
+    1 // cantidad paquetes del cliente
+  );
   
   // ════════════════════════════════════════════
   
   const tieneRestricciones = restricciones.length > 0;
   const requiereRevisionManual = tieneRestricciones || arancel.hsCode === '9999.99.99';
   
-  return {
+  const liquidacion: Liquidacion = {
     id: generarId(),
     numeroGuia: paquete.trackingNumber,
     manifiestoId,
@@ -276,7 +340,7 @@ function calcularCategoriaC(
     tasasAdicionales: 0,
     
     totalTributos,
-    totalAPagar,
+    totalAPagar: tarifaCliente.totalFinal, // Total CON margen comercial
     
     estado: requiereRevisionManual ? 'pendiente_revision' : 'calculada',
     
@@ -292,8 +356,27 @@ function calcularCategoriaC(
     calculadaPor: 'sistema',
     fechaCalculo: new Date().toISOString(),
     
+    // Corrección #6: Transparencia de seguro teórico
+    seguroTeorico,
+    fundamentoLegal,
+    
+    // Corrección #9: Tarifas comerciales
+    comisionTributos: tarifaCliente.comisionTributos,
+    handlingFee: tarifaCliente.handlingFee,
+    profitMargin: tarifaCliente.profitMargin,
+    descuentoVolumen: tarifaCliente.descuentoVolumen,
+    porcentajeDescuento: tarifaCliente.porcentajeDescuento,
+    aplicoMinimoCobro: tarifaCliente.aplicoMinimoCobro,
+    
     version: 1
   };
+  
+  // Corrección #10: Registrar en auditoría
+  GestorAuditoria.registrarCreacion(liquidacion, 'sistema').catch(err => {
+    console.error('Error registrando auditoría:', err);
+  });
+  
+  return liquidacion;
 }
 
 // Generar observaciones automáticas
