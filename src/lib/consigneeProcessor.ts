@@ -281,6 +281,9 @@ export function filterConsignees(
 
 /**
  * Export consolidated deliveries to a format suitable for Excel
+ * 
+ * NOTA: El análisis y exportación se realiza por GUÍA INDIVIDUAL (trackingNumber),
+ * no por la guía aérea master (MAWB). Cada fila representa un paquete único.
  */
 export function formatConsolidatedForExport(deliveries: ConsolidatedDelivery[]): Record<string, unknown>[] {
   const rows: Record<string, unknown>[] = [];
@@ -292,7 +295,8 @@ export function formatConsolidatedForExport(deliveries: ConsolidatedDelivery[]):
         'ID Consignatario': delivery.consignee.id,
         'Total Paquetes': delivery.consignee.totalPackages,
         'Paquete #': index + 1,
-        'Número de Guía': pkg.trackingNumber,
+        'Guía Individual': pkg.trackingNumber, // Guía del paquete Amazon/courier
+        'MAWB (Referencia)': pkg.mawb || 'N/A', // Solo referencia del manifiesto
         'Descripción': pkg.description,
         'Valor USD': pkg.valueUSD,
         'Peso': pkg.weight,

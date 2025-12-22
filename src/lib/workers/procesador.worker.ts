@@ -384,6 +384,10 @@ async function procesarManifiesto(data: { archivo: ArrayBuffer; operador?: strin
 
 // ═══════════════════════════════════════════════════════════════
 // PROCESAR FILA CON MAPEO AUTOMÁTICO
+// 
+// IMPORTANTE: El análisis se realiza por GUÍA INDIVIDUAL (tracking/AWB),
+// NO por la guía aérea master (MAWB). El MAWB solo es referencia del
+// manifiesto consolidado. Cada paquete tiene su propia guía única.
 // ═══════════════════════════════════════════════════════════════
 
 function procesarFilaAutomatica(
@@ -482,11 +486,13 @@ function procesarFilaAutomatica(
   const numeroInterno = obtenerValor('numeroInterno') || '';
   const tipoDoc = obtenerValor('tipoDoc') || '';
   
-  // 9. Crear paquete
+  // 9. Crear paquete - identificado por GUÍA INDIVIDUAL (numeroGuia), no por MAWB
   const paquete = {
     id: nanoid(),
     manifiestoId: '',
+    // GUÍA INDIVIDUAL del paquete (Amazon, courier local) - IDENTIFICADOR ÚNICO
     numeroGuia: tracking,
+    // MAWB es solo REFERENCIA del manifiesto consolidado, NO para análisis individual
     mawb,
     
     // Clasificación

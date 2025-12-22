@@ -1,6 +1,18 @@
+/**
+ * ManifestRow - Representa un paquete individual en el manifiesto
+ * 
+ * IMPORTANTE: El análisis se realiza por GUÍA INDIVIDUAL (trackingNumber),
+ * NO por la guía aérea master (MAWB). El MAWB solo es referencia del envío consolidado.
+ * 
+ * - trackingNumber: Guía individual del paquete (Amazon, courier local, etc.)
+ * - mawb: (opcional) Guía aérea master - solo referencia del manifiesto
+ */
 export interface ManifestRow {
   id: string;
+  /** Guía individual del paquete (Amazon tracking, courier local) - IDENTIFICADOR ÚNICO para análisis */
   trackingNumber: string;
+  /** Guía aérea master - SOLO REFERENCIA del manifiesto, NO se usa para análisis individual */
+  mawb?: string;
   description: string;
   valueUSD: number;
   weight: number;
