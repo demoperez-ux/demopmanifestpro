@@ -20,6 +20,7 @@ import {
   dbDeleteByIndex,
   migrateFromLocalStorage 
 } from './indexedDB';
+import { devLog, devError, devSuccess } from '../logger';
 
 // ============================================
 // TIPOS DE BASE DE DATOS
@@ -154,7 +155,7 @@ export async function guardarManifiesto(
       await dbPutMany('filas', filasConManifiesto);
       await dbPutMany('consignatarios', consignatariosAgrupados);
       
-      console.log('✅ Manifiesto guardado en IndexedDB:', manifiestoId);
+      devSuccess(`Manifiesto guardado en IndexedDB: ${manifiestoId}`);
     } else {
       // Fallback a localStorage
       const manifiestos = obtenerManifiestosLocalStorage();
@@ -169,7 +170,7 @@ export async function guardarManifiesto(
       consignatariosExistentes.push(...consignatariosAgrupados);
       localStorage.setItem(CONSIGNATARIOS_KEY, JSON.stringify(consignatariosExistentes));
       
-      console.log('✅ Manifiesto guardado en localStorage:', manifiestoId);
+      devSuccess(`Manifiesto guardado en localStorage: ${manifiestoId}`);
     }
 
     return {
@@ -184,7 +185,7 @@ export async function guardarManifiesto(
     
     const mensaje = error instanceof Error ? error.message : 'Error desconocido';
     errores.push(mensaje);
-    console.error('Error guardando manifiesto:', error);
+    devError('Error guardando manifiesto');
 
     return {
       exito: false,
