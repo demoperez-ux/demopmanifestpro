@@ -323,7 +323,7 @@ export function ConsigneeDashboard({
                   <div className="px-4 pb-4 pt-0">
                     <div className="bg-muted/50 rounded-lg p-3 space-y-2">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Paquetes de este consignatario
+                        Paquetes individuales (por guía Amazon/courier)
                       </p>
                       <div className="space-y-2">
                         {consignee.packages.map((pkg, idx) => (
@@ -332,10 +332,17 @@ export function ConsigneeDashboard({
                             className="flex items-center justify-between text-sm p-2 bg-background rounded"
                           >
                             <div>
-                              <p className="font-mono text-xs">{pkg.trackingNumber}</p>
+                              <p className="font-mono text-xs font-semibold text-primary">
+                                Guía: {pkg.trackingNumber}
+                              </p>
                               <p className="text-muted-foreground text-xs truncate max-w-[300px]">
                                 {pkg.description}
                               </p>
+                              {pkg.mawb && (
+                                <p className="text-muted-foreground/60 text-[10px]">
+                                  MAWB ref: {pkg.mawb}
+                                </p>
+                              )}
                             </div>
                             <div className="text-right">
                               <p className="font-medium">${pkg.valueUSD.toFixed(2)}</p>

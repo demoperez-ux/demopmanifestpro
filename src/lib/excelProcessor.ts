@@ -279,9 +279,16 @@ function calculateBatchStats(rows: ManifestRow[]): BatchStats {
   };
 }
 
+/**
+ * Exportar lote a Excel
+ * 
+ * NOTA: Cada fila representa un paquete individual identificado por su
+ * guía propia (trackingNumber), NO por la guía aérea master (MAWB).
+ */
 export function exportBatchToExcel(batch: ProcessedBatch): Blob {
   const exportData = batch.rows.map(row => ({
-    'Número de Guía': row.trackingNumber,
+    'Guía Individual': row.trackingNumber, // Guía del paquete (Amazon, courier)
+    'MAWB (Referencia)': row.mawb || 'N/A', // Solo referencia del envío consolidado
     'Descripción': row.description,
     'Valor USD': row.valueUSD,
     'Peso': row.weight,
