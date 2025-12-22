@@ -28,6 +28,8 @@ import {
   Waves,
   Building2,
   Calculator,
+  ShieldCheck,
+  TrendingDown,
 } from 'lucide-react';
 import { ProcessingConfig } from '@/types/manifest';
 import { ExtendedProcessingResult } from '@/lib/excelProcessor';
@@ -42,6 +44,7 @@ import { ConsigneeDashboard } from './ConsigneeDashboard';
 import { LiquidacionDashboard } from './LiquidacionDashboard';
 import { FarmaceuticosResumen } from './FarmaceuticosResumen';
 import { FiltroSanitarioPanel } from './FiltroSanitarioPanel';
+import { SubvaluacionPanel } from './SubvaluacionPanel';
 import { generarReporteConsolidado } from '@/lib/aduanas/reporteConsolidado';
 import {
   PieChart,
@@ -334,7 +337,7 @@ export function VisualDashboard({ result, config, mawbInfo, onReset }: VisualDas
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="liquidacion" className="gap-1">
             <Calculator className="w-4 h-4" />
@@ -344,6 +347,14 @@ export function VisualDashboard({ result, config, mawbInfo, onReset }: VisualDas
                 {resumenLiquidacion.requierenRevision}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="minsa" className="gap-1">
+            <ShieldCheck className="w-4 h-4" />
+            MINSA
+          </TabsTrigger>
+          <TabsTrigger value="subvaluacion" className="gap-1">
+            <TrendingDown className="w-4 h-4" />
+            Subvaluación
           </TabsTrigger>
           <TabsTrigger value="geographic" className="gap-1">
             📍 Geográfico
@@ -548,6 +559,16 @@ export function VisualDashboard({ result, config, mawbInfo, onReset }: VisualDas
               );
             }}
           />
+        </TabsContent>
+
+        {/* MINSA Filtro Sanitario Tab */}
+        <TabsContent value="minsa" className="space-y-6">
+          <FiltroSanitarioPanel data={allRows} />
+        </TabsContent>
+
+        {/* Subvaluación Tab */}
+        <TabsContent value="subvaluacion" className="space-y-6">
+          <SubvaluacionPanel data={allRows} />
         </TabsContent>
 
         {/* Geographic Tab */}
