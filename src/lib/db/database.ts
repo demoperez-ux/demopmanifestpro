@@ -8,6 +8,7 @@
  * @version 2.0.0
  */
 
+import { z } from 'zod';
 import { ResultadoProcesamiento, FilaProcesada } from '../workers/procesador.worker';
 import { 
   initDB, 
@@ -21,6 +22,12 @@ import {
   migrateFromLocalStorage 
 } from './indexedDB';
 import { devLog, devError, devSuccess } from '../logger';
+import { safeJsonParseArray } from '../utils/safeJsonParse';
+import { 
+  ManifiestoGuardadoSchema, 
+  FilaConManifiestoSchema, 
+  ConsignatarioGuardadoSchema 
+} from '../schemas/storageSchemas';
 
 // ============================================
 // TIPOS DE BASE DE DATOS
@@ -315,12 +322,8 @@ export async function eliminarManifiesto(id: string): Promise<boolean> {
 // ============================================
 
 function obtenerManifiestosLocalStorage(): ManifiestoGuardado[] {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
+  const data = localStorage.getItem(STORAGE_KEY);
+  return safeJsonParseArray<ManifiestoGuardado>(data, ManifiestoGuardadoSchema as unknown as z.ZodType<ManifiestoGuardado>);
 }
 
 function obtenerManifiestoLocalStorage(id: string): ManifiestoGuardado | null {
@@ -329,12 +332,8 @@ function obtenerManifiestoLocalStorage(id: string): ManifiestoGuardado | null {
 }
 
 function obtenerFilasLocalStorage(): FilaConManifiesto[] {
-  try {
-    const data = localStorage.getItem(FILAS_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
+  const data = localStorage.getItem(FILAS_KEY);
+  return safeJsonParseArray<FilaConManifiesto>(data, FilaConManifiestoSchema as unknown as z.ZodType<FilaConManifiesto>);
 }
 
 function obtenerFilasPorManifiestoLocalStorage(manifiestoId: string): FilaProcesada[] {
@@ -343,12 +342,8 @@ function obtenerFilasPorManifiestoLocalStorage(manifiestoId: string): FilaProces
 }
 
 function obtenerConsignatariosLocalStorage(): ConsignatarioGuardado[] {
-  try {
-    const data = localStorage.getItem(CONSIGNATARIOS_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
+  const data = localStorage.getItem(CONSIGNATARIOS_KEY);
+  return safeJsonParseArray<ConsignatarioGuardado>(data, ConsignatarioGuardadoSchema as unknown as z.ZodType<ConsignatarioGuardado>);
 }
 
 function actualizarEstadoManifiestoLocalStorage(

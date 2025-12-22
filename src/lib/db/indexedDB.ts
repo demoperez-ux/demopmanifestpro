@@ -4,7 +4,10 @@
 // con soporte para múltiples stores
 // ============================================
 
+import { z } from 'zod';
 import { devLog, devError, devSuccess } from '@/lib/logger';
+import { safeJsonParseArray } from '@/lib/utils/safeJsonParse';
+import { ManifiestoGuardadoSchema, FilaConManifiestoSchema, ConsignatarioGuardadoSchema } from '@/lib/schemas/storageSchemas';
 
 const DB_NAME = 'pasarex_db';
 const DB_VERSION = 2;
@@ -333,37 +336,37 @@ export async function migrateFromLocalStorage(): Promise<{
       return result;
     }
     
-    // Migrar manifiestos
+    // Migrar manifiestos con validación segura
     const manifiestoData = localStorage.getItem('manifiestos_db');
     if (manifiestoData) {
-      const manifiestos = JSON.parse(manifiestoData);
-      if (Array.isArray(manifiestos) && manifiestos.length > 0) {
-        await dbPutMany('manifiestos', manifiestos);
+      const manifiestos = safeJsonParseArray(manifiestoData, ManifiestoGuardadoSchema);
+      if (manifiestos.length > 0) {
+        await dbPutMany('manifiestos', manifiestos as unknown as Array<{ id: string }>);
         result.manifiestos = manifiestos.length;
       }
     }
     
-    // Migrar filas
+    // Migrar filas con validación segura
     const filasData = localStorage.getItem('filas_db');
     if (filasData) {
-      const filas = JSON.parse(filasData);
-      if (Array.isArray(filas) && filas.length > 0) {
+      const filas = safeJsonParseArray(filasData, FilaConManifiestoSchema);
+      if (filas.length > 0) {
         // Agregar ID si no existe
-        const filasConId = filas.map((f: any, i: number) => ({
+        const filasConId = filas.map((f, i) => ({
           ...f,
           id: f.id || `fila_${Date.now()}_${i}`
         }));
-        await dbPutMany('filas', filasConId);
+        await dbPutMany('filas', filasConId as unknown as Array<{ id: string }>);
         result.filas = filas.length;
       }
     }
     
-    // Migrar consignatarios
+    // Migrar consignatarios con validación segura
     const consigData = localStorage.getItem('consignatarios_db');
     if (consigData) {
-      const consignatarios = JSON.parse(consigData);
-      if (Array.isArray(consignatarios) && consignatarios.length > 0) {
-        await dbPutMany('consignatarios', consignatarios);
+      const consignatarios = safeJsonParseArray(consigData, ConsignatarioGuardadoSchema);
+      if (consignatarios.length > 0) {
+        await dbPutMany('consignatarios', consignatarios as unknown as Array<{ id: string }>);
         result.consignatarios = consignatarios.length;
       }
     }

@@ -3,7 +3,10 @@
 // Previene procesamiento duplicado del mismo MAWB
 // ============================================
 
+import { z } from 'zod';
 import { devError } from '@/lib/logger';
+import { safeJsonParseArray, safeJsonParseMap } from '@/lib/utils/safeJsonParse';
+import { ManifiestoLockSchema, StoredManifestBasicSchema } from '@/lib/schemas/storageSchemas';
 
 export interface ManifiestoLock {
   mawb: string;
@@ -28,14 +31,12 @@ const SESSION_ID = generarSessionId();
 // Key para almacenar manifiestos procesados
 const MANIFESTS_STORAGE_KEY = 'processed_manifests';
 
-// Función auxiliar para obtener manifiestos almacenados
-function getStoredManifestsLocal(): Array<{ mawb?: string; processedAt: string; totalRows: number }> {
-  try {
-    const stored = localStorage.getItem(MANIFESTS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
+type StoredManifestBasic = { mawb?: string; processedAt: string; totalRows: number };
+
+// Función auxiliar para obtener manifiestos almacenados con validación segura
+function getStoredManifestsLocal(): StoredManifestBasic[] {
+  const stored = localStorage.getItem(MANIFESTS_STORAGE_KEY);
+  return safeJsonParseArray<StoredManifestBasic>(stored, StoredManifestBasicSchema as unknown as z.ZodType<StoredManifestBasic>);
 }
 
 /**
@@ -44,18 +45,11 @@ function getStoredManifestsLocal(): Array<{ mawb?: string; processedAt: string; 
 export class GestorLocks {
   
   /**
-   * Obtiene todos los locks almacenados
+   * Obtiene todos los locks almacenados con validación segura
    */
   private static getLocks(): Map<string, ManifiestoLock> {
-    try {
-      const stored = localStorage.getItem(LOCKS_KEY);
-      if (!stored) return new Map();
-      
-      const locksArray = JSON.parse(stored) as [string, ManifiestoLock][];
-      return new Map(locksArray);
-    } catch {
-      return new Map();
-    }
+    const stored = localStorage.getItem(LOCKS_KEY);
+    return safeJsonParseMap<string, ManifiestoLock>(stored, ManifiestoLockSchema as unknown as z.ZodType<ManifiestoLock>);
   }
   
   /**
