@@ -655,12 +655,16 @@ export default function DashboardManifiesto() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="loteA" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsList className="grid w-full grid-cols-4 mb-4">
               <TabsTrigger value="loteA">
                 Lote A ({loteA.length})
               </TabsTrigger>
               <TabsTrigger value="loteB">
                 Lote B ({loteB.length})
+              </TabsTrigger>
+              <TabsTrigger value="farmaceuticos" className="text-red-600 dark:text-red-400">
+                <Pill className="h-3 w-3 mr-1" />
+                MINSA ({productosFarmaceuticos.length})
               </TabsTrigger>
               <TabsTrigger value="restricciones">
                 Restricciones ({conRestricciones.length})
@@ -751,6 +755,55 @@ export default function DashboardManifiesto() {
               {loteB.length > 20 && (
                 <p className="text-sm text-muted-foreground text-center mt-4">
                   Mostrando 20 de {loteB.length} paquetes. Descarga el Excel para ver todos.
+                </p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="farmaceuticos">
+              {productosFarmaceuticos.length === 0 ? (
+                <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+                  <Pill className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800 dark:text-blue-200">
+                    No se detectaron productos farmacéuticos que requieran permiso MINSA en este manifiesto
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="rounded-md border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead>Guía</TableHead>
+                        <TableHead>Consignatario</TableHead>
+                        <TableHead>Descripción</TableHead>
+                        <TableHead>Peso</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {productosFarmaceuticos.slice(0, 30).map((paq, idx) => (
+                        <TableRow key={idx} className="bg-red-50/30 dark:bg-red-950/20">
+                          <TableCell>{idx + 1}</TableCell>
+                          <TableCell className="font-mono text-sm">{paq.guiaAerea}</TableCell>
+                          <TableCell className="max-w-[150px] truncate">{paq.consignatario}</TableCell>
+                          <TableCell className="max-w-[250px]">
+                            <span className="text-red-700 dark:text-red-400 font-medium">
+                              {paq.descripcionCompleta?.substring(0, 60)}{paq.descripcionCompleta && paq.descripcionCompleta.length > 60 ? '...' : ''}
+                            </span>
+                          </TableCell>
+                          <TableCell>{paq.peso?.toFixed(2) || '0'} lb</TableCell>
+                          <TableCell className="text-right font-medium">
+                            ${(paq.valorUSD || 0).toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+              {productosFarmaceuticos.length > 30 && (
+                <p className="text-sm text-muted-foreground text-center mt-4">
+                  Mostrando 30 de {productosFarmaceuticos.length} productos. Descarga el reporte MINSA para ver todos.
                 </p>
               )}
             </TabsContent>
