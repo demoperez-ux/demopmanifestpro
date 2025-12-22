@@ -10,7 +10,10 @@ import {
   ChevronUp,
   MapPin,
   Phone,
-  CreditCard
+  CreditCard,
+  FileText,
+  CheckCircle2,
+  Hash
 } from 'lucide-react';
 import { Consignee, ConsigneeStats, ConsolidatedDelivery } from '@/types/manifest';
 import { Button } from '@/components/ui/button';
@@ -104,8 +107,92 @@ export function ConsigneeDashboard({
     saveAs(blob, `Lista_Consignatarios_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
+  // Calculate tracking number stats
+  const trackingStats = useMemo(() => {
+    let totalGuias = 0;
+    let consignatariosConMultiplesGuias = 0;
+    const guiasPorConsignatario: { nombre: string; cantidad: number; guias: string[] }[] = [];
+
+    consigneeMap.forEach((consignee) => {
+      const guias = consignee.packages.map(p => p.trackingNumber).filter(Boolean);
+      totalGuias += guias.length;
+      if (guias.length >= 2) {
+        consignatariosConMultiplesGuias++;
+      }
+      guiasPorConsignatario.push({
+        nombre: consignee.name,
+        cantidad: guias.length,
+        guias: guias.slice(0, 5) // Limit to first 5 for display
+      });
+    });
+
+    return {
+      totalGuias,
+      consignatariosConMultiplesGuias,
+      guiasPorConsignatario: guiasPorConsignatario.sort((a, b) => b.cantidad - a.cantidad),
+    };
+  }, [consigneeMap]);
+
   return (
     <div className="space-y-6">
+      {/* Analysis Report Banner */}
+      <div className="bg-primary/5 border border-primary/20 rounded-lg p-5">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <FileText className="w-6 h-6 text-primary" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-foreground">Reporte de Análisis por Guía Individual</h3>
+              <CheckCircle2 className="w-4 h-4 text-success" />
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              El análisis se realizó usando las <strong>guías individuales de cada paquete</strong> (AWB Amazon, FedEx, UPS, etc.), 
+              NO por la guía aérea master (MAWB).
+            </p>
+            
+            {/* Tracking Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-background/80 rounded-lg p-3 border border-border/50">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Hash className="w-3.5 h-3.5" />
+                  <span className="text-[10px] uppercase tracking-wide font-medium">Guías Analizadas</span>
+                </div>
+                <p className="text-xl font-bold text-foreground">{trackingStats.totalGuias.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">paquetes únicos</p>
+              </div>
+              
+              <div className="bg-background/80 rounded-lg p-3 border border-border/50">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Users className="w-3.5 h-3.5" />
+                  <span className="text-[10px] uppercase tracking-wide font-medium">Consignatarios</span>
+                </div>
+                <p className="text-xl font-bold text-foreground">{stats.totalConsignees.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">destinatarios únicos</p>
+              </div>
+              
+              <div className="bg-background/80 rounded-lg p-3 border border-border/50">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <PackageCheck className="w-3.5 h-3.5" />
+                  <span className="text-[10px] uppercase tracking-wide font-medium">Con +2 Guías</span>
+                </div>
+                <p className="text-xl font-bold text-success">{trackingStats.consignatariosConMultiplesGuias.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">consolidables</p>
+              </div>
+              
+              <div className="bg-background/80 rounded-lg p-3 border border-border/50">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Package className="w-3.5 h-3.5" />
+                  <span className="text-[10px] uppercase tracking-wide font-medium">Promedio</span>
+                </div>
+                <p className="text-xl font-bold text-foreground">{stats.avgPackagesPerConsignee}</p>
+                <p className="text-[10px] text-muted-foreground">guías/consignatario</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="stat-card">
