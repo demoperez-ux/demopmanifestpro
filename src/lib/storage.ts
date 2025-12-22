@@ -1,5 +1,8 @@
+import { z } from 'zod';
 import { ProcessingConfig, DEFAULT_CONFIG, ProcessingSummary, ProcessedBatch } from '@/types/manifest';
 import { devError } from '@/lib/logger';
+import { safeJsonParse, safeJsonParseArray } from '@/lib/utils/safeJsonParse';
+import { ProcessingConfigSchema, ManifestStorageSchema } from '@/lib/schemas/storageSchemas';
 
 const CONFIG_KEY = 'manifest_processor_config';
 const MANIFESTS_KEY = 'processed_manifests';
@@ -32,20 +35,18 @@ export function saveConfig(config: ProcessingConfig): void {
 }
 
 export function loadConfig(): ProcessingConfig {
-  try {
-    const stored = localStorage.getItem(CONFIG_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return {
-        ...DEFAULT_CONFIG,
-        ...parsed,
-        categories: parsed.categories || DEFAULT_CONFIG.categories,
-        valueTresholds: parsed.valueTresholds || DEFAULT_CONFIG.valueTresholds,
-      };
-    }
-  } catch (error) {
-    devError('Error loading config');
+  const stored = localStorage.getItem(CONFIG_KEY);
+  const parsed = safeJsonParse<Partial<ProcessingConfig>>(stored, ProcessingConfigSchema as unknown as z.ZodType<Partial<ProcessingConfig>>, null);
+  
+  if (parsed) {
+    return {
+      ...DEFAULT_CONFIG,
+      ...parsed,
+      categories: parsed.categories || DEFAULT_CONFIG.categories,
+      valueTresholds: parsed.valueTresholds || DEFAULT_CONFIG.valueTresholds,
+    };
   }
+  
   return DEFAULT_CONFIG;
 }
 
@@ -59,15 +60,8 @@ export function resetConfig(): ProcessingConfig {
 // ============================================
 
 export function getStoredManifests(): ManifestStorage[] {
-  try {
-    const stored = localStorage.getItem(MANIFESTS_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (error) {
-    devError('Error loading manifests');
-  }
-  return [];
+  const stored = localStorage.getItem(MANIFESTS_KEY);
+  return safeJsonParseArray<ManifestStorage>(stored, ManifestStorageSchema as unknown as z.ZodType<ManifestStorage>);
 }
 
 export function saveManifest(manifest: ManifestStorage): void {
