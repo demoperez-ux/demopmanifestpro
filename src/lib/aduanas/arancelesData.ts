@@ -406,6 +406,83 @@ export const ARANCELES_PANAMA: Arancel[] = [
     requiresPermiso: false,
     categoria: 'Hogar',
     unidad: 'unidad'
+  },
+
+  // ============================================
+  // ANIMALES VIVOS
+  // ============================================
+  {
+    hsCode: '0101.21.00.00',
+    descripcion: 'Caballos, reproductores de raza pura',
+    daiPercent: 0,
+    iscPercent: 0,
+    itbmsPercent: 0,
+    requiresPermiso: true,
+    autoridad: 'MIDA',
+    categoria: 'Animales Vivos',
+    unidad: 'unidad',
+    notasAdicionales: 'Requiere certificado zoosanitario'
+  },
+
+  // ============================================
+  // CAFÉ Y TÉ
+  // ============================================
+  {
+    hsCode: '0901.21.00.00',
+    descripcion: 'Café tostado, sin descafeinar',
+    daiPercent: 54,
+    iscPercent: 0,
+    itbmsPercent: 0,
+    requiresPermiso: false,
+    categoria: 'Alimentos',
+    unidad: 'kg',
+    notasAdicionales: 'Producto protegido - arancel alto'
+  },
+
+  // ============================================
+  // SMARTPHONES (Código específico)
+  // ============================================
+  {
+    hsCode: '8517.13.00.00',
+    descripcion: 'Teléfonos inteligentes (Smartphones)',
+    daiPercent: 0,
+    iscPercent: 0,
+    itbmsPercent: 7,
+    requiresPermiso: false,
+    categoria: 'Electrónica',
+    unidad: 'unidad'
+  },
+
+  // ============================================
+  // VEHÍCULOS
+  // ============================================
+  {
+    hsCode: '8703.23.91.00',
+    descripcion: 'Automóviles nuevos de turismo, cilindrada > 1500 cm3 pero <= 3000 cm3',
+    daiPercent: 15,
+    iscPercent: 0,
+    itbmsPercent: 7,
+    requiresPermiso: true,
+    autoridad: 'ATTT',
+    categoria: 'Vehículos',
+    unidad: 'unidad',
+    notasAdicionales: 'Requiere homologación vehicular'
+  },
+
+  // ============================================
+  // CEREALES
+  // ============================================
+  {
+    hsCode: '1006.30.00.00',
+    descripcion: 'Arroz semiblanqueado o blanqueado, incluso pulido o glaseado',
+    daiPercent: 90,
+    iscPercent: 0,
+    itbmsPercent: 0,
+    requiresPermiso: true,
+    autoridad: 'MIDA',
+    categoria: 'Alimentos',
+    unidad: 'kg',
+    notasAdicionales: 'Producto protegido - contingente arancelario aplicable'
   }
 ];
 
@@ -415,6 +492,7 @@ export const ARANCELES_PANAMA: Arancel[] = [
 export const KEYWORDS_ARANCEL: Record<string, string[]> = {
   '8471.30.00': ['laptop', 'notebook', 'computadora portatil', 'macbook', 'chromebook'],
   '8517.12.00': ['celular', 'telefono', 'iphone', 'samsung', 'smartphone', 'movil'],
+  '8517.13.00.00': ['smartphone', 'telefono inteligente', 'iphone', 'galaxy', 'pixel', 'android phone'],
   '8528.72.00': ['tv', 'television', 'televisor', 'smart tv', 'monitor'],
   '8518.30.00': ['auricular', 'audifonos', 'headphone', 'earbuds', 'airpods'],
   '6109.10.00': ['camiseta', 'tshirt', 't-shirt', 'polo', 'camisa'],
@@ -432,6 +510,11 @@ export const KEYWORDS_ARANCEL: Record<string, string[]> = {
   '9102.11.00': ['reloj', 'watch', 'smartwatch', 'apple watch'],
   '4202.92.00': ['bolso', 'cartera', 'bag', 'purse', 'backpack', 'mochila'],
   '2309.10.00': ['comida perro', 'dog food', 'cat food', 'comida gato', 'pet food'],
+  // Nuevos aranceles
+  '0101.21.00.00': ['caballo', 'horse', 'yegua', 'potro', 'equino', 'reproductor'],
+  '0901.21.00.00': ['cafe', 'coffee', 'cafe tostado', 'roasted coffee', 'grano cafe'],
+  '8703.23.91.00': ['automovil', 'carro', 'vehiculo', 'sedan', 'auto nuevo', 'car'],
+  '1006.30.00.00': ['arroz', 'rice', 'arroz blanco', 'arroz pulido', 'white rice'],
 };
 
 // Función para buscar arancel por descripción
