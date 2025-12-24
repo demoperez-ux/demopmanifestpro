@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,12 +14,25 @@ import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+const App: React.FC = () => {
   // Inicializar sistema de encriptación al arrancar
   useEffect(() => {
-    ProtectorDatos.inicializarSesion();
+    let mounted = true;
+    
+    const initSession = async () => {
+      try {
+        if (mounted) {
+          await ProtectorDatos.inicializarSesion();
+        }
+      } catch (error) {
+        console.warn('Error inicializando sesión de seguridad');
+      }
+    };
+    
+    initSession();
     
     return () => {
+      mounted = false;
       ProtectorDatos.limpiarSesion();
     };
   }, []);
@@ -38,23 +51,23 @@ const App = () => {
   }, []);
 
   return (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/historial" element={<Historial />} />
-          <Route path="/test-deteccion" element={<TestDeteccion />} />
-          <Route path="/dashboard/:manifiestoId" element={<DashboardManifiesto />} />
-          <Route path="/aranceles" element={<BuscadorAranceles />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/historial" element={<Historial />} />
+            <Route path="/test-deteccion" element={<TestDeteccion />} />
+            <Route path="/dashboard/:manifiestoId" element={<DashboardManifiesto />} />
+            <Route path="/aranceles" element={<BuscadorAranceles />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 
