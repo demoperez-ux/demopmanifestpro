@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ARANCELES_COMPLETOS } from '@/lib/aduanas/arancelesCompletos';
+import { ARANCELES_COMPLETOS, expandirBusqueda } from '@/lib/aduanas/arancelesCompletos';
 import { Link } from 'react-router-dom';
 import { ImportadorAranceles } from '@/components/aranceles/ImportadorAranceles';
 import type { Arancel } from '@/types/aduanas';
@@ -26,16 +26,17 @@ export default function BuscadorAranceles() {
       return todosAranceles;
     }
 
-    const termino = busqueda.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    // Expandir búsqueda con sinónimos
+    const terminosExpandidos = expandirBusqueda(busqueda);
 
     return todosAranceles.filter(arancel => {
       const codigo = arancel.hsCode.toLowerCase();
       const descripcion = arancel.descripcion.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const categoria = (arancel.categoria || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const textoCompleto = `${codigo} ${descripcion} ${categoria}`;
 
-      return codigo.includes(termino) || 
-             descripcion.includes(termino) || 
-             categoria.includes(termino);
+      // Buscar cualquiera de los términos expandidos
+      return terminosExpandidos.some(termino => textoCompleto.includes(termino));
     });
   }, [busqueda, todosAranceles]);
 
