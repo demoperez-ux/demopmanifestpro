@@ -291,6 +291,57 @@ export const ARANCELES_COMPLETOS: Arancel[] = [
   { hsCode: "5608.11.00.00", descripcion: "Redes de pesca confeccionadas", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Pesca", unidad: "kg" },
   // Tabaco/Vapers (requiere alerta sanitaria)
   { hsCode: "9614.00.90.00", descripcion: "Cigarrillos electrónicos y Vapers", daiPercent: 50, iscPercent: 0, itbmsPercent: 10, requiresPermiso: true, categoria: "Tabaco", unidad: "u", notasAdicionales: "ALERTA: Estos productos están sujetos a regulaciones sanitarias adicionales en Panamá. Consulte con la Autoridad de Salud antes de importar." },
+  // Tecnología Maker / Impresión 3D
+  { hsCode: "8485.20.00.00", descripcion: "Impresoras 3D (Fabricación aditiva)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Maker", unidad: "u" },
+  { hsCode: "3916.90.90.00", descripcion: "Filamento para impresión 3D (Plástico en bobinas)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Maker", unidad: "kg" },
+  { hsCode: "8479.89.90.00", descripcion: "Máquinas de corte (Plotters caseros tipo Cricut/Cameo)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Maker", unidad: "u" },
+  // Belleza y cuidado personal
+  { hsCode: "8516.31.00.00", descripcion: "Secadores de cabello eléctricos", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Belleza", unidad: "u" },
+  { hsCode: "8516.32.00.00", descripcion: "Planchas y tenazas para el cabello (Alisadoras)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Belleza", unidad: "u" },
+  { hsCode: "8543.70.99.00", descripcion: "Depiladoras láser o luz pulsada (IPL domésticas)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Belleza", unidad: "u" },
+  { hsCode: "9019.10.00.00", descripcion: "Masajeadores eléctricos corporales e íntimos", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Bienestar", unidad: "u" },
+  { hsCode: "6704.11.00.00", descripcion: "Pelucas y extensiones de cabello sintético", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Belleza", unidad: "kg" },
+  { hsCode: "6704.20.00.00", descripcion: "Pelucas y extensiones de cabello humano", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Belleza", unidad: "kg" },
+  { hsCode: "3304.30.00.00", descripcion: "Preparaciones para manicuras o pedicuros (Esmaltes)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Belleza", unidad: "kg" },
+  { hsCode: "3307.20.00.00", descripcion: "Desodorantes corporales y antitranspirantes", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Higiene", unidad: "kg" },
+  // Bisutería
+  { hsCode: "7117.19.00.00", descripcion: "Bisutería dorada/plateada (Joyería de fantasía)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Joyería", unidad: "kg" },
+  { hsCode: "7117.90.00.00", descripcion: "Bisutería de otros materiales (Plástico/Madera/Vidrio)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Joyería", unidad: "kg" },
+  // Streaming y audio
+  { hsCode: "9620.00.10.00", descripcion: "Trípodes y monopods (Selfie sticks)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Fotografía", unidad: "u" },
+  { hsCode: "8518.10.00.00", descripcion: "Micrófonos (para PC, Streaming, USB)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Audio", unidad: "u" },
+  { hsCode: "8518.40.00.00", descripcion: "Amplificadores de audio eléctricos", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Audio", unidad: "u" },
+  { hsCode: "8539.22.00.00", descripcion: "Aros de luz (Ring Lights) sin trípode", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Streaming", unidad: "u" },
+  // Crypto y tech
+  { hsCode: "8543.70.99.00", descripcion: "Hardware Wallets (Billeteras Cripto - Ledger/Trezor)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Crypto", unidad: "u" },
+  // Oficina y papelería
+  { hsCode: "8443.99.00.00", descripcion: "Cartuchos de tinta y tóner (Originales o genéricos)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Oficina", unidad: "kg" },
+  { hsCode: "9608.20.00.00", descripcion: "Rotuladores y marcadores (Punta de fieltro)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Oficina", unidad: "u" },
+  { hsCode: "4820.10.00.00", descripcion: "Cuadernos, agendas y libretas", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Oficina", unidad: "kg" },
+  { hsCode: "3926.10.00.00", descripcion: "Artículos de oficina de plástico (Clips, organizadores)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Oficina", unidad: "kg" },
+  { hsCode: "8304.00.00.00", descripcion: "Ficheros y cajas de clasificación de metal", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Oficina", unidad: "kg" },
+  { hsCode: "8213.00.00.00", descripcion: "Tijeras y sus hojas", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Oficina", unidad: "u" },
+  // Accesorios personales
+  { hsCode: "4202.32.00.00", descripcion: "Billeteras y monederos de bolsillo (Material sintético)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Accesorios", unidad: "u" },
+  { hsCode: "9102.19.00.00", descripcion: "Relojes de pulsera (Digitales simples tipo Casio)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Relojes", unidad: "u" },
+  // Fiestas y disfraces
+  { hsCode: "9505.90.00.00", descripcion: "Artículos para fiestas (Confeti, serpentinas, decoración)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Fiestas", unidad: "kg" },
+  { hsCode: "9505.90.00.00", descripcion: "Disfraces (Carnaval, Halloween)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Fiestas", unidad: "u" },
+  // Autocare
+  { hsCode: "3405.30.00.00", descripcion: "Ceras y abrillantadores para carrocerías de auto", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Autopartes", unidad: "kg" },
+  // Gaming furniture
+  { hsCode: "9403.20.00.00", descripcion: "Sillas Gamer (Estructura de metal)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Gaming", unidad: "u" },
+  // Outdoor
+  { hsCode: "6602.00.00.00", descripcion: "Bastones para caminar (Trekking poles)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Deportes", unidad: "u" },
+  // Fotografía
+  { hsCode: "9006.61.00.00", descripcion: "Flashes para cámaras fotográficas", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Fotografía", unidad: "u" },
+  { hsCode: "9209.94.00.00", descripcion: "Partes y accesorios de instrumentos musicales (Cables, pedales)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Música", unidad: "kg" },
+  // TV y hogar
+  { hsCode: "8529.90.90.00", descripcion: "Soportes de pared para TV (TV Mounts)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "kg" },
+  { hsCode: "8504.40.90.00", descripcion: "Regletas y extensiones eléctricas (Surge Protectors)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Eléctricos", unidad: "u" },
+  // Básculas
+  { hsCode: "8423.10.00.00", descripcion: "Básculas de baño (Pesas personales)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Hogar", unidad: "u" },
+  { hsCode: "8423.81.00.00", descripcion: "Balanzas de cocina digitales", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Cocina", unidad: "u" },
 ];
 
 // Obtener categorías únicas para filtros
@@ -327,6 +378,8 @@ export const SINONIMOS_BUSQUEDA: Record<string, string[]> = {
   "audifonos": ["auriculares", "earbuds", "headphones", "airpods"],
   "bocina": ["speaker", "altavoz", "parlante", "jbl", "bose"],
   "speaker": ["bocina", "altavoz", "parlante"],
+  "mic": ["microfono", "microphone", "mic usb"],
+  "microfono": ["mic", "microphone", "mic streaming"],
   
   // Computación
   "laptop": ["portatil", "notebook", "computadora portatil"],
@@ -340,11 +393,14 @@ export const SINONIMOS_BUSQUEDA: Record<string, string[]> = {
   "whey": ["proteina", "whey protein", "proteina en polvo"],
   "proteina": ["whey", "protein", "whey protein"],
   "vitaminas": ["multivitaminico", "vitamins", "suplemento"],
+  "creatina": ["creatine", "suplemento deportivo"],
+  "colageno": ["collagen", "colageno hidrolizado"],
   
   // Wearables
   "smartwatch": ["reloj inteligente", "apple watch", "garmin", "smart watch"],
   "apple watch": ["smartwatch", "reloj inteligente"],
   "reloj inteligente": ["smartwatch", "apple watch", "garmin"],
+  "casio": ["reloj digital", "reloj pulsera"],
   
   // Drones y cámaras
   "drone": ["dron", "dji", "quadcopter"],
@@ -359,6 +415,50 @@ export const SINONIMOS_BUSQUEDA: Record<string, string[]> = {
   "control": ["mando", "joystick", "gamepad", "controller"],
   "mando": ["control", "joystick", "gamepad"],
   "consola": ["videojuego", "ps5", "xbox", "nintendo", "playstation"],
+  "silla gamer": ["gaming chair", "silla gaming", "silla para juegos"],
+  "gaming chair": ["silla gamer", "silla gaming"],
+  
+  // Tecnología Maker
+  "impresora 3d": ["3d printer", "printer 3d", "fabricacion aditiva", "ender"],
+  "3d printer": ["impresora 3d", "fabricacion aditiva"],
+  "filamento": ["pla", "abs", "filament", "filamento 3d"],
+  "cricut": ["plotter", "cameo", "maquina de corte", "silhouette"],
+  "plotter": ["cricut", "cameo", "cortadora", "silhouette"],
+  
+  // Belleza
+  "secador": ["hair dryer", "secadora de pelo", "blow dryer"],
+  "hair dryer": ["secador", "secadora"],
+  "plancha pelo": ["alisadora", "flat iron", "straightener", "tenaza"],
+  "flat iron": ["plancha pelo", "alisadora"],
+  "ipl": ["depiladora laser", "luz pulsada", "depilacion"],
+  "depiladora": ["ipl", "laser", "luz pulsada"],
+  "peluca": ["wig", "extension", "cabello postizo"],
+  "wig": ["peluca", "extension"],
+  "esmalte": ["nail polish", "unas", "manicura"],
+  "nail polish": ["esmalte", "esmalte unas"],
+  
+  // Crypto
+  "ledger": ["hardware wallet", "billetera cripto", "trezor", "cold wallet"],
+  "trezor": ["hardware wallet", "billetera cripto", "ledger"],
+  "wallet cripto": ["ledger", "trezor", "hardware wallet", "billetera cripto"],
+  
+  // Streaming
+  "ring light": ["aro de luz", "luz led circular", "luz streaming"],
+  "aro de luz": ["ring light", "luz led", "luz circular"],
+  "tripode": ["tripod", "monopod", "selfie stick"],
+  "selfie stick": ["palo selfie", "monopod", "tripode"],
+  
+  // Oficina
+  "toner": ["cartucho", "tinta", "ink cartridge"],
+  "cartucho": ["toner", "tinta", "ink"],
+  "agenda": ["planner", "cuaderno", "libreta", "notebook"],
+  "planner": ["agenda", "organizador"],
+  "marcador": ["rotulador", "marker", "highlighter"],
+  
+  // Fiestas
+  "disfraz": ["costume", "halloween", "carnaval"],
+  "costume": ["disfraz", "halloween"],
+  "confeti": ["fiesta", "party", "decoracion"],
   
   // Otros
   "kindle": ["lector electronico", "ebook reader", "e-reader", "kobo"],
@@ -368,8 +468,10 @@ export const SINONIMOS_BUSQUEDA: Record<string, string[]> = {
   "crocs": ["zuecos", "sandalias plastico"],
   "yoga mat": ["esterilla", "colchoneta yoga", "mat yoga"],
   "esterilla": ["yoga mat", "mat", "colchoneta"],
-  "ring light": ["aro de luz", "luz led circular", "luz streaming"],
-  "aro de luz": ["ring light", "luz led"],
+  "bascula": ["scale", "pesa", "balanza"],
+  "scale": ["bascula", "pesa", "balanza"],
+  "surge protector": ["regleta", "extension electrica", "protector"],
+  "regleta": ["surge protector", "extension", "multicontacto"],
 };
 
 // Función para expandir términos de búsqueda con sinónimos
@@ -377,14 +479,25 @@ export function expandirBusqueda(termino: string): string[] {
   const termsNormalized = termino.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const terminos = new Set<string>([termsNormalized]);
   
+  // Dividir en palabras para buscar coincidencias parciales
+  const palabras = termsNormalized.split(/\s+/);
+  
   // Buscar en el mapa de sinónimos
   for (const [key, values] of Object.entries(SINONIMOS_BUSQUEDA)) {
     const keyNorm = key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     
-    // Si el término contiene la clave o viceversa
+    // Coincidencia exacta o parcial con el término completo
     if (termsNormalized.includes(keyNorm) || keyNorm.includes(termsNormalized)) {
       terminos.add(keyNorm);
       values.forEach(v => terminos.add(v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
+    }
+    
+    // Buscar coincidencia con palabras individuales
+    for (const palabra of palabras) {
+      if (palabra.length >= 3 && (keyNorm.includes(palabra) || palabra.includes(keyNorm))) {
+        terminos.add(keyNorm);
+        values.forEach(v => terminos.add(v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
+      }
     }
     
     // También buscar en los valores
@@ -393,6 +506,14 @@ export function expandirBusqueda(termino: string): string[] {
       if (termsNormalized.includes(valueNorm) || valueNorm.includes(termsNormalized)) {
         terminos.add(keyNorm);
         values.forEach(v => terminos.add(v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
+      }
+      
+      // Buscar coincidencia parcial en valores
+      for (const palabra of palabras) {
+        if (palabra.length >= 3 && (valueNorm.includes(palabra) || palabra.includes(valueNorm))) {
+          terminos.add(keyNorm);
+          values.forEach(v => terminos.add(v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
+        }
       }
     }
   }
