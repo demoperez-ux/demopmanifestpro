@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calculator, Scale, DollarSign, Truck, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Calculator, Scale, DollarSign, Truck, Shield, AlertTriangle, CheckCircle, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Sheet,
   SheetContent,
@@ -36,12 +37,18 @@ interface LandedCostResult {
   baseITBMS: number;
   itbmsPercent: number;
   itbmsAmount: number;
+  tasaAdministrativa: number;
+  esImportacionFormal: boolean;
   totalTributos: number;
   totalAPagar: number;
 }
 
 // Tarifa promedio de mercado por libra
 const TARIFA_POR_LIBRA = 3.50;
+
+// Umbral para Importación Formal
+const UMBRAL_IMPORTACION_FORMAL = 2000;
+const TASA_ADMINISTRATIVA = 70;
 
 export function CalculadoraLandedCost({ arancel, trigger }: CalculadoraLandedCostProps) {
   const [valorFOB, setValorFOB] = useState<string>('');
@@ -102,8 +109,12 @@ export function CalculadoraLandedCost({ arancel, trigger }: CalculadoraLandedCos
     // Paso D: ITBMS
     const itbmsAmount = baseITBMS * (itbmsPercent / 100);
 
-    // Paso E: Total
-    const totalTributos = daiAmount + itbmsAmount;
+    // Paso E: Tasa Administrativa (TGA)
+    const esImportacionFormal = valorCIF >= UMBRAL_IMPORTACION_FORMAL;
+    const tasaAdministrativa = esImportacionFormal ? TASA_ADMINISTRATIVA : 0;
+
+    // Paso F: Total (CIF + DAI + ITBMS + TGA)
+    const totalTributos = daiAmount + itbmsAmount + tasaAdministrativa;
     const totalAPagar = valorCIF + totalTributos;
 
     return {
@@ -116,6 +127,8 @@ export function CalculadoraLandedCost({ arancel, trigger }: CalculadoraLandedCos
       baseITBMS,
       itbmsPercent,
       itbmsAmount,
+      tasaAdministrativa,
+      esImportacionFormal,
       totalTributos,
       totalAPagar,
     };
@@ -375,7 +388,36 @@ export function CalculadoraLandedCost({ arancel, trigger }: CalculadoraLandedCos
                   {resultado.itbmsAmount > 0 ? formatMoney(resultado.itbmsAmount) : 'Exento'}
                 </span>
               </div>
+
+              <Separator />
+
+              {/* Tasa Administrativa (TGA) */}
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-700">Tasa Administrativa (TGA):</span>
+                  {resultado.esImportacionFormal && (
+                    <Badge variant="outline" className="text-xs border-amber-400 text-amber-600 bg-amber-50">
+                      Importación Formal
+                    </Badge>
+                  )}
+                </div>
+                <span className={resultado.tasaAdministrativa > 0 ? 'text-purple-600 font-medium' : 'text-green-600'}>
+                  {formatMoney(resultado.tasaAdministrativa)}
+                </span>
+              </div>
             </div>
+
+            {/* Alerta de Importación Formal */}
+            {resultado.esImportacionFormal && (
+              <Alert className="border-amber-400 bg-amber-50">
+                <Briefcase className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-800">Importación Formal</AlertTitle>
+                <AlertDescription className="text-amber-700 text-sm">
+                  Al superar los $2,000 CIF, esta carga se considera <strong>Importación Formal</strong>. 
+                  Requiere pago de Tasa Administrativa ($70) y contratación de un <strong>Corredor de Aduanas</strong> (Honorarios no incluidos aquí).
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Total Tributos */}
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
@@ -385,6 +427,9 @@ export function CalculadoraLandedCost({ arancel, trigger }: CalculadoraLandedCos
                   {formatMoney(resultado.totalTributos)}
                 </span>
               </div>
+              <p className="text-xs text-amber-600 mt-1">
+                DAI + ITBMS{resultado.esImportacionFormal ? ' + TGA' : ''}
+              </p>
             </div>
 
             {/* TOTAL A PAGAR */}
@@ -392,7 +437,9 @@ export function CalculadoraLandedCost({ arancel, trigger }: CalculadoraLandedCos
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-green-100 text-sm">COSTO TOTAL PUESTO EN PANAMÁ</p>
-                  <p className="text-xs text-green-200 mt-1">CIF + DAI + ITBMS</p>
+                  <p className="text-xs text-green-200 mt-1">
+                    CIF + DAI + ITBMS{resultado.esImportacionFormal ? ' + TGA' : ''}
+                  </p>
                 </div>
                 <span className="font-bold text-3xl">
                   {formatMoney(resultado.totalAPagar)}
