@@ -122,7 +122,152 @@ export const ARANCELES_COMPLETOS: Arancel[] = [
   { hsCode: "9608.10.00.00", descripcion: "Bolígrafos", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Oficina", unidad: "u" },
   { hsCode: "9619.00.10.00", descripcion: "Pañales para bebés", daiPercent: 5, iscPercent: 0, itbmsPercent: 0, requiresPermiso: false, categoria: "Bebé", unidad: "kg" },
   { hsCode: "9619.00.20.00", descripcion: "Toallas sanitarias", daiPercent: 5, iscPercent: 0, itbmsPercent: 0, requiresPermiso: false, categoria: "Higiene", unidad: "kg" },
+  // Productos tecnológicos y de venta online
+  { hsCode: "8517.62.00.00", descripcion: "Asistentes de voz (Amazon Echo / Google Nest)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8517.62.00.00", descripcion: "Dispositivos de Streaming (Fire TV Stick / Roku / Chromecast)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8528.72.00.00", descripcion: "Proyectores portátiles (Mini Projectors)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8508.11.00.00", descripcion: "Aspiradoras Robot (Roomba / Roborock)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrodomésticos", unidad: "u" },
+  { hsCode: "8516.60.00.00", descripcion: "Freidoras de Aire (Air Fryers)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrodomésticos", unidad: "u" },
+  { hsCode: "8509.40.00.00", descripcion: "Batidoras personales (Nutribullet / Ninja)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrodomésticos", unidad: "u" },
+  { hsCode: "9617.00.00.00", descripcion: "Termos y botellas aisladas (Stanley / Yeti)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Hogar", unidad: "u" },
+  { hsCode: "8518.30.00.00", descripcion: "Auriculares True Wireless (AirPods / Galaxy Buds)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8518.21.00.00", descripcion: "Bocinas portátiles Bluetooth (JBL / Bose)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8471.60.00.00", descripcion: "Teclados mecánicos Gaming (Razer / Logitech)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8471.60.00.00", descripcion: "Ratones (Mouse) Gaming de alta precisión", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "9405.42.00.00", descripcion: "Aros de luz LED (Ring Lights para Streaming)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Iluminación", unidad: "u" },
+  { hsCode: "8525.80.20.00", descripcion: "Cámaras de acción (GoPro / DJI Osmo)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8802.20.00.00", descripcion: "Drones con cámara (DJI Mini / Air)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "9504.50.00.00", descripcion: "Gafas de Realidad Virtual (Meta Quest / PS VR)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "9504.50.00.00", descripcion: "Mandos y controles para videojuegos (PS5 / Xbox)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8414.51.00.00", descripcion: "Bases de enfriamiento para Laptops (Cooling Pads)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8504.40.90.00", descripcion: "Cargadores rápidos (GaN Chargers)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8507.60.00.00", descripcion: "Baterías portátiles (Power Banks)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8517.79.00.00", descripcion: "Fundas y carcasas para celulares (Cases)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Accesorios", unidad: "u" },
+  { hsCode: "3926.90.99.00", descripcion: "Soportes de celular para auto o escritorio", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Accesorios", unidad: "u" },
+  { hsCode: "9019.10.00.00", descripcion: "Pistolas de masaje muscular (Massage Guns)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Salud", unidad: "u" },
+  { hsCode: "9603.21.00.00", descripcion: "Cepillos de dientes eléctricos", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Higiene", unidad: "u" },
+  { hsCode: "8510.10.00.00", descripcion: "Afeitadoras y recortadoras de barba eléctricas", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Higiene", unidad: "u" },
+  { hsCode: "9102.12.00.00", descripcion: "Relojes Inteligentes (Apple Watch / Garmin)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "6404.11.10.00", descripcion: "Zapatillas de correr (Running Shoes)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Calzado", unidad: "par" },
+  { hsCode: "6402.91.00.00", descripcion: "Zuecos de plástico tipo Crocs", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Calzado", unidad: "par" },
+  { hsCode: "4202.92.00.00", descripcion: "Mochilas para portátiles / Tech Backpacks", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Accesorios", unidad: "u" },
+  { hsCode: "9506.91.00.00", descripcion: "Esterillas de Yoga (Yoga Mats)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Deportes", unidad: "u" },
+  { hsCode: "9506.91.00.00", descripcion: "Bandas elásticas de resistencia", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Deportes", unidad: "kg" },
+  { hsCode: "2106.90.62.00", descripcion: "Vitaminas y Multivitamínicos", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Suplementos", unidad: "kg" },
+  { hsCode: "2106.90.99.00", descripcion: "Proteína en polvo (Whey Protein)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Suplementos", unidad: "kg" },
+  { hsCode: "3924.10.00.00", descripcion: "Organizadores de nevera (Plástico transparente)", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Hogar", unidad: "kg" },
+  { hsCode: "6307.90.90.00", descripcion: "Organizadores de equipaje (Packing Cubes)", daiPercent: 15, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Viaje", unidad: "kg" },
+  { hsCode: "8539.52.00.00", descripcion: "Bombillas inteligentes (Smart Bulbs WiFi)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Iluminación", unidad: "u" },
+  { hsCode: "8536.69.00.00", descripcion: "Enchufes inteligentes (Smart Plugs)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8543.70.99.00", descripcion: "Lectores de libros electrónicos (Kindle / Kobo)", daiPercent: 0, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrónica", unidad: "u" },
+  { hsCode: "8303.00.00.00", descripcion: "Cajas fuertes de seguridad domésticas", daiPercent: 10, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Seguridad", unidad: "u" },
+  { hsCode: "9207.10.00.00", descripcion: "Teclados MIDI / Controladores musicales", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Música", unidad: "u" },
+  { hsCode: "8516.40.00.00", descripcion: "Planchas de vapor verticales (Steamers)", daiPercent: 5, iscPercent: 0, itbmsPercent: 7, requiresPermiso: false, categoria: "Electrodomésticos", unidad: "u" },
 ];
 
 // Obtener categorías únicas para filtros
 export const CATEGORIAS_ARANCELES = [...new Set(ARANCELES_COMPLETOS.map(a => a.categoria))].sort();
+
+// Sistema de sinónimos para búsqueda flexible (inglés/español y marcas comunes)
+export const SINONIMOS_BUSQUEDA: Record<string, string[]> = {
+  // Electrodomésticos
+  "freidora": ["air fryer", "airfryer", "freidora de aire", "freidora sin aceite"],
+  "air fryer": ["freidora", "freidora de aire", "airfryer"],
+  "aspiradora robot": ["roomba", "roborock", "robot vacuum", "vacuum robot"],
+  "roomba": ["aspiradora robot", "robot aspirador"],
+  "batidora": ["nutribullet", "ninja", "blender", "licuadora"],
+  
+  // Asistentes y streaming
+  "alexa": ["asistente de voz", "echo", "amazon echo", "altavoz inteligente"],
+  "echo": ["alexa", "asistente de voz", "amazon echo"],
+  "google home": ["asistente de voz", "google nest", "nest"],
+  "asistente": ["alexa", "echo", "google home", "nest", "asistente de voz"],
+  "fire tv": ["streaming", "fire stick", "chromecast", "roku"],
+  "roku": ["streaming", "fire tv", "chromecast"],
+  "chromecast": ["streaming", "fire tv", "roku"],
+  
+  // Accesorios móviles
+  "case": ["funda", "carcasa", "cover", "protector"],
+  "funda": ["case", "carcasa", "cover", "protector celular"],
+  "carcasa": ["case", "funda", "cover"],
+  "power bank": ["bateria portatil", "cargador portatil", "powerbank"],
+  "bateria portatil": ["power bank", "powerbank"],
+  
+  // Audio
+  "airpods": ["auriculares", "earbuds", "audifonos inalambricos", "true wireless"],
+  "earbuds": ["auriculares", "airpods", "audifonos"],
+  "audifonos": ["auriculares", "earbuds", "headphones", "airpods"],
+  "bocina": ["speaker", "altavoz", "parlante", "jbl", "bose"],
+  "speaker": ["bocina", "altavoz", "parlante"],
+  
+  // Computación
+  "laptop": ["portatil", "notebook", "computadora portatil"],
+  "portatil": ["laptop", "notebook"],
+  "mouse": ["raton", "mouse gaming"],
+  "raton": ["mouse"],
+  "teclado": ["keyboard", "teclado mecanico", "teclado gaming"],
+  "keyboard": ["teclado"],
+  
+  // Suplementos
+  "whey": ["proteina", "whey protein", "proteina en polvo"],
+  "proteina": ["whey", "protein", "whey protein"],
+  "vitaminas": ["multivitaminico", "vitamins", "suplemento"],
+  
+  // Wearables
+  "smartwatch": ["reloj inteligente", "apple watch", "garmin", "smart watch"],
+  "apple watch": ["smartwatch", "reloj inteligente"],
+  "reloj inteligente": ["smartwatch", "apple watch", "garmin"],
+  
+  // Drones y cámaras
+  "drone": ["dron", "dji", "quadcopter"],
+  "dji": ["drone", "dron"],
+  "gopro": ["camara de accion", "action cam", "camara deportiva"],
+  "camara de accion": ["gopro", "action cam", "dji osmo"],
+  
+  // Gaming
+  "vr": ["realidad virtual", "meta quest", "oculus", "playstation vr"],
+  "realidad virtual": ["vr", "meta quest", "oculus"],
+  "meta quest": ["vr", "realidad virtual", "oculus"],
+  "control": ["mando", "joystick", "gamepad", "controller"],
+  "mando": ["control", "joystick", "gamepad"],
+  "consola": ["videojuego", "ps5", "xbox", "nintendo", "playstation"],
+  
+  // Otros
+  "kindle": ["lector electronico", "ebook reader", "e-reader", "kobo"],
+  "ebook": ["kindle", "lector electronico", "libro electronico"],
+  "stanley": ["termo", "botella termica", "yeti"],
+  "termo": ["stanley", "yeti", "botella aislada"],
+  "crocs": ["zuecos", "sandalias plastico"],
+  "yoga mat": ["esterilla", "colchoneta yoga", "mat yoga"],
+  "esterilla": ["yoga mat", "mat", "colchoneta"],
+  "ring light": ["aro de luz", "luz led circular", "luz streaming"],
+  "aro de luz": ["ring light", "luz led"],
+};
+
+// Función para expandir términos de búsqueda con sinónimos
+export function expandirBusqueda(termino: string): string[] {
+  const termsNormalized = termino.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const terminos = new Set<string>([termsNormalized]);
+  
+  // Buscar en el mapa de sinónimos
+  for (const [key, values] of Object.entries(SINONIMOS_BUSQUEDA)) {
+    const keyNorm = key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    
+    // Si el término contiene la clave o viceversa
+    if (termsNormalized.includes(keyNorm) || keyNorm.includes(termsNormalized)) {
+      terminos.add(keyNorm);
+      values.forEach(v => terminos.add(v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
+    }
+    
+    // También buscar en los valores
+    for (const value of values) {
+      const valueNorm = value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (termsNormalized.includes(valueNorm) || valueNorm.includes(termsNormalized)) {
+        terminos.add(keyNorm);
+        values.forEach(v => terminos.add(v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
+      }
+    }
+  }
+  
+  return Array.from(terminos);
+}
