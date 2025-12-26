@@ -30,9 +30,9 @@ const signupSchema = z.object({
 const Auth: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, isAuthenticated, loading: authLoading } = useAuth();
+  const { signIn, signUp, resetPassword, isAuthenticated, loading: authLoading } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'reset'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -112,6 +112,29 @@ const Auth: React.FC = () => {
     setLoading(false);
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    
+    if (!email || !z.string().email().safeParse(email).success) {
+      setError('Por favor ingresa un email válido');
+      return;
+    }
+    
+    setLoading(true);
+    
+    const { error: resetError } = await resetPassword(email);
+    
+    if (resetError) {
+      setError(resetError.message);
+    } else {
+      setSuccess('Se ha enviado un enlace de recuperación a tu correo. Revisa tu bandeja de entrada.');
+    }
+    
+    setLoading(false);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
@@ -136,10 +159,11 @@ const Auth: React.FC = () => {
         </CardHeader>
         
         <CardContent>
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup' | 'reset')}>
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
               <TabsTrigger value="signup">Registrarse</TabsTrigger>
+              <TabsTrigger value="reset">Recuperar</TabsTrigger>
             </TabsList>
             
             {error && (
@@ -193,6 +217,47 @@ const Auth: React.FC = () => {
                   ) : (
                     'Iniciar Sesión'
                   )}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="reset">
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="usuario@empresa.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                
+                <p className="text-sm text-muted-foreground">
+                  Te enviaremos un enlace para restablecer tu contraseña.
+                </p>
+                
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    'Enviar enlace de recuperación'
+                  )}
+                </Button>
+                
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  className="w-full" 
+                  onClick={() => setActiveTab('login')}
+                >
+                  Volver a iniciar sesión
                 </Button>
               </form>
             </TabsContent>
