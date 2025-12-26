@@ -69,6 +69,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
   hasPermission: (permission: Permission) => boolean;
   hasRole: (role: AppRole) => boolean;
   isAuthenticated: boolean;
@@ -200,6 +201,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole(null);
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const redirectUrl = `${window.location.origin}/auth?type=recovery`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+      });
+      
+      if (error) {
+        return { error: new Error(error.message) };
+      }
+      
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
   const hasPermission = (permission: Permission): boolean => {
     if (!role) return false;
     return ROLE_PERMISSIONS[role].includes(permission);
@@ -217,6 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signUp,
     signOut,
+    resetPassword,
     hasPermission,
     hasRole,
     isAuthenticated: !!user && !!session
