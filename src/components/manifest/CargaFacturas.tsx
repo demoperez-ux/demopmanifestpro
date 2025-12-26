@@ -1,7 +1,7 @@
 // ============================================
 // COMPONENTE DE CARGA DE FACTURAS COMERCIALES
 // Asocia facturas PDF a paquetes que requieren liquidación
-// Extrae datos del contenido del PDF (AWB, valores, descripciones)
+// Extrae datos del contenido del PDF con IA (AWB, valores, descripciones)
 // ============================================
 
 import { useState, useRef, useCallback } from 'react';
@@ -34,22 +34,26 @@ import {
   Trash2,
   Package,
   Eye,
-  DollarSign
+  DollarSign,
+  Sparkles
 } from 'lucide-react';
 import { Liquidacion } from '@/types/aduanas';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configurar worker de PDF.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
-interface DatosFactura {
+interface DatosFacturaIA {
   awbs: string[];
-  valores: { valor: number; moneda: string }[];
+  valores: { valor: number; moneda: string; concepto?: string }[];
   descripciones: string[];
   proveedores: string[];
   fechas: string[];
-  textoCompleto: string;
+  destinatarios: string[];
+  paises: { origen?: string; destino?: string };
+  items: { descripcion: string; cantidad?: number; valorUnitario?: number; valorTotal?: number }[];
 }
 
 interface FacturaAsociada {
@@ -58,11 +62,12 @@ interface FacturaAsociada {
   awbExtraidos: string[];
   archivo: File;
   fechaCarga: Date;
-  estado: 'pendiente' | 'validada' | 'error';
+  estado: 'pendiente' | 'procesando' | 'validada' | 'error';
   errores: string[];
   awbsCoincidentes: string[];
   awbsFaltantes: string[];
-  datosExtraidos: DatosFactura | null;
+  datosExtraidos: DatosFacturaIA | null;
+  extraidoConIA: boolean;
 }
 
 interface ValidacionResultado {
@@ -121,18 +126,37 @@ export function CargaFacturas({
     }
   };
 
-  // Extraer datos estructurados del texto del PDF
-  const extraerDatosDeTexto = (texto: string): DatosFactura => {
-    const textoUpper = texto.toUpperCase();
-    
-    // Patrones para AWBs
+  // Extraer datos usando IA
+  const extraerDatosConIA = async (textoFactura: string, nombreArchivo: string): Promise<DatosFacturaIA | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-invoice-data', {
+        body: { textoFactura, nombreArchivo }
+      });
+
+      if (error) {
+        console.error('Error al invocar función:', error);
+        return null;
+      }
+
+      if (data?.success && data?.data) {
+        return data.data as DatosFacturaIA;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error en extracción IA:', error);
+      return null;
+    }
+  };
+
+  // Extraer datos con patrones regex (fallback)
+  const extraerDatosConPatrones = (texto: string): DatosFacturaIA => {
     const patronesAWB = [
-      /\b\d{3}[-\s]?\d{8}\b/g,          // 123-45678901
-      /\bAWB\s*[:#]?\s*\d{9,12}\b/gi,    // AWB: 123456789
-      /\b[A-Z]{2,3}\d{8,12}\b/g,         // AA12345678
-      /\bGU[IÍ]A\s*[:#]?\s*\d{9,14}\b/gi, // GUÍA: 123456789
-      /\bTRACKING\s*[:#]?\s*\d{9,14}\b/gi, // TRACKING: 123456789
-      /\b\d{10,14}\b/g                    // Números largos
+      /\b\d{3}[-\s]?\d{8}\b/g,
+      /\bAWB\s*[:#]?\s*\d{9,12}\b/gi,
+      /\b[A-Z]{2,3}\d{8,12}\b/g,
+      /\bGU[IÍ]A\s*[:#]?\s*\d{9,14}\b/gi,
+      /\b\d{10,14}\b/g
     ];
     
     const awbs: string[] = [];
@@ -148,15 +172,10 @@ export function CargaFacturas({
       }
     }
     
-    // Patrones para valores monetarios
     const patronesValor = [
       /\$\s*([\d,]+\.?\d{0,2})\s*(USD|US)?/gi,
       /USD\s*([\d,]+\.?\d{0,2})/gi,
-      /TOTAL\s*[:#]?\s*\$?\s*([\d,]+\.?\d{0,2})/gi,
-      /VALOR\s*[:#]?\s*\$?\s*([\d,]+\.?\d{0,2})/gi,
-      /AMOUNT\s*[:#]?\s*\$?\s*([\d,]+\.?\d{0,2})/gi,
-      /VALUE\s*[:#]?\s*\$?\s*([\d,]+\.?\d{0,2})/gi,
-      /([\d,]+\.?\d{0,2})\s*USD/gi
+      /TOTAL\s*[:#]?\s*\$?\s*([\d,]+\.?\d{0,2})/gi
     ];
     
     const valores: { valor: number; moneda: string }[] = [];
@@ -171,16 +190,11 @@ export function CargaFacturas({
       }
     }
     
-    // Patrones para descripciones de productos
     const descripciones: string[] = [];
     const patronesDescripcion = [
       /DESCRIPTION\s*[:#]?\s*([^\n]+)/gi,
       /DESCRIPCI[OÓ]N\s*[:#]?\s*([^\n]+)/gi,
-      /CONTENIDO\s*[:#]?\s*([^\n]+)/gi,
-      /PRODUCTO\s*[:#]?\s*([^\n]+)/gi,
-      /ITEM\s*[:#]?\s*([^\n]+)/gi,
-      /GOODS\s*[:#]?\s*([^\n]+)/gi,
-      /MERCHANDISE\s*[:#]?\s*([^\n]+)/gi
+      /CONTENIDO\s*[:#]?\s*([^\n]+)/gi
     ];
     
     for (const patron of patronesDescripcion) {
@@ -193,49 +207,15 @@ export function CargaFacturas({
       }
     }
     
-    // Patrones para proveedores/remitentes
-    const proveedores: string[] = [];
-    const patronesProveedor = [
-      /SHIPPER\s*[:#]?\s*([^\n]+)/gi,
-      /REMITENTE\s*[:#]?\s*([^\n]+)/gi,
-      /SENDER\s*[:#]?\s*([^\n]+)/gi,
-      /VENDOR\s*[:#]?\s*([^\n]+)/gi,
-      /FROM\s*[:#]?\s*([^\n]+)/gi,
-      /PROVEEDOR\s*[:#]?\s*([^\n]+)/gi
-    ];
-    
-    for (const patron of patronesProveedor) {
-      let match;
-      while ((match = patron.exec(texto)) !== null) {
-        const prov = match[1].trim();
-        if (prov.length > 2 && prov.length < 100) {
-          proveedores.push(prov);
-        }
-      }
-    }
-    
-    // Patrones para fechas
-    const fechas: string[] = [];
-    const patronesFecha = [
-      /\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b/g,
-      /\b(\d{4}[/-]\d{1,2}[/-]\d{1,2})\b/g,
-      /DATE\s*[:#]?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/gi
-    ];
-    
-    for (const patron of patronesFecha) {
-      const matches = texto.match(patron);
-      if (matches) {
-        fechas.push(...matches.slice(0, 5));
-      }
-    }
-    
     return {
       awbs: [...new Set(awbs)],
       valores: valores.slice(0, 10),
       descripciones: [...new Set(descripciones)].slice(0, 10),
-      proveedores: [...new Set(proveedores)].slice(0, 5),
-      fechas: [...new Set(fechas)].slice(0, 5),
-      textoCompleto: texto.substring(0, 2000)
+      proveedores: [],
+      fechas: [],
+      destinatarios: [],
+      paises: {},
+      items: []
     };
   };
 
@@ -244,13 +224,13 @@ export function CargaFacturas({
     const awbsEnFacturas = new Set<string>();
     
     const facturasValidadas = facturasActuales.map(factura => {
+      if (factura.estado === 'procesando') return factura;
+      
       const awbsCoincidentes: string[] = [];
       const errores: string[] = [];
       
-      // Buscar coincidencias
       for (const awb of factura.awbExtraidos) {
         const normalizado = awb.toUpperCase().trim();
-        // Buscar coincidencia parcial también
         for (const awbRequerido of awbsRequeridos) {
           if (awbRequerido.includes(normalizado) || normalizado.includes(awbRequerido)) {
             awbsCoincidentes.push(awbRequerido);
@@ -259,12 +239,10 @@ export function CargaFacturas({
         }
       }
       
-      // Verificar si se encontró al menos un AWB válido
       if (awbsCoincidentes.length === 0) {
         errores.push('No se encontró ningún AWB que coincida con los paquetes pendientes');
       }
       
-      // Verificar si hay valores extraídos
       if (!factura.datosExtraidos?.valores?.length) {
         errores.push('No se detectaron valores monetarios en la factura');
       }
@@ -277,7 +255,6 @@ export function CargaFacturas({
       };
     });
     
-    // AWBs que no tienen factura asociada
     const awbsSinFactura = awbsRequeridos.filter(awb => !awbsEnFacturas.has(awb));
     
     const resultado: ValidacionResultado = {
@@ -317,45 +294,77 @@ export function CargaFacturas({
           continue;
         }
         
-        // Extraer texto del contenido del PDF
+        // Extraer texto del PDF
         const textoPDF = await extraerTextoPDF(file);
         
         if (!textoPDF || textoPDF.trim().length === 0) {
           toast.warning(`${file.name}: No se pudo extraer texto del PDF`);
+          continue;
         }
-        
-        // Extraer datos estructurados
-        const datosExtraidos = extraerDatosDeTexto(textoPDF);
-        
-        // Combinar AWBs del nombre y del contenido
-        const awbsDelNombre = extraerAWBsDeNombre(file.name);
-        const todosAWBs = [...new Set([...awbsDelNombre, ...datosExtraidos.awbs])];
-        
-        nuevasFacturas.push({
-          id: `factura-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+
+        // Primero agregar con estado procesando
+        const facturaId = `factura-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const facturaInicial: FacturaAsociada = {
+          id: facturaId,
           nombreArchivo: file.name,
-          awbExtraidos: todosAWBs,
+          awbExtraidos: [],
           archivo: file,
           fechaCarga: new Date(),
-          estado: 'pendiente',
+          estado: 'procesando',
           errores: [],
           awbsCoincidentes: [],
           awbsFaltantes: [],
-          datosExtraidos
-        });
+          datosExtraidos: null,
+          extraidoConIA: false
+        };
         
+        nuevasFacturas.push(facturaInicial);
+        setFacturas(prev => [...prev, facturaInicial]);
+
+        // Intentar extracción con IA
+        let datosExtraidos = await extraerDatosConIA(textoPDF, file.name);
+        let extraidoConIA = !!datosExtraidos;
+        
+        // Fallback a patrones si IA falla
+        if (!datosExtraidos) {
+          datosExtraidos = extraerDatosConPatrones(textoPDF);
+        }
+        
+        // Combinar AWBs del nombre
+        const awbsDelNombre = extraerAWBsDeNombre(file.name);
+        const todosAWBs = [...new Set([...awbsDelNombre, ...(datosExtraidos?.awbs || [])])];
+
+        // Actualizar factura con datos extraídos
+        const facturaActualizada: FacturaAsociada = {
+          ...facturaInicial,
+          awbExtraidos: todosAWBs,
+          estado: 'pendiente',
+          datosExtraidos,
+          extraidoConIA
+        };
+        
+        // Actualizar en el array
+        const idx = nuevasFacturas.findIndex(f => f.id === facturaId);
+        if (idx !== -1) {
+          nuevasFacturas[idx] = facturaActualizada;
+        }
+        
+        setFacturas(prev => prev.map(f => f.id === facturaId ? facturaActualizada : f));
         setProgreso(Math.round(((i + 1) / totalArchivos) * 100));
       }
       
-      const todasFacturas = [...facturas, ...nuevasFacturas];
-      const resultado = validarFacturas(todasFacturas);
-      
-      if (resultado.facturasValidas > 0) {
-        toast.success(`${resultado.facturasValidas} factura(s) validada(s) correctamente`);
-      }
-      if (resultado.facturasConErrores > 0) {
-        toast.warning(`${resultado.facturasConErrores} factura(s) con problemas de validación`);
-      }
+      // Validar todas las facturas
+      setTimeout(() => {
+        const todasFacturas = [...facturas.filter(f => !nuevasFacturas.find(n => n.id === f.id)), ...nuevasFacturas];
+        const resultado = validarFacturas(todasFacturas);
+        
+        if (resultado.facturasValidas > 0) {
+          toast.success(`${resultado.facturasValidas} factura(s) validada(s) correctamente`);
+        }
+        if (resultado.facturasConErrores > 0) {
+          toast.warning(`${resultado.facturasConErrores} factura(s) con problemas de validación`);
+        }
+      }, 100);
       
     } catch (error) {
       console.error('Error al procesar facturas:', error);
@@ -369,7 +378,6 @@ export function CargaFacturas({
     }
   };
 
-  // Extraer AWBs del nombre del archivo PDF
   const extraerAWBsDeNombre = (nombreArchivo: string): string[] => {
     const nombre = nombreArchivo.toUpperCase();
     const patrones = [
@@ -389,7 +397,6 @@ export function CargaFacturas({
     return [...new Set(encontrados)];
   };
 
-  // Eliminar factura
   const eliminarFactura = (id: string) => {
     const nuevasFacturas = facturas.filter(f => f.id !== id);
     setFacturas(nuevasFacturas);
@@ -400,7 +407,6 @@ export function CargaFacturas({
     }
   };
 
-  // Si no hay liquidaciones pendientes que requieran factura
   if (awbsRequeridos.length === 0) {
     return null;
   }
@@ -415,21 +421,22 @@ export function CargaFacturas({
             <Badge variant="secondary" className="ml-2">
               {awbsRequeridos.length} paquetes
             </Badge>
+            <Badge variant="outline" className="ml-1 gap-1">
+              <Sparkles className="w-3 h-3" />
+              IA
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Instrucciones */}
           <Alert>
             <Package className="w-4 h-4" />
-            <AlertTitle>Paquetes que requieren factura</AlertTitle>
+            <AlertTitle>Extracción inteligente con IA</AlertTitle>
             <AlertDescription>
-              Se requieren facturas comerciales para {awbsRequeridos.length} paquete(s) 
-              con valor superior a $100 USD. El sistema extraerá automáticamente AWBs, 
-              valores y descripciones del contenido del PDF.
+              El sistema usa IA para extraer automáticamente AWBs, valores y descripciones 
+              de facturas con cualquier formato. Cargue los PDFs para procesarlos.
             </AlertDescription>
           </Alert>
 
-          {/* Botón de carga */}
           <div className="flex items-center gap-4">
             <input
               ref={inputRef}
@@ -472,14 +479,13 @@ export function CargaFacturas({
             )}
           </div>
 
-          {/* Alertas de validación */}
           {validacion && validacion.awbsSinFactura.length > 0 && (
             <Alert variant="destructive">
               <AlertTriangle className="w-4 h-4" />
               <AlertTitle>Facturas faltantes</AlertTitle>
               <AlertDescription>
                 <p className="mb-2">
-                  Los siguientes {validacion.awbsSinFactura.length} AWB(s) no tienen factura asociada:
+                  {validacion.awbsSinFactura.length} AWB(s) sin factura asociada:
                 </p>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {validacion.awbsSinFactura.slice(0, 10).map(awb => (
@@ -497,14 +503,13 @@ export function CargaFacturas({
             </Alert>
           )}
 
-          {/* Tabla de facturas cargadas */}
           {facturas.length > 0 && (
             <ScrollArea className="h-[300px] border rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Archivo</TableHead>
-                    <TableHead>AWBs Detectados</TableHead>
+                    <TableHead>AWBs</TableHead>
                     <TableHead>Valores</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="w-[120px]">Acciones</TableHead>
@@ -516,31 +521,39 @@ export function CargaFacturas({
                       <TableCell className="font-mono text-sm">
                         <div className="flex items-center gap-2">
                           <FileText className="w-4 h-4 text-red-500" />
-                          <span className="truncate max-w-[180px]" title={factura.nombreArchivo}>
+                          <span className="truncate max-w-[160px]" title={factura.nombreArchivo}>
                             {factura.nombreArchivo}
                           </span>
+                          {factura.extraidoConIA && (
+                            <span title="Extraído con IA">
+                              <Sparkles className="w-3 h-3 text-purple-500" />
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {factura.awbsCoincidentes.length > 0 ? (
-                            factura.awbsCoincidentes.slice(0, 3).map(awb => (
+                          {factura.estado === 'procesando' ? (
+                            <span className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              Procesando...
+                            </span>
+                          ) : factura.awbsCoincidentes.length > 0 ? (
+                            factura.awbsCoincidentes.slice(0, 2).map(awb => (
                               <Badge key={awb} variant="default" className="font-mono text-xs">
                                 {awb}
                               </Badge>
                             ))
                           ) : factura.awbExtraidos.length > 0 ? (
                             <span className="text-sm text-amber-600">
-                              {factura.awbExtraidos.length} AWB(s) sin coincidir
+                              {factura.awbExtraidos.length} sin coincidir
                             </span>
                           ) : (
-                            <span className="text-sm text-muted-foreground">
-                              Sin AWBs
-                            </span>
+                            <span className="text-sm text-muted-foreground">—</span>
                           )}
-                          {factura.awbsCoincidentes.length > 3 && (
+                          {factura.awbsCoincidentes.length > 2 && (
                             <Badge variant="outline" className="text-xs">
-                              +{factura.awbsCoincidentes.length - 3}
+                              +{factura.awbsCoincidentes.length - 2}
                             </Badge>
                           )}
                         </div>
@@ -573,11 +586,13 @@ export function CargaFacturas({
                             <XCircle className="w-3 h-3" />
                             Error
                           </Badge>
-                        ) : (
+                        ) : factura.estado === 'procesando' ? (
                           <Badge variant="secondary" className="gap-1">
                             <Loader2 className="w-3 h-3 animate-spin" />
-                            Procesando
+                            IA...
                           </Badge>
+                        ) : (
+                          <Badge variant="outline">Pendiente</Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -586,7 +601,7 @@ export function CargaFacturas({
                             variant="ghost"
                             size="icon"
                             onClick={() => setFacturaDetalle(factura)}
-                            title="Ver detalles"
+                            disabled={factura.estado === 'procesando'}
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -595,7 +610,6 @@ export function CargaFacturas({
                             size="icon"
                             onClick={() => eliminarFactura(factura.id)}
                             className="text-destructive hover:text-destructive"
-                            title="Eliminar"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -608,25 +622,18 @@ export function CargaFacturas({
             </ScrollArea>
           )}
 
-          {/* Resumen de validación */}
           {validacion && (
             <div className="grid grid-cols-3 gap-4 pt-4 border-t">
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">
-                  {validacion.facturasValidas}
-                </p>
-                <p className="text-sm text-muted-foreground">Facturas válidas</p>
+                <p className="text-2xl font-bold text-green-600">{validacion.facturasValidas}</p>
+                <p className="text-sm text-muted-foreground">Válidas</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-primary">
-                  {validacion.awbsEncontrados}
-                </p>
+                <p className="text-2xl font-bold text-primary">{validacion.awbsEncontrados}</p>
                 <p className="text-sm text-muted-foreground">AWBs asociados</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-amber-600">
-                  {validacion.awbsSinFactura.length}
-                </p>
+                <p className="text-2xl font-bold text-amber-600">{validacion.awbsSinFactura.length}</p>
                 <p className="text-sm text-muted-foreground">Pendientes</p>
               </div>
             </div>
@@ -634,13 +641,18 @@ export function CargaFacturas({
         </CardContent>
       </Card>
 
-      {/* Modal de detalles de factura */}
       <Dialog open={!!facturaDetalle} onOpenChange={() => setFacturaDetalle(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Detalles de Factura
+              {facturaDetalle?.extraidoConIA && (
+                <Badge variant="secondary" className="gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Extraído con IA
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
           
@@ -648,10 +660,9 @@ export function CargaFacturas({
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground">Archivo</p>
-                <p className="font-mono">{facturaDetalle.nombreArchivo}</p>
+                <p className="font-mono text-sm">{facturaDetalle.nombreArchivo}</p>
               </div>
               
-              {/* AWBs */}
               <div>
                 <p className="text-sm text-muted-foreground mb-2">AWBs Detectados</p>
                 <div className="flex flex-wrap gap-2">
@@ -674,7 +685,6 @@ export function CargaFacturas({
                 </div>
               </div>
               
-              {/* Valores */}
               {facturaDetalle.datosExtraidos?.valores && facturaDetalle.datosExtraidos.valores.length > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">Valores Detectados</p>
@@ -682,16 +692,44 @@ export function CargaFacturas({
                     {facturaDetalle.datosExtraidos.valores.map((v, i) => (
                       <Badge key={i} variant="secondary" className="font-mono">
                         ${v.valor.toFixed(2)} {v.moneda}
+                        {v.concepto && <span className="ml-1 text-xs opacity-70">({v.concepto})</span>}
                       </Badge>
                     ))}
                   </div>
                 </div>
               )}
               
-              {/* Descripciones */}
+              {facturaDetalle.datosExtraidos?.items && facturaDetalle.datosExtraidos.items.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Items de la Factura</p>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Descripción</TableHead>
+                          <TableHead className="text-right">Cant.</TableHead>
+                          <TableHead className="text-right">Valor</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {facturaDetalle.datosExtraidos.items.slice(0, 10).map((item, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="text-sm">{item.descripcion}</TableCell>
+                            <TableCell className="text-right">{item.cantidad || '-'}</TableCell>
+                            <TableCell className="text-right font-mono">
+                              {item.valorTotal ? `$${item.valorTotal.toFixed(2)}` : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+              
               {facturaDetalle.datosExtraidos?.descripciones && facturaDetalle.datosExtraidos.descripciones.length > 0 && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Descripciones de Productos</p>
+                  <p className="text-sm text-muted-foreground mb-2">Descripciones</p>
                   <ul className="list-disc list-inside space-y-1">
                     {facturaDetalle.datosExtraidos.descripciones.map((desc, i) => (
                       <li key={i} className="text-sm">{desc}</li>
@@ -699,11 +737,10 @@ export function CargaFacturas({
                   </ul>
                 </div>
               )}
-              
-              {/* Proveedores */}
+
               {facturaDetalle.datosExtraidos?.proveedores && facturaDetalle.datosExtraidos.proveedores.length > 0 && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Proveedores/Remitentes</p>
+                  <p className="text-sm text-muted-foreground mb-2">Proveedores</p>
                   <div className="flex flex-wrap gap-2">
                     {facturaDetalle.datosExtraidos.proveedores.map((prov, i) => (
                       <Badge key={i} variant="outline">{prov}</Badge>
@@ -711,8 +748,18 @@ export function CargaFacturas({
                   </div>
                 </div>
               )}
+
+              {facturaDetalle.datosExtraidos?.destinatarios && facturaDetalle.datosExtraidos.destinatarios.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Destinatarios</p>
+                  <div className="flex flex-wrap gap-2">
+                    {facturaDetalle.datosExtraidos.destinatarios.map((dest, i) => (
+                      <Badge key={i} variant="outline">{dest}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
               
-              {/* Errores */}
               {facturaDetalle.errores.length > 0 && (
                 <Alert variant="destructive">
                   <AlertTriangle className="w-4 h-4" />
