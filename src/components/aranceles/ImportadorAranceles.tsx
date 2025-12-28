@@ -5,7 +5,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import type { Arancel } from '@/types/aduanas';
+
+// Zod schema for JSON validation
+const ArancelJSONSchema = z.object({
+  codigo_arancelario: z.string().min(1).max(20).optional(),
+  hsCode: z.string().min(1).max(20).optional(),
+  codigo: z.string().min(1).max(20).optional(),
+  descripcion: z.string().min(1).max(500).optional(),
+  description: z.string().min(1).max(500).optional(),
+  dai: z.union([z.string(), z.number()]).optional(),
+  daiPercent: z.union([z.string(), z.number()]).optional(),
+  itbms: z.union([z.string(), z.number()]).optional(),
+  itbmsPercent: z.union([z.string(), z.number()]).optional(),
+  unidad_medida: z.string().max(10).optional(),
+  unidad: z.string().max(10).optional(),
+  categoria: z.string().max(100).optional(),
+  category: z.string().max(100).optional(),
+});
+
+const ArancelArraySchema = z.array(ArancelJSONSchema).max(10000);
+
+const MAX_FILE_SIZE = 5_000_000; // 5MB limit
 
 interface ImportadorArancelesProps {
   onImport: (aranceles: Arancel[]) => void;
@@ -74,10 +96,28 @@ export function ImportadorAranceles({ onImport }: ImportadorArancelesProps) {
   };
 
   const parseJSON = (text: string): ArancelCSV[] => {
-    const data = JSON.parse(text);
+    // Validate file size first
+    if (text.length > MAX_FILE_SIZE) {
+      throw new Error('Archivo JSON demasiado grande (máximo 5MB)');
+    }
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      throw new Error('JSON inválido - verifique el formato del archivo');
+    }
+
     const arr = Array.isArray(data) ? data : [data];
-    
-    return arr.map(item => ({
+
+    // Validate with Zod schema
+    const result = ArancelArraySchema.safeParse(arr);
+    if (!result.success) {
+      const firstError = result.error.issues[0];
+      throw new Error(`Estructura de datos inválida: ${firstError?.message || 'Error de validación'}`);
+    }
+
+    return result.data.map(item => ({
       codigo_arancelario: item.codigo_arancelario || item.hsCode || item.codigo || '',
       descripcion: item.descripcion || item.description || '',
       dai: String(item.dai || item.daiPercent || '0'),
