@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.clasificar-hts-ai]
 verify_jwt = false
+
+[functions.motor-aprendizaje-hts]
+verify_jwt = false
