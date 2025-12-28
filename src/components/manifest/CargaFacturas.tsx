@@ -407,9 +407,8 @@ export function CargaFacturas({
     }
   };
 
-  if (awbsRequeridos.length === 0) {
-    return null;
-  }
+  // Siempre mostrar el componente, pero con mensaje si no hay paquetes que requieran factura
+  const sinPaquetesRequeridos = awbsRequeridos.length === 0;
 
   return (
     <>
@@ -417,10 +416,12 @@ export function CargaFacturas({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-amber-800">
             <FileText className="w-5 h-5" />
-            Facturas Comerciales Requeridas
-            <Badge variant="secondary" className="ml-2">
-              {awbsRequeridos.length} paquetes
-            </Badge>
+            Carga de Facturas Comerciales (PDF)
+            {!sinPaquetesRequeridos && (
+              <Badge variant="secondary" className="ml-2">
+                {awbsRequeridos.length} paquetes requieren factura
+              </Badge>
+            )}
             <Badge variant="outline" className="ml-1 gap-1">
               <Sparkles className="w-3 h-3" />
               IA
@@ -428,14 +429,26 @@ export function CargaFacturas({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert>
-            <Package className="w-4 h-4" />
-            <AlertTitle>Extracción inteligente con IA</AlertTitle>
-            <AlertDescription>
-              El sistema usa IA para extraer automáticamente AWBs, valores y descripciones 
-              de facturas con cualquier formato. Cargue los PDFs para procesarlos.
-            </AlertDescription>
-          </Alert>
+          {sinPaquetesRequeridos ? (
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              <AlertTitle className="text-green-800">Sin facturas requeridas</AlertTitle>
+              <AlertDescription className="text-green-700">
+                Todos los paquetes en este manifiesto tienen valor menor a $100 y no requieren factura comercial.
+                Puede cargar facturas opcionalmente para documentación adicional.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert>
+              <Package className="w-4 h-4" />
+              <AlertTitle>Extracción inteligente con IA</AlertTitle>
+              <AlertDescription>
+                El sistema usa IA para extraer automáticamente AWBs, valores y descripciones 
+                de facturas con cualquier formato. Cargue los PDFs para procesarlos.
+              </AlertDescription>
+            </Alert>
+          )}
+
 
           <div className="flex items-center gap-4">
             <input
