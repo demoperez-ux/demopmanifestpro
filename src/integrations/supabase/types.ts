@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      alertas_peso: {
+        Row: {
+          created_at: string
+          diferencia: number
+          estado: string | null
+          guia: string
+          id: string
+          mawb: string | null
+          notas: string | null
+          peso_bruto_declarado: number
+          peso_neto_calculado: number
+          porcentaje_diferencia: number
+          revisado_por: string | null
+          severidad: string
+        }
+        Insert: {
+          created_at?: string
+          diferencia: number
+          estado?: string | null
+          guia: string
+          id?: string
+          mawb?: string | null
+          notas?: string | null
+          peso_bruto_declarado: number
+          peso_neto_calculado: number
+          porcentaje_diferencia: number
+          revisado_por?: string | null
+          severidad: string
+        }
+        Update: {
+          created_at?: string
+          diferencia?: number
+          estado?: string | null
+          guia?: string
+          id?: string
+          mawb?: string | null
+          notas?: string | null
+          peso_bruto_declarado?: number
+          peso_neto_calculado?: number
+          porcentaje_diferencia?: number
+          revisado_por?: string | null
+          severidad?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -56,6 +101,69 @@ export type Database = {
           sequence_number?: number | null
           user_id?: string
           user_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Relationships: []
+      }
+      clasificaciones_validadas: {
+        Row: {
+          activo: boolean | null
+          autoridad_anuente: string | null
+          confianza: number | null
+          corredor_id: string
+          corredor_nombre: string | null
+          created_at: string
+          dai_percent: number | null
+          descripcion_arancelaria: string | null
+          descripcion_normalizada: string
+          descripcion_original: string
+          guia_origen: string | null
+          hts_code: string
+          id: string
+          isc_percent: number | null
+          itbms_percent: number | null
+          mawb_origen: string | null
+          updated_at: string
+          usos_exitosos: number | null
+        }
+        Insert: {
+          activo?: boolean | null
+          autoridad_anuente?: string | null
+          confianza?: number | null
+          corredor_id: string
+          corredor_nombre?: string | null
+          created_at?: string
+          dai_percent?: number | null
+          descripcion_arancelaria?: string | null
+          descripcion_normalizada: string
+          descripcion_original: string
+          guia_origen?: string | null
+          hts_code: string
+          id?: string
+          isc_percent?: number | null
+          itbms_percent?: number | null
+          mawb_origen?: string | null
+          updated_at?: string
+          usos_exitosos?: number | null
+        }
+        Update: {
+          activo?: boolean | null
+          autoridad_anuente?: string | null
+          confianza?: number | null
+          corredor_id?: string
+          corredor_nombre?: string | null
+          created_at?: string
+          dai_percent?: number | null
+          descripcion_arancelaria?: string | null
+          descripcion_normalizada?: string
+          descripcion_original?: string
+          guia_origen?: string | null
+          hts_code?: string
+          id?: string
+          isc_percent?: number | null
+          itbms_percent?: number | null
+          mawb_origen?: string | null
+          updated_at?: string
+          usos_exitosos?: number | null
         }
         Relationships: []
       }

@@ -1,14 +1,26 @@
 // ============================================
 // GENERADOR EXCEL INTELIGENTE - IPL CUSTOMS AI
 // Archivo único consolidado con pestañas inteligentes
+// Incluye escenarios de pago según fecha de vencimiento
 // ============================================
 
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { ManifestRow } from '@/types/manifest';
 import { Liquidacion } from '@/types/aduanas';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+
+// ============================================
+// CONFIGURACIÓN DE MORA (BOLETAS REALES ANA)
+// ============================================
+const CONFIG_MORA = {
+  diasVencimiento1: 3,   // Primer vencimiento
+  diasVencimiento2: 8,   // Segundo vencimiento
+  diasVencimiento3: 15,  // Tercer vencimiento
+  recargoMora1: 0.10,    // 10% de recargo
+  recargoMora2: 0.20,    // 20% de recargo
+};
 
 // ============================================
 // PALABRAS CLAVE PHARMA (MINSA/APA)
@@ -48,6 +60,7 @@ export interface DatosExcelInteligente {
   liquidaciones: Liquidacion[];
   mawb: string;
   fechaProceso: Date;
+  pesoBrutoTotal?: number; // Para auditoría de peso
 }
 
 export interface ResultadoAnalisisAI {
@@ -58,6 +71,20 @@ export interface ResultadoAnalisisAI {
     severidad: 'alta' | 'media' | 'baja';
   }>;
   alertas: string[];
+  alertasPeso: Array<{
+    guia: string;
+    pesoBruto: number;
+    pesoNeto: number;
+    diferencia: number;
+  }>;
+}
+
+export interface EscenarioPago {
+  fechaVencimiento: Date;
+  montoBase: number;
+  recargo: number;
+  montoTotal: number;
+  etiqueta: string;
 }
 
 // ============================================
@@ -65,11 +92,76 @@ export interface ResultadoAnalisisAI {
 // ============================================
 
 /**
+ * Calcula escenarios de pago según fechas de vencimiento
+ */
+function calcularEscenariosPago(montoBase: number, fechaRegistro: Date): EscenarioPago[] {
+  const escenarios: EscenarioPago[] = [];
+  
+  // Escenario 1: Pago puntual (sin recargo)
+  escenarios.push({
+    fechaVencimiento: addDays(fechaRegistro, CONFIG_MORA.diasVencimiento1),
+    montoBase,
+    recargo: 0,
+    montoTotal: montoBase,
+    etiqueta: 'PAGO PUNTUAL'
+  });
+  
+  // Escenario 2: Primer recargo (10%)
+  const recargo1 = montoBase * CONFIG_MORA.recargoMora1;
+  escenarios.push({
+    fechaVencimiento: addDays(fechaRegistro, CONFIG_MORA.diasVencimiento2),
+    montoBase,
+    recargo: recargo1,
+    montoTotal: montoBase + recargo1,
+    etiqueta: 'CON 10% MORA'
+  });
+  
+  // Escenario 3: Segundo recargo (20%)
+  const recargo2 = montoBase * CONFIG_MORA.recargoMora2;
+  escenarios.push({
+    fechaVencimiento: addDays(fechaRegistro, CONFIG_MORA.diasVencimiento3),
+    montoBase,
+    recargo: recargo2,
+    montoTotal: montoBase + recargo2,
+    etiqueta: 'CON 20% MORA'
+  });
+  
+  return escenarios;
+}
+
+/**
+ * Audita peso bruto vs suma de pesos netos
+ */
+function auditarPesos(paquetes: ManifestRow[], pesoBrutoTotal?: number): ResultadoAnalisisAI['alertasPeso'] {
+  const alertasPeso: ResultadoAnalisisAI['alertasPeso'] = [];
+  
+  // Si hay peso bruto total declarado, comparar con suma
+  if (pesoBrutoTotal && pesoBrutoTotal > 0) {
+    const pesoNetoCalculado = paquetes.reduce((sum, p) => sum + (p.weight || 0), 0);
+    const diferencia = Math.abs(pesoBrutoTotal - pesoNetoCalculado);
+    const porcentajeDiferencia = (diferencia / pesoBrutoTotal) * 100;
+    
+    // Si la diferencia es mayor al 10%, generar alerta
+    if (porcentajeDiferencia > 10) {
+      alertasPeso.push({
+        guia: 'CONSOLIDADO',
+        pesoBruto: pesoBrutoTotal,
+        pesoNeto: pesoNetoCalculado,
+        diferencia
+      });
+    }
+  }
+  
+  return alertasPeso;
+}
+
+/**
  * Analiza consistencia peso vs bultos usando lógica AI
  */
-function analizarConsistenciaPesoBultos(paquetes: ManifestRow[]): ResultadoAnalisisAI {
+function analizarConsistenciaPesoBultos(paquetes: ManifestRow[], pesoBrutoTotal?: number): ResultadoAnalisisAI {
   const inconsistencias: ResultadoAnalisisAI['inconsistencias'] = [];
   const alertas: string[] = [];
+  const alertasPeso = auditarPesos(paquetes, pesoBrutoTotal);
 
   // Calcular peso promedio por categoría
   const pesosPromedio: Record<string, { total: number; count: number }> = {};
@@ -130,8 +222,12 @@ function analizarConsistenciaPesoBultos(paquetes: ManifestRow[]): ResultadoAnali
   if (inconsistencias.length > 0) {
     alertas.push(`Se detectaron ${inconsistencias.length} inconsistencias peso/bultos`);
   }
+  
+  if (alertasPeso.length > 0) {
+    alertas.push(`⚠️ ALERTA: Discrepancia peso bruto vs neto detectada`);
+  }
 
-  return { inconsistencias, alertas };
+  return { inconsistencias, alertas, alertasPeso };
 }
 
 /**
@@ -232,23 +328,26 @@ export async function generarExcelInteligente(
 
   onProgress?.(20);
 
-  // Análisis AI
-  const analisisAI = analizarConsistenciaPesoBultos(paquetes);
+  // Análisis AI con auditoría de peso
+  const analisisAI = analizarConsistenciaPesoBultos(paquetes, datos.pesoBrutoTotal);
 
   // ══════════════════════════════════════════════════════════
-  // PESTAÑA 1: +100 (LIQUIDACIÓN)
-  // Formato: RUC/Cédula | Nombre | Guía | CIF | DAI | ITBMS | Total
+  // PESTAÑA 1: +100 (LIQUIDACIÓN) CON ESCENARIOS DE PAGO
+  // Formato: RUC/Cédula | Nombre | Guía | CIF | DAI | ITBMS | Pago Puntual | +10% Mora | +20% Mora
   // ══════════════════════════════════════════════════════════
   
   const headerLiquidacion = [
     'RUC/Cédula', 'Consignatario', 'Guía', 'Descripción',
     'CIF USD', 'DAI %', 'DAI USD', 'ITBMS %', 'ITBMS USD', 
-    'Tasa Aduana', 'TOTAL USD', 'HTS Code', 'Estado'
+    'Tasa Aduana', 'PAGO PUNTUAL', 'CON 10% MORA', 'CON 20% MORA', 'HTS Code'
   ];
 
   const dataLiquidacion: (string | number)[][] = [headerLiquidacion];
   
   liquidacionMas100.forEach(({ paquete, liquidacion }) => {
+    // Calcular escenarios de pago
+    const escenarios = calcularEscenariosPago(liquidacion.totalAPagar, fechaProceso);
+    
     dataLiquidacion.push([
       paquete.identification || 'S/I',
       paquete.recipient || '',
@@ -260,13 +359,14 @@ export async function generarExcelInteligente(
       liquidacion.percentITBMS.toFixed(2),
       liquidacion.montoITBMS.toFixed(2),
       liquidacion.tasaAduanera.toFixed(2),
-      liquidacion.totalAPagar.toFixed(2),
-      liquidacion.hsCode || 'PENDIENTE',
-      liquidacion.estado.toUpperCase()
+      `B/. ${escenarios[0].montoTotal.toFixed(2)}`,  // Pago puntual
+      `B/. ${escenarios[1].montoTotal.toFixed(2)}`,  // +10% mora
+      `B/. ${escenarios[2].montoTotal.toFixed(2)}`,  // +20% mora
+      liquidacion.hsCode || 'PENDIENTE'
     ]);
   });
 
-  // Agregar fila de totales
+  // Agregar fila de totales con escenarios
   if (liquidacionMas100.length > 0) {
     const totales = liquidacionMas100.reduce((acc, { liquidacion }) => ({
       cif: acc.cif + liquidacion.valorCIF,
@@ -276,6 +376,8 @@ export async function generarExcelInteligente(
       total: acc.total + liquidacion.totalAPagar
     }), { cif: 0, dai: 0, itbms: 0, tasa: 0, total: 0 });
 
+    const totalEscenarios = calcularEscenariosPago(totales.total, fechaProceso);
+
     dataLiquidacion.push([]);
     dataLiquidacion.push([
       '', 'TOTALES', '', '',
@@ -283,7 +385,20 @@ export async function generarExcelInteligente(
       totales.dai.toFixed(2), '',
       totales.itbms.toFixed(2),
       totales.tasa.toFixed(2),
-      totales.total.toFixed(2), '', ''
+      `B/. ${totalEscenarios[0].montoTotal.toFixed(2)}`,
+      `B/. ${totalEscenarios[1].montoTotal.toFixed(2)}`,
+      `B/. ${totalEscenarios[2].montoTotal.toFixed(2)}`,
+      ''
+    ]);
+    
+    // Agregar fechas de vencimiento
+    dataLiquidacion.push([]);
+    dataLiquidacion.push([
+      '', 'FECHAS VENCIMIENTO:', '', '', '', '', '', '', '', '',
+      format(totalEscenarios[0].fechaVencimiento, 'dd/MM/yyyy'),
+      format(totalEscenarios[1].fechaVencimiento, 'dd/MM/yyyy'),
+      format(totalEscenarios[2].fechaVencimiento, 'dd/MM/yyyy'),
+      ''
     ]);
   }
 
@@ -291,7 +406,7 @@ export async function generarExcelInteligente(
   wsLiquidacion['!cols'] = [
     { wch: 15 }, { wch: 25 }, { wch: 18 }, { wch: 40 },
     { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 10 },
-    { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }
+    { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }
   ];
   XLSX.utils.book_append_sheet(wb, wsLiquidacion, '+100');
 
