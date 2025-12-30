@@ -45,6 +45,37 @@ import * as pdfjsLib from 'pdfjs-dist';
 // Configurar worker de PDF.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
+// Estructura mejorada para items de factura Amazon
+interface AmazonInvoiceItem {
+  asin: string;
+  descripcion: string;
+  productGroup: string;
+  paHsCode: string;
+  countryOfOrigin: string;
+  cantidad: number;
+  pesoNeto: number;
+  valorUnitario: number;
+  valorTotal: number;
+}
+
+// Estructura de factura Amazon individual
+interface AmazonInvoice {
+  invoiceNo: string;
+  invoiceDate: string;
+  transportationReference: string;
+  numberOfPackages: number;
+  exporter: string;
+  consignee: string;
+  grossWeight: number;
+  phone: string;
+  email: string;
+  incoterms: string;
+  items: AmazonInvoiceItem[];
+  totalItemValue: number;
+  freightCharge: number;
+  totalInvoiceValue: number;
+}
+
 interface DatosFacturaIA {
   awbs: string[];
   valores: { valor: number; moneda: string; concepto?: string }[];
@@ -53,7 +84,16 @@ interface DatosFacturaIA {
   fechas: string[];
   destinatarios: string[];
   paises: { origen?: string; destino?: string };
-  items: { descripcion: string; cantidad?: number; valorUnitario?: number; valorTotal?: number }[];
+  items: { descripcion: string; cantidad?: number; valorUnitario?: number; valorTotal?: number; hsCode?: string }[];
+  // Campos específicos Amazon
+  amazonInvoices?: AmazonInvoice[];
+  transportationReferences?: string[];
+  hsCodesPanama?: { codigo: string; descripcion: string }[];
+  desglose?: {
+    totalItemValue: number;
+    totalFreight: number;
+    totalInvoiceValue: number;
+  };
 }
 
 interface FacturaAsociada {
@@ -68,6 +108,10 @@ interface FacturaAsociada {
   awbsFaltantes: string[];
   datosExtraidos: DatosFacturaIA | null;
   extraidoConIA: boolean;
+  // Datos Amazon específicos
+  transportationReferences?: string[];
+  hsCodesPanama?: { codigo: string; descripcion: string }[];
+  desglose?: { totalItemValue: number; totalFreight: number; totalInvoiceValue: number };
 }
 
 interface ValidacionResultado {
@@ -330,17 +374,26 @@ export function CargaFacturas({
           datosExtraidos = extraerDatosConPatrones(textoPDF);
         }
         
-        // Combinar AWBs del nombre
+        // Combinar AWBs del nombre + transportationReferences de Amazon
         const awbsDelNombre = extraerAWBsDeNombre(file.name);
-        const todosAWBs = [...new Set([...awbsDelNombre, ...(datosExtraidos?.awbs || [])])];
+        const transportRefs = datosExtraidos?.transportationReferences || [];
+        const todosAWBs = [...new Set([
+          ...awbsDelNombre, 
+          ...(datosExtraidos?.awbs || []),
+          ...transportRefs.map(r => r.replace(/[-\s]/g, '').toUpperCase())
+        ])];
 
-        // Actualizar factura con datos extraídos
+        // Actualizar factura con datos extraídos incluyendo datos Amazon
         const facturaActualizada: FacturaAsociada = {
           ...facturaInicial,
           awbExtraidos: todosAWBs,
           estado: 'pendiente',
           datosExtraidos,
-          extraidoConIA
+          extraidoConIA,
+          // Campos específicos Amazon
+          transportationReferences: transportRefs,
+          hsCodesPanama: datosExtraidos?.hsCodesPanama || [],
+          desglose: datosExtraidos?.desglose
         };
         
         // Actualizar en el array
@@ -517,15 +570,16 @@ export function CargaFacturas({
           )}
 
           {facturas.length > 0 && (
-            <ScrollArea className="h-[300px] border rounded-lg">
+            <ScrollArea className="h-[350px] border rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Archivo</TableHead>
-                    <TableHead>AWBs</TableHead>
-                    <TableHead>Valores</TableHead>
+                    <TableHead>Transport Ref</TableHead>
+                    <TableHead>HS Codes</TableHead>
+                    <TableHead>Desglose</TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead className="w-[120px]">Acciones</TableHead>
+                    <TableHead className="w-[100px]">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -534,7 +588,7 @@ export function CargaFacturas({
                       <TableCell className="font-mono text-sm">
                         <div className="flex items-center gap-2">
                           <FileText className="w-4 h-4 text-red-500" />
-                          <span className="truncate max-w-[160px]" title={factura.nombreArchivo}>
+                          <span className="truncate max-w-[140px]" title={factura.nombreArchivo}>
                             {factura.nombreArchivo}
                           </span>
                           {factura.extraidoConIA && (
@@ -545,44 +599,68 @@ export function CargaFacturas({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {factura.estado === 'procesando' ? (
-                            <span className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                              Procesando...
-                            </span>
-                          ) : factura.awbsCoincidentes.length > 0 ? (
-                            factura.awbsCoincidentes.slice(0, 2).map(awb => (
-                              <Badge key={awb} variant="default" className="font-mono text-xs">
-                                {awb}
+                        {factura.estado === 'procesando' ? (
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          </span>
+                        ) : factura.transportationReferences && factura.transportationReferences.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {factura.transportationReferences.slice(0, 2).map((ref, i) => (
+                              <Badge key={i} variant="default" className="font-mono text-xs">
+                                {ref}
                               </Badge>
-                            ))
-                          ) : factura.awbExtraidos.length > 0 ? (
-                            <span className="text-sm text-amber-600">
-                              {factura.awbExtraidos.length} sin coincidir
-                            </span>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">—</span>
-                          )}
-                          {factura.awbsCoincidentes.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{factura.awbsCoincidentes.length - 2}
-                            </Badge>
-                          )}
-                        </div>
+                            ))}
+                            {factura.transportationReferences.length > 2 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{factura.transportationReferences.length - 2} más
+                              </span>
+                            )}
+                          </div>
+                        ) : factura.awbExtraidos.length > 0 ? (
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {factura.awbExtraidos[0].substring(0, 15)}...
+                          </Badge>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
-                        {factura.datosExtraidos?.valores && factura.datosExtraidos.valores.length > 0 ? (
+                        {factura.hsCodesPanama && factura.hsCodesPanama.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {factura.hsCodesPanama.slice(0, 2).map((hs, i) => (
+                              <Badge key={i} variant="secondary" className="font-mono text-xs">
+                                {hs.codigo}
+                              </Badge>
+                            ))}
+                            {factura.hsCodesPanama.length > 2 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{factura.hsCodesPanama.length - 2} más
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {factura.desglose ? (
+                          <div className="text-xs space-y-0.5">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3 text-green-600" />
+                              <span className="font-medium">${factura.desglose.totalInvoiceValue.toFixed(2)}</span>
+                            </div>
+                            {factura.desglose.totalFreight > 0 && (
+                              <div className="text-muted-foreground">
+                                Flete: ${factura.desglose.totalFreight.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                        ) : factura.datosExtraidos?.valores?.[0] ? (
                           <div className="flex items-center gap-1">
                             <DollarSign className="w-3 h-3 text-green-600" />
                             <span className="text-sm font-medium">
                               ${factura.datosExtraidos.valores[0].valor.toFixed(2)}
                             </span>
-                            {factura.datosExtraidos.valores.length > 1 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{factura.datosExtraidos.valores.length - 1}
-                              </Badge>
-                            )}
                           </div>
                         ) : (
                           <span className="text-sm text-muted-foreground">—</span>
@@ -592,7 +670,7 @@ export function CargaFacturas({
                         {factura.estado === 'validada' ? (
                           <Badge className="bg-green-100 text-green-800 gap-1">
                             <CheckCircle className="w-3 h-3" />
-                            Validada
+                            OK
                           </Badge>
                         ) : factura.estado === 'error' ? (
                           <Badge variant="destructive" className="gap-1">
@@ -602,10 +680,10 @@ export function CargaFacturas({
                         ) : factura.estado === 'procesando' ? (
                           <Badge variant="secondary" className="gap-1">
                             <Loader2 className="w-3 h-3 animate-spin" />
-                            IA...
+                            IA
                           </Badge>
                         ) : (
-                          <Badge variant="outline">Pendiente</Badge>
+                          <Badge variant="outline">Pend.</Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -697,6 +775,52 @@ export function CargaFacturas({
                   )}
                 </div>
               </div>
+
+              {/* Datos Amazon específicos */}
+              {facturaDetalle.transportationReferences && facturaDetalle.transportationReferences.length > 0 && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-medium text-blue-800 mb-2">📦 Transportation References (Amazon)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {facturaDetalle.transportationReferences.map((ref, i) => (
+                      <Badge key={i} className="font-mono bg-blue-100 text-blue-800">{ref}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {facturaDetalle.hsCodesPanama && facturaDetalle.hsCodesPanama.length > 0 && (
+                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <p className="text-sm font-medium text-amber-800 mb-2">🇵🇦 PA HS Codes (Aranceles Panamá)</p>
+                  <div className="space-y-1">
+                    {facturaDetalle.hsCodesPanama.slice(0, 5).map((hs, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        <Badge variant="outline" className="font-mono">{hs.codigo}</Badge>
+                        <span className="text-xs text-muted-foreground truncate">{hs.descripcion}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {facturaDetalle.desglose && (
+                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm font-medium text-green-800 mb-2">💰 Desglose de Valores</p>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-lg font-bold text-green-700">${facturaDetalle.desglose.totalItemValue.toFixed(2)}</p>
+                      <p className="text-xs text-green-600">Item Value</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-blue-700">${facturaDetalle.desglose.totalFreight.toFixed(2)}</p>
+                      <p className="text-xs text-blue-600">Freight</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-primary">${facturaDetalle.desglose.totalInvoiceValue.toFixed(2)}</p>
+                      <p className="text-xs text-primary">Total Invoice</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {facturaDetalle.datosExtraidos?.valores && facturaDetalle.datosExtraidos.valores.length > 0 && (
                 <div>
@@ -720,6 +844,7 @@ export function CargaFacturas({
                       <TableHeader>
                         <TableRow>
                           <TableHead>Descripción</TableHead>
+                          <TableHead>HS Code</TableHead>
                           <TableHead className="text-right">Cant.</TableHead>
                           <TableHead className="text-right">Valor</TableHead>
                         </TableRow>
@@ -727,7 +852,8 @@ export function CargaFacturas({
                       <TableBody>
                         {facturaDetalle.datosExtraidos.items.slice(0, 10).map((item, i) => (
                           <TableRow key={i}>
-                            <TableCell className="text-sm">{item.descripcion}</TableCell>
+                            <TableCell className="text-sm max-w-[200px] truncate">{item.descripcion}</TableCell>
+                            <TableCell className="font-mono text-xs">{item.hsCode || '-'}</TableCell>
                             <TableCell className="text-right">{item.cantidad || '-'}</TableCell>
                             <TableCell className="text-right font-mono">
                               {item.valorTotal ? `$${item.valorTotal.toFixed(2)}` : '-'}
