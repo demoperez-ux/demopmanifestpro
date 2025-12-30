@@ -14,7 +14,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileSpreadsheet, X, AlertCircle, CheckCircle2, Play, Loader2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, X, AlertCircle, CheckCircle2, Play, Loader2, Plane, Ship, Truck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -23,6 +23,8 @@ import { toast } from '@/hooks/use-toast';
 import { GestorLocks } from '@/lib/concurrencia/gestorLocks';
 import { guardarManifiesto } from '@/lib/db/database';
 import { devLog, devError, devSuccess } from '@/lib/logger';
+import { SelectorModoTransporte, useTransportMode } from '@/components/transporte/SelectorModoTransporte';
+import { ModoTransporte, ZonaAduanera } from '@/types/transporte';
 
 interface ProgresoInfo {
   porcentaje: number;
@@ -49,6 +51,9 @@ export function UploadManifiesto({ onComplete, onError }: UploadManifiestoProps)
   const [archivo, setArchivo] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [analisisInfo, setAnalisisInfo] = useState<AnalisisInfo | null>(null);
+  
+  // Estado de modo de transporte
+  const { modo, zona, setModo, setZona } = useTransportMode();
   
   // Estado de progreso
   const [progreso, setProgreso] = useState<ProgresoInfo>({
@@ -353,12 +358,20 @@ export function UploadManifiesto({ onComplete, onError }: UploadManifiestoProps)
           Procesamiento Automático de Manifiestos
         </h2>
         <p className="text-muted-foreground">
-          Sube tu archivo Excel y el sistema procesará todo automáticamente.
-          No requiere configuración manual.
+          Selecciona el modo de transporte, zona aduanera y sube tu archivo Excel.
         </p>
       </div>
 
-      {/* Zona de drop del archivo */}
+      {/* Selector de Modo de Transporte */}
+      <div className="bg-card border border-border rounded-xl p-5">
+        <SelectorModoTransporte
+          modoSeleccionado={modo}
+          zonaSeleccionada={zona}
+          onModoChange={setModo}
+          onZonaChange={setZona}
+          disabled={isProcesando}
+        />
+      </div>
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
