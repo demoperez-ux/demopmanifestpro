@@ -11,7 +11,7 @@ const ALLOWED_ORIGINS = [
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : '*';
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -20,11 +20,47 @@ function getCorsHeaders(req: Request) {
 }
 
 // Input validation constants
-const MAX_TEXT_LENGTH = 50000; // 50KB of text
+const MAX_TEXT_LENGTH = 100000; // 100KB of text (facturas pueden ser largas)
 const MAX_FILENAME_LENGTH = 255;
 const MIN_TEXT_LENGTH = 10;
 
+// Estructura mejorada para facturas Amazon
+interface AmazonInvoiceItem {
+  asin: string;
+  descripcion: string;
+  productGroup: string;
+  paHsCode: string;        // PA HS Code de la factura
+  exportControlNumber: string;
+  countryOfOrigin: string;
+  cantidad: number;
+  pesoNeto: number;
+  valorUnitario: number;
+  valorTotal: number;
+}
+
+interface AmazonInvoice {
+  invoiceNo: string;
+  invoiceDate: string;
+  transportationReference: string;  // AWB de Amazon (AMZPSR...)
+  numberOfPackages: number;
+  exporter: string;
+  shipFrom: string;
+  consignee: string;
+  grossWeight: number;
+  phone: string;
+  email: string;
+  incoterms: string;
+  carrierServiceCode: string;
+  taxId: string;
+  items: AmazonInvoiceItem[];
+  totalItemValue: number;
+  freightCharge: number;
+  giftWrapCharge: number;
+  totalInvoiceValue: number;
+}
+
 interface ExtractedInvoiceData {
+  // Campos originales
   awbs: string[];
   valores: { valor: number; moneda: string; concepto?: string }[];
   descripciones: string[];
@@ -32,7 +68,17 @@ interface ExtractedInvoiceData {
   fechas: string[];
   destinatarios: string[];
   paises: { origen?: string; destino?: string };
-  items: { descripcion: string; cantidad?: number; valorUnitario?: number; valorTotal?: number }[];
+  items: { descripcion: string; cantidad?: number; valorUnitario?: number; valorTotal?: number; hsCode?: string }[];
+  
+  // Campos específicos para Amazon
+  amazonInvoices: AmazonInvoice[];
+  transportationReferences: string[];  // Lista de TRANSPORTATION REFERENCE (AWB Amazon)
+  hsCodesPanama: { codigo: string; descripcion: string }[];  // PA HS Codes extraídos
+  desglose: {
+    totalItemValue: number;
+    totalFreight: number;
+    totalInvoiceValue: number;
+  };
 }
 
 serve(async (req) => {
@@ -100,7 +146,6 @@ serve(async (req) => {
     // INPUT VALIDATION
     // ============================================
     
-    // Check content-length header before parsing
     const contentLength = req.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > MAX_TEXT_LENGTH + 1000) {
       console.error('Request payload too large:', contentLength);
@@ -113,7 +158,6 @@ serve(async (req) => {
     const body = await req.json();
     const { textoFactura, nombreArchivo } = body;
 
-    // Validate input types
     if (typeof textoFactura !== 'string') {
       console.error('Invalid textoFactura type:', typeof textoFactura);
       return new Response(
@@ -130,7 +174,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate text is not empty
     if (!textoFactura || textoFactura.trim().length < MIN_TEXT_LENGTH) {
       console.error('Invoice text too short or empty');
       return new Response(
@@ -139,7 +182,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate text length
     if (textoFactura.length > MAX_TEXT_LENGTH) {
       console.error('Invoice text too long:', textoFactura.length);
       return new Response(
@@ -148,7 +190,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate filename if provided
     if (nombreArchivo) {
       if (nombreArchivo.length > MAX_FILENAME_LENGTH) {
         console.error('Filename too long:', nombreArchivo.length);
@@ -157,20 +198,10 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
-      // Allow alphanumeric, dots, hyphens, underscores, spaces, and common characters
-      const safeFilenamePattern = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ._\-\s()[\]]+$/;
-      if (!safeFilenamePattern.test(nombreArchivo)) {
-        console.error('Invalid filename characters:', nombreArchivo);
-        return new Response(
-          JSON.stringify({ error: 'Nombre de archivo contiene caracteres no permitidos' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
     }
 
     // ============================================
-    // PROCESS INVOICE
+    // PROCESS INVOICE WITH AMAZON-SPECIFIC EXTRACTION
     // ============================================
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -182,43 +213,91 @@ serve(async (req) => {
       );
     }
 
-    // Sanitize filename for logging (remove any potential log injection)
     const safeLogFilename = (nombreArchivo || 'sin nombre').substring(0, 100).replace(/[\r\n]/g, '');
     console.log(`Usuario ${user.id} procesando factura: ${safeLogFilename}, longitud texto: ${textoFactura.length}`);
 
-    const systemPrompt = `Eres un experto en extracción de datos de facturas comerciales e invoices para importación/exportación. 
-Tu tarea es extraer información estructurada del texto de una factura.
+    // Prompt optimizado para facturas Amazon
+    const systemPrompt = `Eres un experto en extracción de datos de facturas comerciales Amazon para importación a Panamá.
+Tu tarea es extraer información estructurada de facturas comerciales de Amazon.
 
-DEBES extraer:
-1. AWBs/Números de guía: Busca patrones como AWB, guía, tracking, número de seguimiento (formatos: 123-45678901, AWB123456789, etc.)
-2. Valores monetarios: Busca precios, totales, subtotales, con moneda (USD, EUR, etc.)
-3. Descripciones de productos: Items, merchandise, goods, contenido
-4. Proveedores/Remitentes: Shipper, sender, from, vendor
-5. Destinatarios: Consignee, recipient, to, destinatario
-6. Fechas: Fecha de factura, envío, etc.
-7. Países de origen y destino
-8. Items detallados con cantidad y precios si están disponibles
+CAMPOS CRÍTICOS A EXTRAER:
+1. **TRANSPORTATION REFERENCE**: El número de seguimiento Amazon (formato AMZPSR...), este es el AWB principal
+2. **PA HS Code**: Código arancelario de Panamá (formato XX.XX.XXXXXX o XXXX.XX.XXXXXX)
+3. **UNIT VALUE**: Valor unitario de cada item en USD
+4. **FREIGHT CHARGE**: Cargo de flete en USD
+5. **TOTAL INVOICE VALUE**: Valor total de la factura en USD
+
+OTROS CAMPOS IMPORTANTES:
+- INVOICE NO: Número de factura
+- INVOICE DATE: Fecha de factura
+- CONSIGNEE: Nombre del destinatario
+- PHONE: Teléfono del destinatario (con código de país)
+- EMAIL: Email del destinatario
+- ASIN: Código de producto Amazon
+- DESCRIPTION: Descripción del producto
+- QUANTITY: Cantidad de unidades
+- COUNTRY OF ORIGIN: País de origen
+- GROSS WEIGHT: Peso bruto en kg
+- TOTAL ITEM VALUE: Valor total de items
 
 IMPORTANTE:
-- Extrae TODOS los AWBs que encuentres, incluso si parecen parciales
-- Los valores deben ser números, no strings
-- Si no encuentras algún dato, devuelve array vacío o null
-- Normaliza los AWBs removiendo guiones y espacios`;
+- Una factura puede contener múltiples páginas/invoices
+- Extrae TODOS los TRANSPORTATION REFERENCE que encuentres
+- Los PA HS Codes son códigos arancelarios panameños, no confundir con otros códigos
+- Normaliza teléfonos con formato +507XXXXXXXX para Panamá
+- Los valores monetarios deben ser números, no strings`;
 
-    const userPrompt = `Extrae los datos de esta factura comercial:
+    const userPrompt = `Extrae los datos de esta factura comercial Amazon:
 
-${textoFactura.substring(0, 8000)}
+${textoFactura.substring(0, 15000)}
 
 Responde SOLO con un JSON válido con esta estructura exacta:
 {
+  "amazonInvoices": [
+    {
+      "invoiceNo": "string",
+      "invoiceDate": "string",
+      "transportationReference": "string (AMZPSR...)",
+      "numberOfPackages": number,
+      "exporter": "string",
+      "consignee": "string",
+      "grossWeight": number,
+      "phone": "string",
+      "email": "string",
+      "incoterms": "string",
+      "items": [
+        {
+          "asin": "string",
+          "descripcion": "string",
+          "productGroup": "string",
+          "paHsCode": "string",
+          "countryOfOrigin": "string",
+          "cantidad": number,
+          "pesoNeto": number,
+          "valorUnitario": number,
+          "valorTotal": number
+        }
+      ],
+      "totalItemValue": number,
+      "freightCharge": number,
+      "totalInvoiceValue": number
+    }
+  ],
+  "transportationReferences": ["string"],
+  "hsCodesPanama": [{"codigo": "string", "descripcion": "string"}],
   "awbs": ["string"],
-  "valores": [{"valor": number, "moneda": "string", "concepto": "string"}],
+  "valores": [{"valor": number, "moneda": "USD", "concepto": "string"}],
   "descripciones": ["string"],
-  "proveedores": ["string"],
-  "fechas": ["string"],
   "destinatarios": ["string"],
-  "paises": {"origen": "string", "destino": "string"},
-  "items": [{"descripcion": "string", "cantidad": number, "valorUnitario": number, "valorTotal": number}]
+  "fechas": ["string"],
+  "proveedores": ["string"],
+  "paises": {"origen": "string", "destino": "Panama"},
+  "items": [{"descripcion": "string", "cantidad": number, "valorUnitario": number, "valorTotal": number, "hsCode": "string"}],
+  "desglose": {
+    "totalItemValue": number,
+    "totalFreight": number,
+    "totalInvoiceValue": number
+  }
 }`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -233,7 +312,6 @@ Responde SOLO con un JSON válido con esta estructura exacta:
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.1,
       }),
     });
 
@@ -273,7 +351,7 @@ Responde SOLO con un JSON válido con esta estructura exacta:
 
     console.log('Respuesta IA recibida, parseando JSON...');
 
-    // Extraer JSON de la respuesta (puede venir con markdown)
+    // Extraer JSON de la respuesta
     let jsonStr = content;
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
@@ -285,7 +363,7 @@ Responde SOLO con un JSON válido con esta estructura exacta:
       extractedData = JSON.parse(jsonStr.trim());
     } catch (parseError) {
       console.error('Error al parsear JSON de IA:', parseError);
-      // Intentar extraer datos básicos del texto
+      // Fallback con estructura mínima
       extractedData = {
         awbs: [],
         valores: [],
@@ -293,19 +371,83 @@ Responde SOLO con un JSON válido con esta estructura exacta:
         proveedores: [],
         fechas: [],
         destinatarios: [],
-        paises: {},
-        items: []
+        paises: { destino: 'Panama' },
+        items: [],
+        amazonInvoices: [],
+        transportationReferences: [],
+        hsCodesPanama: [],
+        desglose: { totalItemValue: 0, totalFreight: 0, totalInvoiceValue: 0 }
       };
     }
 
-    // Normalizar AWBs
+    // Post-procesamiento: extraer y normalizar datos
+    
+    // 1. Combinar todos los TRANSPORTATION REFERENCE de las facturas Amazon
+    if (extractedData.amazonInvoices?.length > 0) {
+      const refs = extractedData.amazonInvoices
+        .map(inv => inv.transportationReference)
+        .filter(ref => ref && ref.length > 5);
+      
+      extractedData.transportationReferences = [...new Set([
+        ...(extractedData.transportationReferences || []),
+        ...refs
+      ])];
+      
+      // Agregar TRANSPORTATION REFERENCE a AWBs
+      extractedData.awbs = [...new Set([
+        ...(extractedData.awbs || []),
+        ...extractedData.transportationReferences.map(r => r.replace(/[-\s]/g, '').toUpperCase())
+      ])];
+      
+      // Extraer todos los HS Codes de Panama
+      const hsCodes: { codigo: string; descripcion: string }[] = [];
+      extractedData.amazonInvoices.forEach(inv => {
+        inv.items?.forEach(item => {
+          if (item.paHsCode) {
+            hsCodes.push({
+              codigo: item.paHsCode.replace(/\s/g, ''),
+              descripcion: item.descripcion || item.productGroup || ''
+            });
+          }
+        });
+      });
+      extractedData.hsCodesPanama = [...new Set(hsCodes.map(h => JSON.stringify(h)))].map(s => JSON.parse(s));
+      
+      // Calcular desglose total
+      let totalItemValue = 0;
+      let totalFreight = 0;
+      let totalInvoiceValue = 0;
+      
+      extractedData.amazonInvoices.forEach(inv => {
+        totalItemValue += inv.totalItemValue || 0;
+        totalFreight += inv.freightCharge || 0;
+        totalInvoiceValue += inv.totalInvoiceValue || 0;
+      });
+      
+      extractedData.desglose = { totalItemValue, totalFreight, totalInvoiceValue };
+      
+      // Agregar valores al array de valores
+      if (totalInvoiceValue > 0) {
+        extractedData.valores = extractedData.valores || [];
+        extractedData.valores.push({ valor: totalInvoiceValue, moneda: 'USD', concepto: 'TOTAL INVOICE VALUE' });
+      }
+      if (totalFreight > 0) {
+        extractedData.valores.push({ valor: totalFreight, moneda: 'USD', concepto: 'FREIGHT CHARGE' });
+      }
+      if (totalItemValue > 0) {
+        extractedData.valores.push({ valor: totalItemValue, moneda: 'USD', concepto: 'TOTAL ITEM VALUE' });
+      }
+    }
+
+    // 2. Normalizar AWBs adicionales
     if (extractedData.awbs) {
       extractedData.awbs = extractedData.awbs.map(awb => 
         String(awb).replace(/[-\s]/g, '').toUpperCase()
-      ).filter(awb => awb.length >= 9 && awb.length <= 20);
+      ).filter(awb => awb.length >= 9 && awb.length <= 25);
+      extractedData.awbs = [...new Set(extractedData.awbs)];
     }
 
-    console.log(`Datos extraídos: ${extractedData.awbs?.length || 0} AWBs, ${extractedData.valores?.length || 0} valores`);
+    console.log(`Datos extraídos: ${extractedData.awbs?.length || 0} AWBs, ${extractedData.amazonInvoices?.length || 0} facturas Amazon, ${extractedData.hsCodesPanama?.length || 0} HS Codes`);
 
     return new Response(
       JSON.stringify({ success: true, data: extractedData }),
