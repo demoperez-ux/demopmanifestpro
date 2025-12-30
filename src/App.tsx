@@ -3,14 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Historial from "./pages/Historial";
 import TestDeteccion from "./pages/TestDeteccion";
-import DashboardManifiesto from "./pages/DashboardManifiesto";
 import BuscadorAranceles from "./pages/BuscadorAranceles";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
@@ -83,11 +82,8 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } />
               
-              <Route path="/dashboard/:manifiestoId" element={
-                <ProtectedRoute>
-                  <DashboardManifiesto />
-                </ProtectedRoute>
-              } />
+              {/* Flujo legacy eliminado: redirigir al inicio */}
+              <Route path="/dashboard/:manifiestoId" element={<Navigate to="/" replace />} />
               
               <Route path="/aranceles" element={
                 <ProtectedRoute>
