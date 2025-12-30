@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Allowed origins for CORS - restrict to known application domains
 const ALLOWED_ORIGINS = [
@@ -91,6 +92,34 @@ serve(async (req) => {
   }
 
   try {
+    // === AUTHENTICATION CHECK ===
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('[clasificar-hts-ai] Rechazado: Sin header de autorización');
+      return new Response(
+        JSON.stringify({ error: 'Autenticación requerida' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.log('[clasificar-hts-ai] Rechazado: Usuario no autenticado', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'No autorizado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('[clasificar-hts-ai] Usuario autenticado:', user.id);
+    // === END AUTHENTICATION CHECK ===
+
     const { descripcion, lineItemsFactura, peso, valor } = await req.json() as ClasificacionRequest;
     
     if (!descripcion) {
