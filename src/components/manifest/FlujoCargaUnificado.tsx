@@ -174,9 +174,15 @@ export function FlujoCargaUnificado() {
     setProgreso({ fase: 'extrayendo-manifiesto', porcentaje: 5, mensaje: 'Iniciando procesamiento...' });
 
     try {
-      // Crear el Worker
+      // Si había un worker previo, terminarlo
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+
+      // Crear el Worker (ruta relativa: Vite no resuelve alias en new URL)
       const worker = new Worker(
-        new URL('@/lib/workers/procesador.worker.ts', import.meta.url),
+        new URL('../../lib/workers/procesador.worker.ts', import.meta.url),
         { type: 'module' }
       );
       workerRef.current = worker;
@@ -189,7 +195,7 @@ export function FlujoCargaUnificado() {
         const { tipo, payload } = event.data;
 
         switch (tipo) {
-          case 'PROGRESO':
+          case 'PROGRESO': {
             const faseActual = payload.progreso < 30 ? 'extrayendo-manifiesto' :
                               payload.progreso < 70 ? 'extrayendo-facturas' :
                               payload.progreso < 95 ? 'vinculando' : 'completado';
@@ -199,42 +205,52 @@ export function FlujoCargaUnificado() {
               mensaje: payload.mensaje
             });
             break;
+          }
 
-          case 'COMPLETADO':
+          case 'COMPLETADO': {
             setProgreso({ fase: 'completado', porcentaje: 100, mensaje: '¡Procesamiento completado!' });
-            
-            // Guardar en la base de datos
-            const resultado = await guardarManifiesto({
-              manifiesto: {
-                mawb: payload.manifiesto?.mawb || 'SIN-MAWB',
-                fechaProcesamiento: new Date().toISOString(),
-                totalFilas: payload.paquetes?.length || 0,
-                filasValidas: payload.paquetes?.length || 0,
-                filasConErrores: 0
-              },
-              filas: payload.paquetes || [],
-              resumen: {
-                totalPaquetes: payload.paquetes?.length || 0,
-                valorTotal: payload.paquetes?.reduce((s: number, p: any) => s + (p.valorUSD || 0), 0) || 0,
-                pesoTotal: payload.paquetes?.reduce((s: number, p: any) => s + (p.peso || 0), 0) || 0,
-                promedioValor: 0,
-                promedioPeso: 0,
-                porCategoria: {},
-                porProvincia: {},
-                porCategoriaAduanera: {},
-                tiempoProcesamiento: 0
-              },
-              deteccionColumnas: { mapeo: {}, confianza: {}, noDetectados: [], sugerencias: {} },
-              clasificacion: { categorias: {}, requierenPermisos: 0, prohibidos: 0 },
-              errores: [],
-              advertencias: payload.analisis?.advertencias || []
-            });
 
-            if (resultado.exito) {
+            try {
+              // Guardar en la base de datos (requerido para abrir el dashboard)
+              const paquetes = payload?.paquetes || [];
+              const mawb = payload?.manifiesto?.mawb || 'SIN-MAWB';
+
+              const resultado = await guardarManifiesto({
+                manifiesto: {
+                  mawb,
+                  fechaProcesamiento: new Date().toISOString(),
+                  totalFilas: paquetes.length,
+                  filasValidas: paquetes.length,
+                  filasConErrores: 0
+                },
+                filas: paquetes,
+                resumen: {
+                  totalPaquetes: paquetes.length,
+                  valorTotal: paquetes.reduce((s: number, p: any) => s + (p.valorUSD || 0), 0),
+                  pesoTotal: paquetes.reduce((s: number, p: any) => s + (p.peso || 0), 0),
+                  promedioValor: 0,
+                  promedioPeso: 0,
+                  porCategoria: {},
+                  porProvincia: {},
+                  porCategoriaAduanera: {},
+                  tiempoProcesamiento: 0
+                },
+                deteccionColumnas: { mapeo: {}, confianza: {}, noDetectados: [], sugerencias: {} },
+                clasificacion: { categorias: {}, requierenPermisos: 0, prohibidos: 0 },
+                errores: [],
+                advertencias: payload?.analisis?.advertencias || []
+              });
+
+              if (!resultado.exito) {
+                setProgreso({ fase: 'error', porcentaje: 0, mensaje: resultado.mensaje || 'No se pudo guardar el manifiesto' });
+                toast({ variant: 'destructive', title: 'Error al guardar', description: resultado.mensaje });
+                return; // NO avanzar a paso 3 (evita pantalla vacía)
+              }
+
               setManifiestoIdGuardado(resultado.manifiestoId);
-              
+
               // Crear datos extraídos para mostrar en paso 3
-              const paquetesExtraidos: PaqueteExtraido[] = (payload.paquetes || []).map((p: any) => ({
+              const paquetesExtraidos: PaqueteExtraido[] = paquetes.map((p: any) => ({
                 tracking: p.numeroGuia || p.tracking || '',
                 descripcion: p.descripcion || '',
                 valorUSD: p.valorUSD || 0,
@@ -253,7 +269,7 @@ export function FlujoCargaUnificado() {
               }));
 
               setDatosExtraidos({
-                mawb: payload.manifiesto?.mawb || 'SIN-MAWB',
+                mawb,
                 totalPaquetes: paquetesExtraidos.length,
                 paquetes: paquetesExtraidos,
                 facturas: [],
@@ -264,30 +280,35 @@ export function FlujoCargaUnificado() {
                 title: '✅ Procesamiento exitoso',
                 description: `${paquetesExtraidos.length} paquetes procesados y clasificados`
               });
-            } else {
-              toast({
-                variant: 'destructive',
-                title: 'Error al guardar',
-                description: resultado.mensaje
-              });
+
+              setTimeout(() => setPasoActual(3), 600);
+            } catch (e) {
+              console.error('Error guardando manifiesto:', e);
+              setProgreso({ fase: 'error', porcentaje: 0, mensaje: 'Error guardando el manifiesto' });
+              toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el manifiesto' });
+            } finally {
+              workerRef.current?.terminate();
+              workerRef.current = null;
             }
 
-            // Avanzar al paso 3
-            setTimeout(() => setPasoActual(3), 1000);
             break;
+          }
 
-          case 'ERROR':
-            setProgreso({ 
-              fase: 'error', 
-              porcentaje: 0, 
+          case 'ERROR': {
+            setProgreso({
+              fase: 'error',
+              porcentaje: 0,
               mensaje: payload.mensaje || 'Error en procesamiento'
             });
-            toast({ 
-              variant: 'destructive', 
-              title: 'Error', 
+            toast({
+              variant: 'destructive',
+              title: 'Error',
               description: payload.mensaje || 'Error procesando el manifiesto'
             });
+            workerRef.current?.terminate();
+            workerRef.current = null;
             break;
+          }
         }
       };
 
@@ -295,6 +316,8 @@ export function FlujoCargaUnificado() {
         console.error('Error del worker:', error);
         setProgreso({ fase: 'error', porcentaje: 0, mensaje: 'Error interno del procesador' });
         toast({ variant: 'destructive', title: 'Error', description: 'Error interno del procesador' });
+        workerRef.current?.terminate();
+        workerRef.current = null;
       };
 
       // Enviar archivo al worker
