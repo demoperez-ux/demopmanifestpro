@@ -27,6 +27,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SelloAFC } from './SelloAFC';
+import { SelloGS1ICC } from './SelloGS1ICC';
 
 // ── Types ───────────────────────────────────────────
 interface EmbarqueOrion {
@@ -396,6 +397,7 @@ export function HorizonteCarga() {
                     {emb.afc_apto_despacho_anticipado && (
                       <SelloAFC activo size="sm" showTooltip={false} />
                     )}
+                    <SelloGS1ICC compact tieneGTIN tieneGLN={!!emb.recinto_destino} />
                   </div>
 
                   <p className="text-sm text-foreground/80 line-clamp-1">
@@ -693,6 +695,21 @@ function EmbarqueDrawerContent({
             </div>
           </div>
         )}
+
+        {/* GS1/ICC Compliance */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-foreground/70" />
+            <span className="font-display text-sm font-semibold text-foreground/80">
+              Estándares Internacionales
+            </span>
+          </div>
+          <SelloGS1ICC 
+            tieneGTIN 
+            tieneGLN={!!emb.recinto_destino} 
+            incotermUsado="FOB" 
+          />
+        </div>
 
         {!preLiq && (
           <div className="text-center py-4 text-muted-foreground/50 text-xs">

@@ -3,12 +3,14 @@
 // Cerebro Arancelario del ecosistema Orion
 // Réplica exacta de la aritmética ANA Panamá
 // Verificado por Zod Integrity Engine
+// Incoterms® 2020 (ICC) integrado
 // ============================================
 
 import { CONSTANTES_DECLARACION } from '@/types/declaracionOficial';
 import { Arancel, Liquidacion, CategoriaAduanera, RestriccionDetectada, ConfiguracionLiquidacion, DEFAULT_CONFIG_LIQUIDACION } from '@/types/aduanas';
 import { ManifestRow } from '@/types/manifest';
 import { devLog, devWarn } from '@/lib/logger';
+import { calcularCIFPorIncoterm, Incoterm2020, CostosTransporte, ResultadoCIF } from '@/lib/gs1/MotorIncoterms2020';
 
 // ============================================
 // CONSTANTES SIGA
@@ -58,6 +60,10 @@ export interface ComponentesLiquidacionSIGA {
   // Metadatos
   seguroTeorico: boolean;
   fundamentoLegal?: string;
+  
+  // Incoterms® 2020 (ICC)
+  incoterm?: Incoterm2020;
+  incotermInfo?: ResultadoCIF;
 }
 
 export interface ResultadoLiquidacionSIGA extends Liquidacion {
@@ -97,30 +103,51 @@ export class MotorLiquidacionSIGA {
       valorSeguro?: number;
       fechaRegistro?: Date;
       restricciones?: RestriccionDetectada[];
+      incoterm?: Incoterm2020;
+      costosTransporte?: Partial<CostosTransporte>;
     } = {}
   ): ResultadoLiquidacionSIGA {
     const redondear = (v: number) => Math.round(v * 100) / 100;
     
     // ═══════════════════════════════════════════════════════
-    // PASO 1: CALCULAR COMPONENTES CIF
+    // PASO 1: CALCULAR COMPONENTES CIF (con soporte Incoterms® 2020)
     // ═══════════════════════════════════════════════════════
     
-    const valorFOB = paquete.valueUSD;
-    
-    // Flete: 7% del FOB si no se especifica (estimación courier)
-    const valorFlete = opciones.valorFlete ?? redondear(valorFOB * 0.07);
-    
-    // Seguro: Usar valor proporcionado o calcular teórico (1% del FOB)
+    let valorFOB: number;
+    let valorFlete: number;
     let valorSeguro: number;
     let seguroTeorico = false;
     let fundamentoLegal: string | undefined;
+    let incotermInfo: ResultadoCIF | undefined;
     
-    if (opciones.valorSeguro !== undefined && opciones.valorSeguro !== null) {
-      valorSeguro = opciones.valorSeguro;
+    if (opciones.incoterm) {
+      // === MODO INCOTERMS 2020 (ICC) ===
+      const costosTransp: Partial<CostosTransporte> = {
+        fleteInternacional: opciones.valorFlete ?? opciones.costosTransporte?.fleteInternacional,
+        seguroInternacional: opciones.valorSeguro ?? opciones.costosTransporte?.seguroInternacional,
+        ...opciones.costosTransporte,
+      };
+      
+      incotermInfo = calcularCIFPorIncoterm(paquete.valueUSD, opciones.incoterm, costosTransp);
+      valorFOB = incotermInfo.valorFOB;
+      valorFlete = incotermInfo.valorFlete;
+      valorSeguro = incotermInfo.valorSeguro;
+      seguroTeorico = incotermInfo.seguroTeorico;
+      fundamentoLegal = incotermInfo.fundamentoLegal;
+      
+      devLog(`[SIGA-ICC] Incoterm ${opciones.incoterm}: CIF=$${incotermInfo.valorCIF}`);
     } else {
-      valorSeguro = redondear(valorFOB * (SIGA.SEGURO_TEORICO / 100));
-      seguroTeorico = true;
-      fundamentoLegal = 'Art. 8.2 Acuerdo Valoración Aduanera OMC - Seguro teórico 1%';
+      // === MODO CLÁSICO (sin Incoterm) ===
+      valorFOB = paquete.valueUSD;
+      valorFlete = opciones.valorFlete ?? redondear(valorFOB * 0.07);
+      
+      if (opciones.valorSeguro !== undefined && opciones.valorSeguro !== null) {
+        valorSeguro = opciones.valorSeguro;
+      } else {
+        valorSeguro = redondear(valorFOB * (SIGA.SEGURO_TEORICO / 100));
+        seguroTeorico = true;
+        fundamentoLegal = 'Art. 8.2 Acuerdo Valoración Aduanera OMC - Seguro teórico 1%';
+      }
     }
     
     // CIF = FOB + Flete + Seguro
@@ -226,7 +253,11 @@ export class MotorLiquidacionSIGA {
       version: 2,
       
       // Extensiones SIGA
-      componentes,
+      componentes: {
+        ...componentes,
+        incoterm: opciones.incoterm,
+        incotermInfo,
+      },
       boletaPago
     };
     
@@ -456,6 +487,17 @@ export class MotorLiquidacionSIGA {
         ? SIGA.RECARGO_1_PORCENTAJE 
         : SIGA.RECARGO_2_PORCENTAJE;
       obs.push(`🚨 Recargo ${recargo}% aplicado: $${boletaPago.montoNormal.toFixed(2)} → $${boletaPago.montoActual.toFixed(2)}`);
+    }
+    
+    // Incoterms® 2020 observations
+    if (componentes.incoterm) {
+      obs.push(`📦 Incoterms® 2020: ${componentes.incoterm} (ICC)`);
+    }
+    if (componentes.incotermInfo?.ajustesAplicados) {
+      obs.push(...componentes.incotermInfo.ajustesAplicados);
+    }
+    if (componentes.incotermInfo?.zodAlertasRequeridas) {
+      obs.push(...componentes.incotermInfo.zodAlertasRequeridas.map(a => `⚠️ ${a}`));
     }
     
     return obs;

@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 
 export interface ZodVerdict {
   bloqueado: boolean;
-  tipo: 'peso' | 'honorarios' | 'cumplimiento' | 'subvaluacion' | 'vehiculo' | 'general';
+  tipo: 'peso' | 'honorarios' | 'cumplimiento' | 'subvaluacion' | 'vehiculo' | 'general' | 'gs1';
   titulo: string;
   descripcion: string;
   detalles?: string[];
