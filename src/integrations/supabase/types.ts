@@ -315,6 +315,11 @@ export type Database = {
           destination_country: string
           estado: string
           eta: string | null
+          gln_destino: string | null
+          gln_shipper: string | null
+          gs1_conflictos: Json | null
+          gs1_validado: boolean | null
+          gtin_items: Json | null
           id: string
           modo_transporte: string
           moneda: string
@@ -357,6 +362,11 @@ export type Database = {
           destination_country: string
           estado?: string
           eta?: string | null
+          gln_destino?: string | null
+          gln_shipper?: string | null
+          gs1_conflictos?: Json | null
+          gs1_validado?: boolean | null
+          gtin_items?: Json | null
           id?: string
           modo_transporte?: string
           moneda?: string
@@ -399,6 +409,11 @@ export type Database = {
           destination_country?: string
           estado?: string
           eta?: string | null
+          gln_destino?: string | null
+          gln_shipper?: string | null
+          gs1_conflictos?: Json | null
+          gs1_validado?: boolean | null
+          gtin_items?: Json | null
           id?: string
           modo_transporte?: string
           moneda?: string
@@ -473,6 +488,102 @@ export type Database = {
           progreso?: number
           score_riesgo?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      mapeo_gs1_hts: {
+        Row: {
+          activo: boolean | null
+          autoridad_anuente: string | null
+          conflicto_detectado: boolean | null
+          corredor_id: string | null
+          created_at: string
+          dai_percent: number | null
+          descripcion_arancelaria: string | null
+          descripcion_producto: string
+          fuente: string | null
+          gln_shipper: string | null
+          gtin: string
+          gtin_checksum_valido: boolean
+          gtin_tipo: string | null
+          id: string
+          isc_percent: number | null
+          itbms_percent: number | null
+          nombre_shipper: string | null
+          notas_conflicto: string | null
+          orion_sku: string | null
+          orion_sync_at: string | null
+          pais_origen: string | null
+          partida_arancelaria: string
+          prefijo_gs1: string | null
+          restricciones_salud: string[] | null
+          ultimo_uso: string | null
+          unidad_medida: string | null
+          updated_at: string
+          usos_exitosos: number | null
+          validado_por_zod: boolean | null
+        }
+        Insert: {
+          activo?: boolean | null
+          autoridad_anuente?: string | null
+          conflicto_detectado?: boolean | null
+          corredor_id?: string | null
+          created_at?: string
+          dai_percent?: number | null
+          descripcion_arancelaria?: string | null
+          descripcion_producto: string
+          fuente?: string | null
+          gln_shipper?: string | null
+          gtin: string
+          gtin_checksum_valido?: boolean
+          gtin_tipo?: string | null
+          id?: string
+          isc_percent?: number | null
+          itbms_percent?: number | null
+          nombre_shipper?: string | null
+          notas_conflicto?: string | null
+          orion_sku?: string | null
+          orion_sync_at?: string | null
+          pais_origen?: string | null
+          partida_arancelaria: string
+          prefijo_gs1?: string | null
+          restricciones_salud?: string[] | null
+          ultimo_uso?: string | null
+          unidad_medida?: string | null
+          updated_at?: string
+          usos_exitosos?: number | null
+          validado_por_zod?: boolean | null
+        }
+        Update: {
+          activo?: boolean | null
+          autoridad_anuente?: string | null
+          conflicto_detectado?: boolean | null
+          corredor_id?: string | null
+          created_at?: string
+          dai_percent?: number | null
+          descripcion_arancelaria?: string | null
+          descripcion_producto?: string
+          fuente?: string | null
+          gln_shipper?: string | null
+          gtin?: string
+          gtin_checksum_valido?: boolean
+          gtin_tipo?: string | null
+          id?: string
+          isc_percent?: number | null
+          itbms_percent?: number | null
+          nombre_shipper?: string | null
+          notas_conflicto?: string | null
+          orion_sku?: string | null
+          orion_sync_at?: string | null
+          pais_origen?: string | null
+          partida_arancelaria?: string
+          prefijo_gs1?: string | null
+          restricciones_salud?: string[] | null
+          ultimo_uso?: string | null
+          unidad_medida?: string | null
+          updated_at?: string
+          usos_exitosos?: number | null
+          validado_por_zod?: boolean | null
         }
         Relationships: []
       }

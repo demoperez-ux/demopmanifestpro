@@ -104,6 +104,7 @@ export interface ArticuloDeclaracion {
   descripcion_arancelaria: string;      // "Los demás"
   especificacion_mercancia: string;     // "MASCARILLA FACIAL PARA LA CARA"
   codigo_referencia?: string;           // AMZPSR019170328
+  gtin?: string;                        // GS1 GTIN para escaneo en inspección física
   
   // Condición y origen
   condicion_mercancia: 'NUEVO' | 'USADO' | 'REACONDICIONADO';

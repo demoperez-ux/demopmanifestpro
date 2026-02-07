@@ -209,12 +209,17 @@ function generarArticulos(
     // Código Amazon
     const codigoRef = extraerCodigoAmazon(paquete?.trackingNumber || liq.numeroGuia);
     
+    // GTIN (GS1) — include for customs scanning
+    const gtinCodigos = paquete?.gtinCodigos || [];
+    const gtinDisplay = gtinCodigos.length > 0 ? gtinCodigos[0] : undefined;
+    
     articulos.push({
       numero_articulo: idx + 1,
       fraccion_arancelaria: formatearFraccionArancelaria(liq.hsCode || ''),
       descripcion_arancelaria: liq.descripcionArancelaria || 'Los demás',
       especificacion_mercancia: (paquete?.description || liq.descripcionArancelaria || '').toUpperCase(),
       codigo_referencia: codigoRef,
+      gtin: gtinDisplay,
       
       condicion_mercancia: 'NUEVO',
       regimen_fundamento: '01-00',
@@ -383,7 +388,10 @@ export function exportarDeclaracionTexto(declaracion: DeclaracionOficial): strin
     texto += `${String(art.numero_articulo).padStart(3)}       ${art.fraccion_arancelaria}        ${art.especificacion_mercancia.substring(0, 35).padEnd(35)} ${art.pais_origen.padEnd(4)} ${art.valor_fob.toFixed(2).padStart(8)} ${art.valor_flete.toFixed(2).padStart(8)} ${art.valor_seguro.toFixed(2).padStart(8)} ${art.valor_cif.toFixed(2).padStart(8)}\n`;
     texto += `          ${art.descripcion_arancelaria.substring(0, 50)}\n`;
     if (art.codigo_referencia) {
-      texto += `          ${art.codigo_referencia}\n`;
+      texto += `          REF: ${art.codigo_referencia}\n`;
+    }
+    if (art.gtin) {
+      texto += `          GTIN (GS1): ${art.gtin}\n`;
     }
     texto += `          IMPORT /: ${formatearTarifaANA(art.impuestos.dai_tarifa_percent)}%  $${art.impuestos.dai_a_pagar.toFixed(2)}   ITBM: ${formatearTarifaANA(art.impuestos.itbm_tarifa_percent)}%  $${art.impuestos.itbm_a_pagar.toFixed(2)}\n\n`;
   });
@@ -487,6 +495,9 @@ export function exportarDeclaracionXML(declaracion: DeclaracionOficial): string 
     xml += `      <Numero>${art.numero_articulo}</Numero>\n`;
     xml += `      <FraccionArancelaria>${art.fraccion_arancelaria}</FraccionArancelaria>\n`;
     xml += `      <Descripcion>${escapeXML(art.especificacion_mercancia)}</Descripcion>\n`;
+    if (art.gtin) {
+      xml += `      <GTIN>${art.gtin}</GTIN>\n`;
+    }
     xml += `      <PaisOrigen>${art.pais_origen}</PaisOrigen>\n`;
     xml += `      <ValorFOB>${art.valor_fob.toFixed(2)}</ValorFOB>\n`;
     xml += `      <ValorFlete>${art.valor_flete.toFixed(2)}</ValorFlete>\n`;
