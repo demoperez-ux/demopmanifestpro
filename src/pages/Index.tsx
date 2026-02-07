@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Sparkles } from 'lucide-react';
 import { Header } from '@/components/manifest/Header';
+import { StellaHelpPanel, StellaContext } from '@/components/zenith/StellaHelpPanel';
 import { FileUpload, MAWBInfo } from '@/components/manifest/FileUpload';
 import { ColumnMapper } from '@/components/manifest/ColumnMapper';
 import { DataPreview } from '@/components/manifest/DataPreview';
@@ -162,10 +163,22 @@ export default function Index() {
     setFileLoaded(false);
   }, []);
 
+  const stellaContext: StellaContext = {
+    isNewUser: !fileLoaded && step === 'upload',
+    processingProgress: processingProgress,
+    totalPaquetes: mappedData.length,
+    listoParaExportar: step === 'results' && result !== null,
+    erroresValidacion: warnings.length,
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
+      {/* Stella Help Panel - Compact on Index */}
+      <div className="container mx-auto px-4 pt-4 max-w-6xl">
+        <StellaHelpPanel context={stellaContext} compact />
+      </div>
       <main className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Selector de flujo */}
         {step === 'upload' && (
@@ -408,7 +421,7 @@ export default function Index() {
             <div className="mt-8 text-center">
               <Link 
                 to="/aranceles"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg font-medium transition-colors shadow-md"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg font-medium transition-colors shadow-md border border-border"
               >
                 <Search className="h-5 w-5" />
                 Buscador de Aranceles de Panamá
@@ -421,7 +434,8 @@ export default function Index() {
       {/* Footer */}
       <footer className="border-t border-border mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>CargoManifest Pro — Procesamiento inteligente de manifiestos de carga aérea</p>
+          <p className="font-display tracking-wide">ZENITH — La cumbre del control aduanero</p>
+          <p className="text-xs text-muted-foreground/50 mt-1">Powered by Orion Freight System</p>
         </div>
       </footer>
     </div>

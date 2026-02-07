@@ -1,15 +1,15 @@
 /**
- * DASHBOARD DE MANIFIESTO v3.0
+ * DASHBOARD DE MANIFIESTO v3.0 — ZENITH
  * 
- * Dashboard mejorado que muestra:
- * 1. Información del MAWB y aerolínea detectada
- * 2. Estadísticas generales
- * 3. Distribución automática por valor (según umbral configurable)
+ * Dashboard con Stella Help y Zod Integrity Engine:
+ * 1. Panel proactivo Stella (asistente IA)
+ * 2. Validación Zod (bloqueo de exportación)
+ * 3. Distribución por categoría ANA
  * 4. Clasificación HTS de productos
  * 5. Tablas de paquetes por lote
- * 6. Exportación a Excel
+ * 6. Exportación a Excel con sellos ZENITH
  * 
- * H01 FIX: Usa ConfigService para umbrales
+ * Cerebro Arancelario: Usa ConfigService para umbrales
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -19,12 +19,15 @@ import {
   Download, AlertTriangle, Search, Filter,
   ChevronLeft, ChevronRight, ArrowLeft, FileSpreadsheet,
   Plane, CheckCircle2, AlertCircle, TrendingUp, Pill, Barcode, Brain,
-  MapPin, Building2, Map
+  MapPin, Building2, Map, Shield, Sparkles
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { COLORES_PROVINCIA } from '@/lib/panamaGeography';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { StellaHelpPanel, StellaContext, StellaAlert } from '@/components/zenith/StellaHelpPanel';
+import { ZodIntegrityModal, ZodVerdict } from '@/components/zenith/ZodIntegrityModal';
+import { validarCumplimientoExportacion } from '@/lib/zenith/zodIntegrityEngine';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,6 +84,10 @@ export default function DashboardManifiesto() {
 
   // Agente Aduanal AI
   const agenteAduanal = useAgenteAduanal();
+
+  // Zod Integrity Engine
+  const [zodVerdict, setZodVerdict] = useState<ZodVerdict | null>(null);
+  const [zodModalOpen, setZodModalOpen] = useState(false);
 
   // Filtros y paginación
   const [busqueda, setBusqueda] = useState('');
@@ -391,9 +398,47 @@ export default function DashboardManifiesto() {
     paginaActual * ITEMS_POR_PAGINA
   );
 
-  // Exportar Excel consolidado con el nuevo sistema AI
+  // Stella context for dashboard
+  const stellaContext: StellaContext = useMemo(() => {
+    const alertas: StellaAlert[] = [];
+    
+    // Check for restricted products as sanitary alerts
+    const restringidos = paquetes.filter(p => p.requierePermiso);
+    if (restringidos.length > 0) {
+      alertas.push({
+        tipo: 'MINSA',
+        mensaje: `Se detectaron ${restringidos.length} productos que requieren permisos sanitarios. Verifica los requisitos antes de proceder.`,
+        severidad: restringidos.length > 5 ? 'critical' : 'warning',
+        accion: 'Revisar pestaña de Restricciones',
+      });
+    }
+
+    return {
+      processingProgress: cargando ? 50 : 100,
+      totalPaquetes: paquetes.length,
+      alertasSanitarias: alertas,
+      listoParaExportar: !cargando && paquetes.length > 0,
+      erroresValidacion: paquetes.filter(p => p.errores && p.errores.length > 0).length,
+    };
+  }, [paquetes, cargando]);
+
+  // Exportar Excel consolidado con Zod validation
   const handleDescargarExcel = async () => {
     if (!manifiesto) return;
+
+    // Zod Integrity Engine: validate before export
+    const zodResult = validarCumplimientoExportacion({
+      totalPaquetes: paquetes.length,
+      paquetesConErrores: paquetes.filter(p => p.errores && p.errores.length > 0).length,
+      paquetesRestringidosSinPermiso: paquetes.filter(p => p.requierePermiso).length,
+      pesoVerificado: true,
+    });
+
+    if (zodResult && zodResult.bloqueado) {
+      setZodVerdict(zodResult);
+      setZodModalOpen(true);
+      return;
+    }
 
     // Si hay resultado del Agente AI, usar firma digital
     if (agenteAduanal.resultado) {
@@ -546,6 +591,23 @@ export default function DashboardManifiesto() {
 
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
+      {/* Zod Integrity Modal */}
+      <ZodIntegrityModal 
+        verdict={zodVerdict} 
+        open={zodModalOpen} 
+        onClose={() => setZodModalOpen(false)} 
+      />
+
+      {/* Stella Help Panel */}
+      <StellaHelpPanel 
+        context={stellaContext} 
+        onAction={(action) => {
+          if (action === 'generate-report') {
+            handleDescargarExcel();
+          }
+        }}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">

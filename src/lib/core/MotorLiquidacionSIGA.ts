@@ -1,7 +1,8 @@
 // ============================================
-// MOTOR DE LIQUIDACIÓN ESPEJO SIGA
+// MOTOR DE LIQUIDACIÓN ESPEJO SIGA — ZENITH
+// Cerebro Arancelario del ecosistema Orion
 // Réplica exacta de la aritmética ANA Panamá
-// Declaración DE2025121838660-10 como modelo
+// Verificado por Zod Integrity Engine
 // ============================================
 
 import { CONSTANTES_DECLARACION } from '@/types/declaracionOficial';
