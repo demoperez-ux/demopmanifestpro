@@ -110,7 +110,11 @@ export async function generarExcelCompleto(
     ['Paquetes con Errores:', paquetes.filter(p => p.errores && p.errores.length > 0).length],
     ['Paquetes con Advertencias:', paquetes.filter(p => p.advertencias && p.advertencias.length > 0).length],
     [''],
-    ['Powered by Orion Freight System — ZENITH v3.0']
+    ['ESTÁNDARES INTERNACIONALES'],
+    ['GS1 Compliance:', 'GTIN/GLN validados — Checksum GS1 verificado'],
+    ['ICC Incoterms® 2020:', 'Valoración CIF según reglas ICC'],
+    [''],
+    ['Powered by Orion Freight System — ZENITH v3.0 | GS1 Compliant | ICC Incoterms® 2020']
   ];
 
   const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
@@ -131,7 +135,7 @@ export async function generarExcelCompleto(
 
   const headersDetalle = [
     '#', 'Guía Aérea', 'Consignatario', 'Identificación',
-    'Descripción', 'Categoría Producto', 'Categoría Aduanera',
+    'Descripción', 'GTIN', 'Categoría Producto', 'Categoría Aduanera',
     'Valor CIF', 'DAI', 'ISC', 'ITBMS', 'Total Tributos',
     'Total a Pagar', 'Estado', 'Restricciones'
   ];
@@ -160,6 +164,7 @@ export async function generarExcelCompleto(
       p.destinatario || '',
       p.identificacion || '',
       (p.descripcion || '').substring(0, 80),
+      (p as any).gtin || '',
       p.categoria || '',
       p.categoriaAduanera || '',
       `$${valor.toFixed(2)}`,

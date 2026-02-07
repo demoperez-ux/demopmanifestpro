@@ -2,12 +2,14 @@
  * ZOD INTEGRITY ENGINE
  * Motor de validación e integridad de datos
  * Guardián implacable — Precisión 0% de error
+ * Incluye validación GS1 (GTIN/GLN) e Incoterms 2020
  */
 
 import CryptoJS from 'crypto-js';
 import { ZodVerdict } from '@/components/zenith/ZodIntegrityModal';
 import { ConfigService } from '@/lib/config/ConfigService';
 import { calcularHonorarioCorredor } from '@/lib/financiero/honorariosCorredor';
+import { zodValidarIdentificadorGS1 } from '@/lib/gs1/ValidadorGS1';
 
 /**
  * Genera un hash SHA-256 para firma de integridad
@@ -256,4 +258,57 @@ export function validarModificacionPostValidacion(params: {
     accionRequerida: 'Este evento ha sido registrado. Para modificaciones post-firma, utilice el proceso de Rectificación Voluntaria.',
     hashVerificacion: generarSelloInexpugnabilidad(hashData),
   };
+}
+
+// Re-export GS1 validation for convenience
+export { zodValidarIdentificadorGS1 } from '@/lib/gs1/ValidadorGS1';
+
+/**
+ * Valida Incoterm y coherencia de costos (Zod)
+ */
+export function validarCoherenciaIncoterm(params: {
+  incoterm: string;
+  valorDeclarado: number;
+  fleteProporcionado: boolean;
+  seguroProporcionado: boolean;
+}): ZodVerdict | null {
+  // EXW requiere flete y seguro obligatorios
+  if (params.incoterm === 'EXW' && !params.fleteProporcionado) {
+    const hashData = `incoterm:exw:no_flete:${params.valorDeclarado}:${Date.now()}`;
+    return {
+      bloqueado: false,
+      tipo: 'cumplimiento',
+      titulo: 'Incoterm EXW — Flete No Desglosado',
+      descripcion: `Bajo Incoterm EXW, el flete internacional es obligatorio para calcular el CIF. Se usó estimación automática.`,
+      detalles: [
+        `Incoterm: EXW (Ex Works)`,
+        `Valor declarado: $${params.valorDeclarado.toFixed(2)}`,
+        'El flete fue estimado al 7% del valor FOB',
+        'Art. 8 Acuerdo Valoración OMC — Ajustes al valor de transacción',
+      ],
+      accionRequerida: 'Proporcione el flete real para una liquidación precisa.',
+      hashVerificacion: generarSelloInexpugnabilidad(hashData),
+    };
+  }
+
+  // CIF/CIP requiere seguro desglosado
+  if ((params.incoterm === 'CIF' || params.incoterm === 'CIP') && !params.seguroProporcionado) {
+    const hashData = `incoterm:cif:no_seguro:${params.valorDeclarado}:${Date.now()}`;
+    return {
+      bloqueado: false,
+      tipo: 'cumplimiento',
+      titulo: `Incoterm ${params.incoterm} — Seguro No Desglosado`,
+      descripcion: `Bajo Incoterm ${params.incoterm}, Zod requiere que el seguro esté desglosado en la factura comercial.`,
+      detalles: [
+        `Incoterm: ${params.incoterm}`,
+        `Valor declarado: $${params.valorDeclarado.toFixed(2)}`,
+        'El seguro fue estimado al 1% del valor',
+        'Solicite factura con desglose de seguro al proveedor',
+      ],
+      accionRequerida: 'Solicite al exportador la póliza de seguro con valor desglosado.',
+      hashVerificacion: generarSelloInexpugnabilidad(hashData),
+    };
+  }
+
+  return null;
 }
