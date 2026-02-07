@@ -899,6 +899,15 @@ export default function DashboardManifiesto() {
                 paquetesConErrores={paquetes.filter(p => p.errores && p.errores.length > 0).length}
                 paquetesRestringidos={conRestricciones.length}
                 valorCIFTotal={metricas.valorCIFTotal}
+                pesoDeclarado={paquetes.reduce((sum, p) => sum + (p.peso || 0), 0)}
+                pesoVerificado={paquetes.reduce((sum, p) => sum + (p.peso || 0), 0)}
+                tipoCarga="courier"
+                paisOrigen="US"
+                mawb={manifiesto?.mawb}
+                onZodBloqueo={(verdict) => {
+                  setZodVerdict(verdict);
+                  setZodModalOpen(true);
+                }}
               />
             </TabsContent>
 

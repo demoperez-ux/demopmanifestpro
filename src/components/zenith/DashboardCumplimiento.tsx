@@ -8,7 +8,7 @@ import { useState, useMemo } from 'react';
 import {
   Shield, ShieldCheck, ShieldAlert, CheckCircle2, AlertTriangle,
   Users, FileCheck, Lock, Sparkles, ArrowRight, Eye,
-  ClipboardCheck, TrendingUp, BarChart3, Activity
+  ClipboardCheck, TrendingUp, BarChart3, Activity, Radar
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,19 +16,44 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MotorCumplimientoOEA, ItemChecklistOEA, MetricasOEA, ResultadoMatrizRiesgo } from '@/lib/compliance/MotorCumplimientoOEA';
+import { MotorCumplimientoOEA, ItemChecklistOEA, MetricasOEA, ResultadoMatrizRiesgo as ResultadoMatrizOEALegacy } from '@/lib/compliance/MotorCumplimientoOEA';
 import { GestorAsociadosNegocio, AsociadoNegocio, ResultadoDebidaDiligencia } from '@/lib/compliance/GestorAsociadosNegocio';
+import { RadarRiesgoOEA } from '@/components/zenith/RadarRiesgoOEA';
+import { ParametrosEvaluacion, ResultadoMatrizRiesgo as ResultadoMatrizNueva } from '@/lib/compliance/MatrizRiesgoOEA';
+import { ZodVerdict } from '@/components/zenith/ZodIntegrityModal';
 
 interface Props {
   totalPaquetes?: number;
   paquetesConErrores?: number;
   paquetesRestringidos?: number;
   valorCIFTotal?: number;
+  pesoDeclarado?: number;
+  pesoVerificado?: number;
+  tipoCarga?: 'general' | 'granel' | 'courier';
+  paisOrigen?: string;
+  clienteOEA?: boolean;
+  transportistaBASC?: boolean;
+  mawb?: string;
+  onZodBloqueo?: (verdict: ZodVerdict) => void;
 }
 
-export function DashboardCumplimiento({ totalPaquetes = 0, paquetesConErrores = 0, paquetesRestringidos = 0, valorCIFTotal = 0 }: Props) {
+export function DashboardCumplimiento({
+  totalPaquetes = 0,
+  paquetesConErrores = 0,
+  paquetesRestringidos = 0,
+  valorCIFTotal = 0,
+  pesoDeclarado = 0,
+  pesoVerificado = 0,
+  tipoCarga = 'courier',
+  paisOrigen = 'US',
+  clienteOEA = false,
+  transportistaBASC = false,
+  mawb,
+  onZodBloqueo,
+}: Props) {
   const [checklist, setChecklist] = useState<ItemChecklistOEA[]>(() => MotorCumplimientoOEA.inicializarChecklist());
-  const [activeTab, setActiveTab] = useState('salud');
+  const [activeTab, setActiveTab] = useState('radar');
+  const [inspeccionCompletada, setInspeccionCompletada] = useState(false);
 
   const metricas = useMemo(() => MotorCumplimientoOEA.obtenerMetricas(), [checklist]);
   const metricasBASC = useMemo(() => GestorAsociadosNegocio.obtenerMetricasBASC(), []);
@@ -42,6 +67,35 @@ export function DashboardCumplimiento({ totalPaquetes = 0, paquetesConErrores = 
     incidentesPrevios: 0,
     diasUltimaAuditoria: undefined,
   }), [totalPaquetes, paquetesConErrores, paquetesRestringidos, valorCIFTotal, metricas]);
+
+  // Parámetros para el RadarRiesgoOEA
+  const parametrosRadar: ParametrosEvaluacion = useMemo(() => ({
+    clienteOEA,
+    transportistasBASC: transportistaBASC,
+    pesoDeclarado,
+    pesoVerificado,
+    tipoCarga,
+    paisOrigen,
+    zonaAltoRiesgo: false,
+    productosRestringidosMINSA: paquetesRestringidos,
+    productosRestringidosMIDA: 0,
+    totalProductos: totalPaquetes,
+    mawb,
+  }), [clienteOEA, transportistaBASC, pesoDeclarado, pesoVerificado, tipoCarga, paisOrigen, paquetesRestringidos, totalPaquetes, mawb]);
+
+  const handleZodBloqueo = (resultado: ResultadoMatrizNueva) => {
+    if (onZodBloqueo) {
+      onZodBloqueo({
+        bloqueado: true,
+        tipo: 'cumplimiento',
+        titulo: 'Veredicto de Zod: Integridad Comprometida',
+        descripcion: resultado.mensajeZod || 'Operación bloqueada por protocolo de seguridad OEA.',
+        detalles: resultado.factores.filter(f => f.puntos > 0).map(f => `${f.nombre}: +${f.puntos} pts — ${f.descripcion}`),
+        accionRequerida: 'Se requiere intervención del Oficial de Seguridad BASC antes de proceder.',
+        hashVerificacion: resultado.hashAuditoria,
+      });
+    }
+  };
 
   const handleCheckItem = (itemId: string, checked: boolean) => {
     if (checked) {
@@ -159,10 +213,14 @@ export function DashboardCumplimiento({ totalPaquetes = 0, paquetesConErrores = 
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+        <TabsList className="grid w-full max-w-3xl grid-cols-4">
+          <TabsTrigger value="radar" className="gap-2">
+            <Radar className="w-4 h-4" />
+            Radar OEA
+          </TabsTrigger>
           <TabsTrigger value="salud" className="gap-2">
             <Activity className="w-4 h-4" />
-            Matriz de Riesgo
+            Factores Riesgo
           </TabsTrigger>
           <TabsTrigger value="checklist" className="gap-2">
             <ClipboardCheck className="w-4 h-4" />
@@ -173,6 +231,16 @@ export function DashboardCumplimiento({ totalPaquetes = 0, paquetesConErrores = 
             Alertas ({metricas.alertasActivas})
           </TabsTrigger>
         </TabsList>
+
+        {/* Radar OEA - Nuevo */}
+        <TabsContent value="radar" className="space-y-4 mt-4">
+          <RadarRiesgoOEA
+            parametros={parametrosRadar}
+            onBloqueado={handleZodBloqueo}
+            inspeccionCompletada={inspeccionCompletada}
+            onSubirFotosInspeccion={() => setInspeccionCompletada(true)}
+          />
+        </TabsContent>
 
         {/* Matriz de Riesgo */}
         <TabsContent value="salud" className="space-y-4 mt-4">
