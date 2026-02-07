@@ -227,6 +227,57 @@ export type Database = {
         }
         Relationships: []
       }
+      inspecciones_17pts: {
+        Row: {
+          certificada_at: string | null
+          created_at: string
+          estado: string
+          fotos_urls: Json
+          hash_certificacion: string | null
+          id: string
+          items: Json
+          mawb: string
+          nivel_riesgo: string | null
+          notas: string | null
+          operador_id: string
+          progreso: number
+          score_riesgo: number | null
+          updated_at: string
+        }
+        Insert: {
+          certificada_at?: string | null
+          created_at?: string
+          estado?: string
+          fotos_urls?: Json
+          hash_certificacion?: string | null
+          id?: string
+          items?: Json
+          mawb: string
+          nivel_riesgo?: string | null
+          notas?: string | null
+          operador_id: string
+          progreso?: number
+          score_riesgo?: number | null
+          updated_at?: string
+        }
+        Update: {
+          certificada_at?: string | null
+          created_at?: string
+          estado?: string
+          fotos_urls?: Json
+          hash_certificacion?: string | null
+          id?: string
+          items?: Json
+          mawb?: string
+          nivel_riesgo?: string | null
+          notas?: string | null
+          operador_id?: string
+          progreso?: number
+          score_riesgo?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
