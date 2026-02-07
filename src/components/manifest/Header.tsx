@@ -1,10 +1,14 @@
-import { Anchor, BookOpen, History, Home, Inbox, Shield, Sparkles, UserPlus, ShieldCheck } from 'lucide-react';
+import { Anchor, BookOpen, History, Home, Inbox, Shield, Sparkles, UserPlus, ShieldCheck, FileSignature } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Header() {
   const location = useLocation();
+  const { role } = useAuth();
+  const esCorredor = role === 'revisor' || role === 'admin';
+  
   const isHome = location.pathname === '/';
   const isHistorial = location.pathname === '/historial';
   const isInbox = location.pathname === '/stella-inbox';
@@ -12,6 +16,7 @@ export function Header() {
   const isConsultas = location.pathname === '/consultas-clasificatorias';
   const isOnboarding = location.pathname === '/onboarding-corredor';
   const isCumplimiento = location.pathname === '/red-cumplimiento';
+  const isPortalCorredor = location.pathname === '/portal-corredor';
 
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md shadow-lg zenith-border-glow">
@@ -105,6 +110,19 @@ export function Header() {
                   UNCAP
                 </Button>
               </Link>
+              {/* Portal del Corredor — Solo visible para Corredor/Admin */}
+              {esCorredor && (
+                <Link to="/portal-corredor">
+                  <Button 
+                    variant={isPortalCorredor ? 'default' : 'ghost'} 
+                    size="sm" 
+                    className="gap-2 border border-primary/30"
+                  >
+                    <FileSignature className="h-4 w-4" />
+                    Portal Corredor
+                  </Button>
+                </Link>
+              )}
             </nav>
           </div>
           <div className="hidden lg:flex items-center gap-4">

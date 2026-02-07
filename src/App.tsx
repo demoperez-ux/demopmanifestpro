@@ -17,6 +17,7 @@ import HorizonteCarga from "./pages/HorizonteCarga";
 import ConsultasClasificatoriasPage from "./pages/ConsultasClasificatorias";
 import OnboardingCorredor from "./pages/OnboardingCorredor";
 import RedCumplimientoUNCAP from "./pages/RedCumplimientoUNCAP";
+import PortalCorredorPage from "./pages/PortalCorredorPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -128,6 +129,13 @@ const App: React.FC = () => {
               <Route path="/red-cumplimiento" element={
                 <ProtectedRoute>
                   <RedCumplimientoUNCAP />
+                </ProtectedRoute>
+              } />
+              
+              {/* Portal del Corredor — Solo Corredor (revisor) y admin */}
+              <Route path="/portal-corredor" element={
+                <ProtectedRoute allowedRoles={['revisor', 'admin']}>
+                  <PortalCorredorPage />
                 </ProtectedRoute>
               } />
               

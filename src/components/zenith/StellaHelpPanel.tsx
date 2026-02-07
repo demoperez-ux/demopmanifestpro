@@ -6,12 +6,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Sparkles, MessageCircle, CheckCircle2, AlertTriangle,
-  FileSpreadsheet, ArrowRight, X, Lightbulb, Heart
+  FileSpreadsheet, ArrowRight, X, Lightbulb, Heart, Lock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PLATFORM_INFO } from '@/lib/companyConfig';
+import { useAuth, AppRole } from '@/contexts/AuthContext';
 
 export interface StellaContext {
   /** Is this a new user / first time on this section? */
@@ -56,42 +57,82 @@ interface Props {
 }
 
 export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
+  const { role } = useAuth();
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [isExpanded, setIsExpanded] = useState(!compact);
 
   const messages = useMemo(() => {
     const msgs: StellaMessage[] = [];
+    const esOperador = role === 'operador';
+    const esCorredor = role === 'revisor' || role === 'admin';
 
-    // Onboarding for new users
+    // Onboarding contextual por rol
     if (context.isNewUser || (!context.totalPaquetes && !context.seccionActiva)) {
-      msgs.push({
-        id: 'onboarding',
-        text: 'Soy Stella, tu consultora normativa. Vamos a preparar este expediente juntos. Recuerda: tú das el Aprobado Final. Comienza cargando un manifiesto de transporte.',
-        type: 'greeting',
-        icon: <Heart className="w-4 h-4" />,
-        dismissible: true,
-      });
+      if (esOperador) {
+        msgs.push({
+          id: 'onboarding-operador',
+          text: 'Soy Stella, tu entrenadora operativa. Vamos a preparar este expediente juntos. Yo te guío con las clasificaciones, permisos y cálculos. Cuando todo esté listo, lo enviaremos al Corredor para su Veredicto Profesional.',
+          type: 'greeting',
+          icon: <Heart className="w-4 h-4" />,
+          dismissible: true,
+        });
+      } else if (esCorredor) {
+        msgs.push({
+          id: 'onboarding-corredor',
+          text: 'Bienvenido al centro de control. Tiene expedientes preparados por el equipo de analistas esperando su Veredicto Profesional. Acceda al Portal del Corredor para revisar las aprobaciones pendientes.',
+          type: 'greeting',
+          icon: <Heart className="w-4 h-4" />,
+          dismissible: true,
+          action: {
+            label: 'Ir al Portal del Corredor',
+            onClick: () => onAction?.('go-portal-corredor'),
+          },
+        });
+      } else {
+        msgs.push({
+          id: 'onboarding',
+          text: 'Soy Stella, tu consultora normativa. Comienza cargando un manifiesto de transporte.',
+          type: 'greeting',
+          icon: <Heart className="w-4 h-4" />,
+          dismissible: true,
+        });
+      }
     }
 
-    // Process ready to export
+    // Process ready to export — role-aware messaging
     if (context.processingProgress === 100 && context.listoParaExportar) {
-      msgs.push({
-        id: 'ready-export',
-        text: 'Jefe, el expediente está listo para tu revisión en el Portal del Corredor. ¿Deseas revisar el Informe de Riesgo antes de dar el Aprobado Final?',
-        type: 'proactive',
-        icon: <FileSpreadsheet className="w-4 h-4" />,
-        action: {
-          label: 'Generar Reporte',
-          onClick: () => onAction?.('generate-report'),
-        },
-      });
+      if (esOperador) {
+        msgs.push({
+          id: 'ready-send-review',
+          text: 'El expediente está completo. He preparado el Resumen de Auditoría para el Corredor. Cuando estés listo, envíalo a revisión para obtener el Veredicto Profesional.',
+          type: 'proactive',
+          icon: <FileSpreadsheet className="w-4 h-4" />,
+          action: {
+            label: 'Enviar a Revisión',
+            onClick: () => onAction?.('send-to-review'),
+          },
+        });
+      } else if (esCorredor) {
+        msgs.push({
+          id: 'ready-export',
+          text: 'El expediente está listo para su Veredicto Profesional. Revise el Informe de Confianza de Zod y proceda con la firma si todo está en orden.',
+          type: 'proactive',
+          icon: <FileSpreadsheet className="w-4 h-4" />,
+          action: {
+            label: 'Revisar y Firmar',
+            onClick: () => onAction?.('review-and-sign'),
+          },
+        });
+      }
     }
 
-    // Processing in progress
+    // Processing in progress — instructive for operador
     if (context.processingProgress !== undefined && context.processingProgress > 0 && context.processingProgress < 100) {
       msgs.push({
         id: 'processing',
-        text: `Procesando ${context.totalPaquetes || 0} guías... Estoy triangulando datos y preparando las notas técnicas con base legal. ${context.processingProgress}% completado.`,
+        text: esOperador
+          ? `Procesando ${context.totalPaquetes || 0} guías... Estoy triangulando datos y preparando las notas técnicas. ${context.processingProgress}% completado. Cuando termine, revisa los resultados antes de enviar al Corredor.`
+          : `Procesando ${context.totalPaquetes || 0} guías... ${context.processingProgress}% completado.`,
         type: 'suggestion',
         icon: <Sparkles className="w-4 h-4 animate-spin-slow" />,
       });
@@ -117,11 +158,13 @@ export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
       });
     }
 
-    // Validation errors
+    // Validation errors — role-aware
     if (context.erroresValidacion && context.erroresValidacion > 0) {
       msgs.push({
         id: 'validation-errors',
-        text: `He detectado ${context.erroresValidacion} discrepancias documentales que necesitan la revisión del corredor. Zod las marcó para el Informe de Riesgo.`,
+        text: esOperador
+          ? `He detectado ${context.erroresValidacion} discrepancias que debes corregir antes de enviar a revisión. Haz clic en cada alerta para ver cómo resolverlo.`
+          : `He detectado ${context.erroresValidacion} discrepancias documentales que requieren su criterio profesional. Zod las marcó en el Informe de Confianza.`,
         type: 'alert',
         icon: <AlertTriangle className="w-4 h-4" />,
         action: {
@@ -194,7 +237,7 @@ export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
             <Sparkles className="w-5 h-5" />
             <span className="font-display tracking-wide">{stellaName}</span>
             <Badge variant="outline" className="ml-2 border-primary/30 text-primary text-[10px]">
-              Consultora Normativa
+              {role === 'operador' ? 'Entrenadora del Analista' : role === 'revisor' ? 'Enlace del Corredor' : 'Consultora Normativa'}
             </Badge>
           </CardTitle>
           <Button 
@@ -212,7 +255,11 @@ export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
           {messages.length === 0 ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CheckCircle2 className="w-4 h-4 text-success" />
-              <span>Todo en orden, jefe. El expediente está siendo monitoreado. Cuando estés listo, revisa el Portal del Corredor.</span>
+              <span>
+                {role === 'operador' 
+                  ? 'Todo en orden. Cuando completes el expediente, envíalo al Corredor para su Veredicto Profesional.'
+                  : 'Todo en orden. El expediente está siendo monitoreado. Acceda al Portal del Corredor para las aprobaciones pendientes.'}
+              </span>
             </div>
           ) : (
             messages.map(msg => (
