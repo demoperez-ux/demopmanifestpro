@@ -1,11 +1,13 @@
 /**
- * GENERACIÓN DE EXCEL COMPLETO
+ * GENERACIÓN DE EXCEL COMPLETO — ZENITH
  * 
  * Genera un reporte Excel con 4 hojas:
- * - Resumen Ejecutivo
+ * - Resumen Ejecutivo (con Certificación ZENITH)
  * - Detalle de Paquetes
  * - Productos Restringidos
  * - Liquidación y Honorarios (Feb 2026 - Res. 222)
+ * 
+ * Auditado por Stella Help | Verificado por Zod Integrity Engine
  */
 
 import * as XLSX from 'xlsx';
@@ -13,6 +15,7 @@ import { saveAs } from 'file-saver';
 import { FilaProcesada } from '@/lib/workers/procesador.worker';
 import { ManifiestoGuardado } from '@/lib/db/database';
 import { calcularHonorarioCorredor } from '@/lib/financiero/honorariosCorredor';
+import { generarSelloZenithExportacion } from '@/lib/zenith/zodIntegrityEngine';
 
 /**
  * Genera Excel completo con todas las hojas
@@ -67,8 +70,20 @@ export async function generarExcelCompleto(
   // Honorarios del corredor (Res. 222 de 2025)
   const honorario = calcularHonorarioCorredor(valorCIFTotal);
 
+  // ZENITH certification seal
+  const timestamp = new Date().toISOString();
+  const sello = generarSelloZenithExportacion(
+    manifiesto.mawb || 'N/A',
+    paquetes.length,
+    valorCIFTotal,
+    timestamp
+  );
+
   const resumenData = [
-    ['RESUMEN EJECUTIVO DEL MANIFIESTO'],
+    ['RESUMEN EJECUTIVO DEL MANIFIESTO — ZENITH'],
+    [''],
+    [sello.certificacion],
+    [sello.selloCompleto],
     [''],
     ['INFORMACIÓN GENERAL'],
     ['MAWB:', manifiesto.mawb || 'N/A'],
@@ -93,7 +108,9 @@ export async function generarExcelCompleto(
     ['ALERTAS'],
     ['Paquetes con Restricciones:', paquetes.filter(p => p.requierePermiso).length],
     ['Paquetes con Errores:', paquetes.filter(p => p.errores && p.errores.length > 0).length],
-    ['Paquetes con Advertencias:', paquetes.filter(p => p.advertencias && p.advertencias.length > 0).length]
+    ['Paquetes con Advertencias:', paquetes.filter(p => p.advertencias && p.advertencias.length > 0).length],
+    [''],
+    ['Powered by Orion Freight System — ZENITH v3.0']
   ];
 
   const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);

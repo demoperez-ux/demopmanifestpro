@@ -1,12 +1,13 @@
-// IPL Group S.A. - Company Configuration
-// IPL Customs AI - Intelligent Customs Broker Platform
+// ZENITH - Centro de Comando Aduanero
+// "La cumbre del control aduanero"
+// Powered by Orion Freight System
 // Developed by DemoPerez © 2025
 
 export const COMPANY_INFO = {
-  name: 'IPL Group S.A.',
-  shortName: 'IPL Customs AI',
-  tradeName: 'IPL Customs AI',
-  tagline: 'Intelligent Customs Broker',
+  name: 'ZENITH',
+  shortName: 'ZENITH',
+  tradeName: 'ZENITH',
+  tagline: 'La cumbre del control aduanero',
   ruc: '155678901-2-2025',
   location: 'Panamá, República de Panamá',
   country: 'República de Panamá',
@@ -14,24 +15,37 @@ export const COMPANY_INFO = {
   district: 'Panamá',
   phone: '+507 238-4500',
   whatsapp: '+507 6500-0000',
-  email: 'operaciones@iplgroup.pa',
-  complianceEmail: 'compliance@iplgroup.pa',
-  infoEmail: 'info@iplgroup.pa',
-  website: 'www.iplgroup.pa',
+  email: 'operaciones@zenith.pa',
+  complianceEmail: 'compliance@zenith.pa',
+  infoEmail: 'info@zenith.pa',
+  website: 'www.zenith.pa',
   license: 'Agente de Carga Autorizado ANA',
 };
 
 export const PLATFORM_INFO = {
-  name: 'IPL Customs AI',
-  fullName: 'IPL Customs AI - Intelligent Broker',
-  version: '2.0',
-  description: 'Plataforma de liquidación aduanera inteligente con IA',
+  name: 'ZENITH',
+  fullName: 'ZENITH — Centro de Comando Aduanero',
+  version: '3.0',
+  description: 'La cumbre del control aduanero',
+  poweredBy: 'Powered by Orion Freight System',
+  engines: {
+    stella: {
+      name: 'Stella Help',
+      role: 'IA Proactiva — Entrenadora y Asistente Operativa',
+      color: 'cyan',
+    },
+    zod: {
+      name: 'Zod Integrity Engine',
+      role: 'Guardián de Precisión — Motor de Integridad 0%',
+      color: 'amber',
+    },
+  },
 };
 
 export const DEVELOPER_INFO = {
   name: 'DemoPerez',
   year: 2025,
-  version: '2.0',
+  version: '3.0',
 };
 
 export const REGULATORY_INFO = {
@@ -126,7 +140,7 @@ export function getComplianceDeclaration(): string[] {
     'DECLARACIÓN DE CUMPLIMIENTO REGULATORIO',
     '',
     `Este documento ha sido generado por ${PLATFORM_INFO.name}`,
-    `plataforma de ${COMPANY_INFO.name}`,
+    `${PLATFORM_INFO.poweredBy}`,
     'en cumplimiento con las siguientes regulaciones:',
     '',
     ...REGULATORY_INFO.laws.map(law => `✓ ${law}`),
@@ -150,6 +164,7 @@ export function getCompanyFooter(): string[] {
     `Tel: ${COMPANY_INFO.phone} | Email: ${COMPANY_INFO.infoEmail}`,
     '',
     `${PLATFORM_INFO.name} v${PLATFORM_INFO.version}`,
+    `${PLATFORM_INFO.poweredBy}`,
     `Desarrollado por ${DEVELOPER_INFO.name} © ${DEVELOPER_INFO.year}`,
     'En cumplimiento con regulaciones ANA y MINSA',
     '═══════════════════════════════════════════════════════════════',

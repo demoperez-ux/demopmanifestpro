@@ -1,6 +1,7 @@
 // ============================================
-// CONFIGURACIÓN CENTRALIZADA DE UMBRALES
-// H01: Fuente única de verdad para todos los módulos
+// ZENITH — CEREBRO ARANCELARIO
+// Configuración centralizada del ecosistema Orion
+// Fuente única de verdad para todos los módulos
 // ============================================
 
 import { ConfiguracionLiquidacion, DEFAULT_CONFIG_LIQUIDACION } from '@/types/aduanas';

@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { z } from 'zod';
 import { PLATFORM_INFO } from '@/lib/companyConfig';
-import logoIPL from '@/assets/logo-ipl.png';
+import { Shield, Sparkles } from 'lucide-react';
 
 // Esquemas de validación
 const loginSchema = z.object({
@@ -146,20 +146,19 @@ const Auth: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md glass-panel-stella">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img 
-              src={logoIPL} 
-              alt="IPL Customs AI" 
-              className="h-16 w-auto"
-            />
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary/20 via-background to-warning/20 border border-primary/30 flex items-center justify-center zenith-glow">
+              <span className="text-3xl font-bold font-display text-gradient">Z</span>
+            </div>
           </div>
-          <CardTitle className="text-2xl">{PLATFORM_INFO.name}</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-display tracking-wider text-gradient">{PLATFORM_INFO.name}</CardTitle>
+          <CardDescription className="text-muted-foreground">
             {PLATFORM_INFO.description}
           </CardDescription>
+          <p className="text-[10px] text-muted-foreground/50 mt-1">{PLATFORM_INFO.poweredBy}</p>
         </CardHeader>
         
         <CardContent>

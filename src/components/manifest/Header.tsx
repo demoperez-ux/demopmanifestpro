@@ -1,33 +1,31 @@
-import { MapPin, History, Home, Plane } from 'lucide-react';
+import { History, Home, Shield, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { COMPANY_INFO, DEVELOPER_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
+import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
 import { Button } from '@/components/ui/button';
-import logoIPL from '@/assets/logo-ipl.png';
 
 export function Header() {
   const location = useLocation();
   const isHistorial = location.pathname === '/historial';
 
   return (
-    <header className="border-b-2 border-primary/30 bg-gradient-to-r from-primary/10 via-background to-primary/10 shadow-lg">
+    <header className="border-b border-border bg-card/80 backdrop-blur-md shadow-lg zenith-border-glow">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-4 group">
+              {/* ZENITH Logo Mark */}
               <div className="relative">
-                <img 
-                  src={logoIPL} 
-                  alt="IPL Customs AI - Intelligent Broker" 
-                  className="h-16 md:h-20 w-auto drop-shadow-lg transition-transform group-hover:scale-105"
-                />
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br from-primary/20 via-background to-warning/20 border border-primary/30 flex items-center justify-center transition-transform group-hover:scale-105 zenith-glow">
+                  <span className="text-2xl md:text-3xl font-bold font-display text-gradient">Z</span>
+                </div>
                 <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1">
-                  <Plane className="w-3 h-3" />
+                  <Shield className="w-3 h-3" />
                 </div>
               </div>
               <div className="hidden sm:flex flex-col">
-                <span className="text-xl font-bold text-primary tracking-tight">IPL Customs AI</span>
-                <span className="text-sm font-medium text-muted-foreground">Intelligent Broker Panama</span>
-                <span className="text-xs text-muted-foreground/70">Sistema de Corretaje Aduanal</span>
+                <span className="text-xl font-bold font-display text-gradient tracking-wider">ZENITH</span>
+                <span className="text-xs font-medium text-muted-foreground tracking-wide">{COMPANY_INFO.tagline}</span>
+                <span className="text-[10px] text-muted-foreground/50 tracking-wider">{PLATFORM_INFO.poweredBy}</span>
               </div>
             </Link>
             <nav className="hidden md:flex items-center gap-2 ml-6 border-l border-border pl-6">
@@ -53,17 +51,23 @@ export function Header() {
               </Link>
             </nav>
           </div>
-          <div className="hidden lg:flex flex-col items-end text-right">
-            <div className="flex items-center gap-1 text-sm font-medium text-foreground">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span>{COMPANY_INFO.location}</span>
+          <div className="hidden lg:flex items-center gap-4">
+            {/* Engine indicators */}
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
+                <Sparkles className="w-3 h-3 text-stella" />
+                <span className="text-stella-light font-medium">Stella</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/20">
+                <Shield className="w-3 h-3 text-zod" />
+                <span className="text-zod-light font-medium">Zod</span>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {PLATFORM_INFO.name} v{PLATFORM_INFO.version}
-            </p>
-            <p className="text-xs text-muted-foreground/60">
-              {DEVELOPER_INFO.name}
-            </p>
+            <div className="flex flex-col items-end text-right border-l border-border pl-4">
+              <p className="text-xs text-muted-foreground">
+                v{PLATFORM_INFO.version}
+              </p>
+            </div>
           </div>
         </div>
       </div>

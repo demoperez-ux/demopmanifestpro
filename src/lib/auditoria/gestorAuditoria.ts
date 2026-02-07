@@ -1,6 +1,7 @@
 // ============================================
-// GESTOR DE AUDITORÍA v3.0
+// GESTOR DE AUDITORÍA v3.0 — ZENITH
 // Registra todos los cambios en liquidaciones
+// Cada entrada verificada por Zod Integrity Engine
 // CORRECCIÓN H04: Hash SHA-256 encadenado para integridad
 // ============================================
 
@@ -38,7 +39,7 @@ export interface RegistroAuditoria {
 // Caché en memoria para lecturas rápidas
 let cacheRegistros: RegistroAuditoria[] = [];
 let cacheInicializado = false;
-let ultimoHash: string = 'GENESIS_BLOCK_IPL_CUSTOMS_AI_2024';
+let ultimoHash: string = 'GENESIS_BLOCK_ZENITH_2025';
 let ultimaSecuencia: number = 0;
 
 const VERSION_AUDITORIA = '3.0';
@@ -391,7 +392,7 @@ export class GestorAuditoria {
       registros.sort((a, b) => (a.numeroSecuencia || 0) - (b.numeroSecuencia || 0));
       
       const errores: string[] = [];
-      let hashEsperado = 'GENESIS_BLOCK_IPL_CUSTOMS_AI_2024';
+      let hashEsperado = 'GENESIS_BLOCK_ZENITH_2025';
       
       for (const registro of registros) {
         // Verificar que el hash anterior coincide

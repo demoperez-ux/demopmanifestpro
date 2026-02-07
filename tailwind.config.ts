@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Rajdhani", "Inter", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
       colors: {
@@ -53,6 +54,16 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        stella: {
+          DEFAULT: "hsl(var(--stella))",
+          foreground: "hsl(var(--stella-foreground))",
+          light: "hsl(var(--stella-light))",
+        },
+        zod: {
+          DEFAULT: "hsl(var(--zod))",
+          foreground: "hsl(var(--zod-foreground))",
+          light: "hsl(var(--zod-light))",
         },
         success: {
           DEFAULT: "hsl(var(--success))",
@@ -99,6 +110,8 @@ export default {
         'xl': 'var(--shadow-xl)',
         'glow': 'var(--shadow-glow)',
         'card': 'var(--shadow-card)',
+        'glow-stella': 'var(--shadow-glow-stella)',
+        'glow-zod': 'var(--shadow-glow-zod)',
       },
       keyframes: {
         "accordion-down": {
