@@ -25,20 +25,28 @@ export const COMPANY_INFO = {
 export const PLATFORM_INFO = {
   name: 'ZENITH',
   fullName: 'ZENITH — Centro de Comando Aduanero',
-  version: '3.0',
+  version: '4.0',
   description: 'La cumbre del control aduanero',
   poweredBy: 'Powered by Orion Freight System',
+  standard: 'Gold Standard — OEA & BASC v6-2022',
   engines: {
     stella: {
       name: 'Stella Help',
       role: 'IA Proactiva — Entrenadora y Asistente Operativa',
       color: 'cyan',
+      compliance: 'Monitoreo OEA + Ruta Crítica + Entrenamiento BASC',
     },
     zod: {
       name: 'Zod Integrity Engine',
       role: 'Guardián de Precisión — Motor de Integridad 0%',
       color: 'amber',
+      compliance: 'Debida Diligencia + Sellos/Precintos + Bloqueo OFAC/ONU',
     },
+  },
+  compliance: {
+    oea: 'Operador Económico Autorizado — Resolución ANA',
+    basc: 'Business Alliance for Secure Commerce v6-2022',
+    vuce: 'Ventanilla Única de Comercio Exterior (preparado)',
   },
 };
 

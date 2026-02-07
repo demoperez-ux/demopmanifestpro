@@ -28,6 +28,8 @@ import { saveAs } from 'file-saver';
 import { StellaHelpPanel, StellaContext, StellaAlert } from '@/components/zenith/StellaHelpPanel';
 import { ZodIntegrityModal, ZodVerdict } from '@/components/zenith/ZodIntegrityModal';
 import { validarCumplimientoExportacion } from '@/lib/zenith/zodIntegrityEngine';
+import { DashboardCumplimiento } from '@/components/zenith/DashboardCumplimiento';
+import { PanelRectificacionVoluntaria } from '@/components/zenith/PanelRectificacionVoluntaria';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -410,6 +412,15 @@ export default function DashboardManifiesto() {
         mensaje: `Se detectaron ${restringidos.length} productos que requieren permisos sanitarios. Verifica los requisitos antes de proceder.`,
         severidad: restringidos.length > 5 ? 'critical' : 'warning',
         accion: 'Revisar pestaña de Restricciones',
+      });
+    }
+
+    // OEA/BASC compliance alert
+    if (paquetes.length > 0) {
+      alertas.push({
+        tipo: 'ANA',
+        mensaje: 'Auditoría BASC activa: Cada modificación es registrada en el log inmutable. Revisa el checklist OEA Pilar 2 en la pestaña de Cumplimiento.',
+        severidad: 'info',
       });
     }
 
@@ -830,10 +841,14 @@ export default function DashboardManifiesto() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="agenteAI" className="w-full">
-            <TabsList className="grid w-full grid-cols-8 mb-4">
+            <TabsList className="flex flex-wrap gap-1 h-auto p-1 mb-4">
               <TabsTrigger value="agenteAI" className="text-primary">
                 <Brain className="h-3 w-3 mr-1" />
                 Agente AI
+              </TabsTrigger>
+              <TabsTrigger value="cumplimiento" className="text-primary">
+                <Shield className="h-3 w-3 mr-1" />
+                OEA/BASC
               </TabsTrigger>
               <TabsTrigger value="geografico" className="text-emerald-600 dark:text-emerald-400">
                 <MapPin className="h-3 w-3 mr-1" />
@@ -863,6 +878,9 @@ export default function DashboardManifiesto() {
               <TabsTrigger value="restricciones">
                 Restricciones ({conRestricciones.length})
               </TabsTrigger>
+              <TabsTrigger value="rectificacion">
+                Rectificación
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="agenteAI">
@@ -873,6 +891,15 @@ export default function DashboardManifiesto() {
               <div className="mt-6">
                 <TableroPanelAprendizaje />
               </div>
+            </TabsContent>
+
+            <TabsContent value="cumplimiento">
+              <DashboardCumplimiento
+                totalPaquetes={metricas.totalPaquetes}
+                paquetesConErrores={paquetes.filter(p => p.errores && p.errores.length > 0).length}
+                paquetesRestringidos={conRestricciones.length}
+                valorCIFTotal={metricas.valorCIFTotal}
+              />
             </TabsContent>
 
             <TabsContent value="geografico">
@@ -1250,6 +1277,10 @@ export default function DashboardManifiesto() {
                   </Table>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="rectificacion">
+              <PanelRectificacionVoluntaria />
             </TabsContent>
           </Tabs>
         </CardContent>
