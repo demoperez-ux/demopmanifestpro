@@ -16,6 +16,7 @@ import StellaInbox from "./pages/StellaInbox";
 import HorizonteCarga from "./pages/HorizonteCarga";
 import ConsultasClasificatoriasPage from "./pages/ConsultasClasificatorias";
 import OnboardingCorredor from "./pages/OnboardingCorredor";
+import RedCumplimientoUNCAP from "./pages/RedCumplimientoUNCAP";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -121,6 +122,12 @@ const App: React.FC = () => {
               <Route path="/onboarding-corredor" element={
                 <ProtectedRoute>
                   <OnboardingCorredor />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/red-cumplimiento" element={
+                <ProtectedRoute>
+                  <RedCumplimientoUNCAP />
                 </ProtectedRoute>
               } />
               
