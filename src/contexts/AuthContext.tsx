@@ -10,14 +10,20 @@ import { supabase } from '@/integrations/supabase/client';
 // Tipos de rol (debe coincidir con app_role en DB)
 export type AppRole = 'operador' | 'revisor' | 'auditor' | 'admin';
 
-// Permisos por acción
+// Permisos por acción — Flujo 90/10
 export type Permission = 
-  | 'cargar_manifiesto'
+  | 'cargar_manifiesto'       // Operador: carga de datos
+  | 'clasificar_arancelaria'  // Operador: sugerencia de clasificación
+  | 'gestionar_permisos'      // Operador: trámite MIDA/MINSA
+  | 'generar_borradores'      // Operador: borradores de declaración
+  | 'tramitar_pagos'          // Operador: preparar pagos
   | 'ver_resultados'
-  | 'solicitar_revision'
-  | 'aprobar_liquidacion'
-  | 'rechazar_liquidacion'
-  | 'reclasificar'
+  | 'solicitar_revision'      // Operador: enviar a corredor
+  | 'aprobar_liquidacion'     // Corredor: aprobar expediente
+  | 'rechazar_liquidacion'    // Corredor: devolver al operador
+  | 'reclasificar'            // Corredor: corregir clasificación
+  | 'firmar_digital'          // Corredor: firma digital calificada
+  | 'transmitir_ana'          // Corredor: transmisión a ANA
   | 'exportar_reportes'
   | 'ver_auditoria'
   | 'verificar_integridad'
@@ -25,40 +31,55 @@ export type Permission =
   | 'administrar_usuarios';
 
 // Mapa de permisos por rol
+// Mapa de permisos por rol — Flujo Preparación-Validación (90/10)
+// operador = Analista (Fase 90%): Carga, clasificación sugerida, borradores
+// revisor  = Corredor de Aduana (Fase 10%): Validación, firma, transmisión
 const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
   operador: [
     'cargar_manifiesto',
-    'ver_resultados',
-    'solicitar_revision'
-  ],
-  revisor: [
-    'cargar_manifiesto',
+    'clasificar_arancelaria',
+    'gestionar_permisos',
+    'generar_borradores',
+    'tramitar_pagos',
     'ver_resultados',
     'solicitar_revision',
+    // RESTRICCIÓN: NO tiene firmar_digital ni transmitir_ana
+  ],
+  revisor: [
+    'ver_resultados',
     'aprobar_liquidacion',
     'rechazar_liquidacion',
     'reclasificar',
-    'exportar_reportes'
+    'firmar_digital',
+    'transmitir_ana',
+    'exportar_reportes',
+    // El corredor NO necesita cargar_manifiesto
   ],
   auditor: [
     'ver_resultados',
     'exportar_reportes',
     'ver_auditoria',
-    'verificar_integridad'
+    'verificar_integridad',
   ],
   admin: [
     'cargar_manifiesto',
+    'clasificar_arancelaria',
+    'gestionar_permisos',
+    'generar_borradores',
+    'tramitar_pagos',
     'ver_resultados',
     'solicitar_revision',
     'aprobar_liquidacion',
     'rechazar_liquidacion',
     'reclasificar',
+    'firmar_digital',
+    'transmitir_ana',
     'exportar_reportes',
     'ver_auditoria',
     'verificar_integridad',
     'administrar_config',
-    'administrar_usuarios'
-  ]
+    'administrar_usuarios',
+  ],
 };
 
 interface AuthContextType {
