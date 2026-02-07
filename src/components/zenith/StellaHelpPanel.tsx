@@ -66,7 +66,7 @@ export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
     if (context.isNewUser || (!context.totalPaquetes && !context.seccionActiva)) {
       msgs.push({
         id: 'onboarding',
-        text: 'Soy Stella, tu brazo derecho. Vamos a configurar este proceso juntos. Comienza cargando un manifiesto de transporte para que pueda ayudarte.',
+        text: 'Soy Stella, tu consultora normativa. Vamos a preparar este expediente juntos. Recuerda: tú das el Aprobado Final. Comienza cargando un manifiesto de transporte.',
         type: 'greeting',
         icon: <Heart className="w-4 h-4" />,
         dismissible: true,
@@ -77,7 +77,7 @@ export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
     if (context.processingProgress === 100 && context.listoParaExportar) {
       msgs.push({
         id: 'ready-export',
-        text: 'Jefe, el proceso está listo para facturar. ¿Deseas que genere el reporte ahora?',
+        text: 'Jefe, el expediente está listo para tu revisión en el Portal del Corredor. ¿Deseas revisar el Informe de Riesgo antes de dar el Aprobado Final?',
         type: 'proactive',
         icon: <FileSpreadsheet className="w-4 h-4" />,
         action: {
@@ -91,7 +91,7 @@ export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
     if (context.processingProgress !== undefined && context.processingProgress > 0 && context.processingProgress < 100) {
       msgs.push({
         id: 'processing',
-        text: `Procesando ${context.totalPaquetes || 0} paquetes... Estoy verificando cada uno con Zod Integrity Engine. ${context.processingProgress}% completado.`,
+        text: `Procesando ${context.totalPaquetes || 0} guías... Estoy triangulando datos y preparando las notas técnicas con base legal. ${context.processingProgress}% completado.`,
         type: 'suggestion',
         icon: <Sparkles className="w-4 h-4 animate-spin-slow" />,
       });
@@ -121,7 +121,7 @@ export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
     if (context.erroresValidacion && context.erroresValidacion > 0) {
       msgs.push({
         id: 'validation-errors',
-        text: `He detectado ${context.erroresValidacion} discrepancias que necesitan tu revisión. Zod ya las marcó para atención prioritaria.`,
+        text: `He detectado ${context.erroresValidacion} discrepancias documentales que necesitan la revisión del corredor. Zod las marcó para el Informe de Riesgo.`,
         type: 'alert',
         icon: <AlertTriangle className="w-4 h-4" />,
         action: {
@@ -194,7 +194,7 @@ export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
             <Sparkles className="w-5 h-5" />
             <span className="font-display tracking-wide">{stellaName}</span>
             <Badge variant="outline" className="ml-2 border-primary/30 text-primary text-[10px]">
-              IA Proactiva
+              Consultora Normativa
             </Badge>
           </CardTitle>
           <Button 
@@ -212,7 +212,7 @@ export function StellaHelpPanel({ context, onAction, compact = false }: Props) {
           {messages.length === 0 ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CheckCircle2 className="w-4 h-4 text-success" />
-              <span>Todo en orden, jefe. Estoy monitoreando.</span>
+              <span>Todo en orden, jefe. El expediente está siendo monitoreado. Cuando estés listo, revisa el Portal del Corredor.</span>
             </div>
           ) : (
             messages.map(msg => (

@@ -141,7 +141,7 @@ export function DashboardCumplimiento({
               Salud de la Licencia de Corretaje
             </h2>
             <p className="text-sm text-muted-foreground">
-              Cumplimiento OEA & BASC v6-2022 en tiempo real
+              Cumplimiento OEA & BASC v6-2022 — ZENITH protege tu licencia
             </p>
           </div>
         </div>
