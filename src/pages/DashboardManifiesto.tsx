@@ -19,7 +19,7 @@ import {
   Download, AlertTriangle, Search, Filter,
   ChevronLeft, ChevronRight, ArrowLeft, FileSpreadsheet,
   Plane, CheckCircle2, AlertCircle, TrendingUp, Pill, Barcode, Brain,
-  MapPin, Building2, Map, Shield, Sparkles
+  MapPin, Building2, Map, Shield, Sparkles, Anchor
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { COLORES_PROVINCIA } from '@/lib/panamaGeography';
@@ -30,6 +30,7 @@ import { ZodIntegrityModal, ZodVerdict } from '@/components/zenith/ZodIntegrityM
 import { validarCumplimientoExportacion } from '@/lib/zenith/zodIntegrityEngine';
 import { DashboardCumplimiento } from '@/components/zenith/DashboardCumplimiento';
 import { PanelRectificacionVoluntaria } from '@/components/zenith/PanelRectificacionVoluntaria';
+import { MapaRecintosANA } from '@/components/zenith/MapaRecintosANA';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -854,6 +855,10 @@ export default function DashboardManifiesto() {
                 <MapPin className="h-3 w-3 mr-1" />
                 Geográfico
               </TabsTrigger>
+              <TabsTrigger value="recintos" className="text-primary">
+                <Anchor className="h-3 w-3 mr-1" />
+                Recintos ANA
+              </TabsTrigger>
               <TabsTrigger value="loteA">
                 Lote A ({loteA.length})
               </TabsTrigger>
@@ -903,6 +908,18 @@ export default function DashboardManifiesto() {
                 pesoVerificado={paquetes.reduce((sum, p) => sum + (p.peso || 0), 0)}
                 tipoCarga="courier"
                 paisOrigen="US"
+                mawb={manifiesto?.mawb}
+                onZodBloqueo={(verdict) => {
+                  setZodVerdict(verdict);
+                  setZodModalOpen(true);
+                }}
+              />
+            </TabsContent>
+
+            <TabsContent value="recintos">
+              <MapaRecintosANA
+                modoTransporte="aereo"
+                provinciaDestino={paquetes[0]?.provincia || undefined}
                 mawb={manifiesto?.mawb}
                 onZodBloqueo={(verdict) => {
                   setZodVerdict(verdict);
