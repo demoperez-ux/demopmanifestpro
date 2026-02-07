@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.motor-aprendizaje-hts]
 verify_jwt = true
+
+[functions.orion-listener]
+verify_jwt = false

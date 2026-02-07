@@ -1,12 +1,14 @@
-import { History, Home, Inbox, Shield, Sparkles } from 'lucide-react';
+import { Anchor, History, Home, Inbox, Shield, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
   const location = useLocation();
+  const isHome = location.pathname === '/';
   const isHistorial = location.pathname === '/historial';
   const isInbox = location.pathname === '/stella-inbox';
+  const isHorizonte = location.pathname === '/horizonte-carga';
 
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md shadow-lg zenith-border-glow">
@@ -32,12 +34,22 @@ export function Header() {
             <nav className="hidden md:flex items-center gap-2 ml-6 border-l border-border pl-6">
               <Link to="/">
                 <Button 
-                  variant={!isHistorial ? 'default' : 'ghost'} 
+                  variant={isHome ? 'default' : 'ghost'} 
                   size="sm" 
                   className="gap-2"
                 >
                   <Home className="h-4 w-4" />
                   Inicio
+                </Button>
+              </Link>
+              <Link to="/horizonte-carga">
+                <Button 
+                  variant={isHorizonte ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="gap-2"
+                >
+                  <Anchor className="h-4 w-4" />
+                  Horizonte
                 </Button>
               </Link>
               <Link to="/stella-inbox">

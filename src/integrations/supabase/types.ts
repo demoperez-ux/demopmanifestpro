@@ -227,6 +227,117 @@ export type Database = {
         }
         Relationships: []
       }
+      embarques_orion: {
+        Row: {
+          ata: string | null
+          bultos: number | null
+          buque_vuelo: string | null
+          consignatario: string
+          consignatario_ruc: string | null
+          created_at: string
+          customs_clearance_required: boolean
+          descripcion_carga: string | null
+          destination_country: string
+          estado: string
+          eta: string | null
+          id: string
+          modo_transporte: string
+          moneda: string
+          operador_id: string | null
+          origin_country: string
+          orion_shipment_id: string
+          peso_bruto_kg: number | null
+          peso_neto_kg: number | null
+          pre_liquidacion: Json | null
+          recinto_destino: string | null
+          referencia: string
+          salud_documental: number
+          shipper: string | null
+          stella_notas: Json | null
+          tipo_documento: string
+          updated_at: string
+          valor_cif: number | null
+          valor_flete: number | null
+          valor_fob: number | null
+          valor_seguro: number | null
+          zod_duplicado_detectado: boolean
+          zod_hallazgos: Json | null
+          zod_validado: boolean
+        }
+        Insert: {
+          ata?: string | null
+          bultos?: number | null
+          buque_vuelo?: string | null
+          consignatario: string
+          consignatario_ruc?: string | null
+          created_at?: string
+          customs_clearance_required?: boolean
+          descripcion_carga?: string | null
+          destination_country: string
+          estado?: string
+          eta?: string | null
+          id?: string
+          modo_transporte?: string
+          moneda?: string
+          operador_id?: string | null
+          origin_country: string
+          orion_shipment_id: string
+          peso_bruto_kg?: number | null
+          peso_neto_kg?: number | null
+          pre_liquidacion?: Json | null
+          recinto_destino?: string | null
+          referencia: string
+          salud_documental?: number
+          shipper?: string | null
+          stella_notas?: Json | null
+          tipo_documento?: string
+          updated_at?: string
+          valor_cif?: number | null
+          valor_flete?: number | null
+          valor_fob?: number | null
+          valor_seguro?: number | null
+          zod_duplicado_detectado?: boolean
+          zod_hallazgos?: Json | null
+          zod_validado?: boolean
+        }
+        Update: {
+          ata?: string | null
+          bultos?: number | null
+          buque_vuelo?: string | null
+          consignatario?: string
+          consignatario_ruc?: string | null
+          created_at?: string
+          customs_clearance_required?: boolean
+          descripcion_carga?: string | null
+          destination_country?: string
+          estado?: string
+          eta?: string | null
+          id?: string
+          modo_transporte?: string
+          moneda?: string
+          operador_id?: string | null
+          origin_country?: string
+          orion_shipment_id?: string
+          peso_bruto_kg?: number | null
+          peso_neto_kg?: number | null
+          pre_liquidacion?: Json | null
+          recinto_destino?: string | null
+          referencia?: string
+          salud_documental?: number
+          shipper?: string | null
+          stella_notas?: Json | null
+          tipo_documento?: string
+          updated_at?: string
+          valor_cif?: number | null
+          valor_flete?: number | null
+          valor_fob?: number | null
+          valor_seguro?: number | null
+          zod_duplicado_detectado?: boolean
+          zod_hallazgos?: Json | null
+          zod_validado?: boolean
+        }
+        Relationships: []
+      }
       inspecciones_17pts: {
         Row: {
           certificada_at: string | null
