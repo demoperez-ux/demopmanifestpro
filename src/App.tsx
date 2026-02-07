@@ -14,6 +14,7 @@ import TestDeteccion from "./pages/TestDeteccion";
 import BuscadorAranceles from "./pages/BuscadorAranceles";
 import StellaInbox from "./pages/StellaInbox";
 import HorizonteCarga from "./pages/HorizonteCarga";
+import ConsultasClasificatoriasPage from "./pages/ConsultasClasificatorias";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -107,6 +108,12 @@ const App: React.FC = () => {
               <Route path="/horizonte-carga" element={
                 <ProtectedRoute>
                   <HorizonteCarga />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/consultas-clasificatorias" element={
+                <ProtectedRoute>
+                  <ConsultasClasificatoriasPage />
                 </ProtectedRoute>
               } />
               
