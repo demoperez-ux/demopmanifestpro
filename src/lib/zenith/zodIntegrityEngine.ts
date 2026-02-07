@@ -148,3 +148,112 @@ export function generarSelloZenithExportacion(
     selloCompleto: `Sello de Inexpugnabilidad: SHA-256 ${hash}`,
   };
 }
+
+/**
+ * Validar integridad de sellos/precintos (OEA)
+ */
+export function validarIntegridadSellos(params: {
+  selloDeclarado: string;
+  selloRecibido: string;
+  mawb: string;
+  guia: string;
+}): ZodVerdict | null {
+  const declarado = params.selloDeclarado.trim().toUpperCase();
+  const recibido = params.selloRecibido.trim().toUpperCase();
+
+  if (declarado && recibido && declarado !== recibido) {
+    const hashData = `sello:${declarado}:${recibido}:${params.mawb}:${Date.now()}`;
+    return {
+      bloqueado: true,
+      tipo: 'cumplimiento',
+      titulo: 'Discrepancia de Sellos/Precintos (OEA)',
+      descripcion: `El sello declarado no coincide con el sello recibido físicamente. Protocolo BASC requiere verificación inmediata.`,
+      detalles: [
+        `MAWB: ${params.mawb}`,
+        `Guía: ${params.guia}`,
+        `Sello declarado: ${declarado}`,
+        `Sello recibido: ${recibido}`,
+        'Posible contaminación de carga — Cadena de custodia comprometida',
+      ],
+      accionRequerida: 'Detener liquidación. Verificar integridad física de la carga e informar al Oficial de Seguridad BASC.',
+      hashVerificacion: generarSelloInexpugnabilidad(hashData),
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Validar asociado de negocio (BASC debida diligencia)
+ */
+export function validarAsociadoNegocio(params: {
+  nombre: string;
+  estado: 'pendiente' | 'aprobado' | 'rechazado' | 'suspendido' | 'vencido';
+  puntuacionRiesgo: number;
+}): ZodVerdict | null {
+  if (params.estado === 'rechazado' || params.estado === 'suspendido') {
+    const hashData = `asociado:${params.nombre}:${params.estado}:${Date.now()}`;
+    return {
+      bloqueado: true,
+      tipo: 'cumplimiento',
+      titulo: 'Asociado de Negocio Bloqueado (BASC)',
+      descripcion: `El asociado "${params.nombre}" tiene estado "${params.estado}" en el sistema de debida diligencia. Todo despacho asociado queda denegado.`,
+      detalles: [
+        `Asociado: ${params.nombre}`,
+        `Estado: ${params.estado.toUpperCase()}`,
+        `Puntuación de riesgo: ${params.puntuacionRiesgo}/100`,
+        params.estado === 'rechazado' 
+          ? 'Posible coincidencia en listas restrictivas (OFAC/ONU)'
+          : 'Documentación vencida o incompleta',
+      ],
+      accionRequerida: 'Contactar al Oficial de Cumplimiento BASC. No se permite ningún despacho hasta resolución.',
+      hashVerificacion: generarSelloInexpugnabilidad(hashData),
+    };
+  }
+
+  if (params.estado === 'vencido') {
+    const hashData = `asociado_vencido:${params.nombre}:${Date.now()}`;
+    return {
+      bloqueado: false,
+      tipo: 'cumplimiento',
+      titulo: 'Documentación de Asociado Vencida',
+      descripcion: `La documentación del asociado "${params.nombre}" está vencida. Se recomienda actualizar antes de continuar.`,
+      detalles: [
+        `Asociado: ${params.nombre}`,
+        'Estado: DOCUMENTACIÓN VENCIDA',
+        'Se permite continuar bajo responsabilidad del corredor',
+      ],
+      accionRequerida: 'Solicitar actualización de documentos al asociado de negocio.',
+      hashVerificacion: generarSelloInexpugnabilidad(hashData),
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Validar modificación de valor CIF post-validación (BASC)
+ */
+export function validarModificacionPostValidacion(params: {
+  campo: string;
+  valorOriginal: number | string;
+  valorNuevo: number | string;
+  liquidacionId: string;
+}): ZodVerdict {
+  const hashData = `post_val:${params.campo}:${params.valorOriginal}:${params.valorNuevo}:${Date.now()}`;
+  return {
+    bloqueado: true,
+    tipo: 'cumplimiento',
+    titulo: 'Modificación Post-Validación Denegada (BASC)',
+    descripcion: `Se intentó modificar "${params.campo}" después de la validación inicial. Protocolo BASC prohíbe cambios post-firma sin autorización del Oficial de Seguridad.`,
+    detalles: [
+      `Campo: ${params.campo}`,
+      `Valor original: ${params.valorOriginal}`,
+      `Valor intentado: ${params.valorNuevo}`,
+      `Liquidación: ${params.liquidacionId}`,
+      'Acción denegada por protocolo BASC. Registrando incidente en Log inmutable.',
+    ],
+    accionRequerida: 'Este evento ha sido registrado. Para modificaciones post-firma, utilice el proceso de Rectificación Voluntaria.',
+    hashVerificacion: generarSelloInexpugnabilidad(hashData),
+  };
+}

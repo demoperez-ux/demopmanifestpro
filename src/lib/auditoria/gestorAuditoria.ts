@@ -551,4 +551,82 @@ export class GestorAuditoria {
       };
     }
   }
+
+  /**
+   * Registra evento BASC en el audit trail inmutable
+   * Stella notifica: "Auditoría BASC activa"
+   */
+  static async registrarEventoBASC(
+    tipo: 'verificacion_asociado' | 'bloqueo_ofac' | 'validacion_sello' | 'alerta_ruta' | 'checklist_oea' | 'rectificacion' | 'modificacion_post_firma',
+    detalles: {
+      entidadId: string;
+      entidadNombre: string;
+      accion: string;
+      resultado: string;
+      operador?: string;
+      metadatos?: Record<string, unknown>;
+    }
+  ): Promise<void> {
+    try {
+      await inicializarCache();
+
+      const datosBase = {
+        id: generarId(),
+        liquidacionId: `BASC_${detalles.entidadId}`,
+        numeroGuia: detalles.entidadNombre,
+        timestamp: new Date().toISOString(),
+        operador: detalles.operador || 'sistema_basc',
+        accion: 'modificacion' as const,
+        cambios: [
+          {
+            campo: `basc_${tipo}`,
+            valorAnterior: detalles.accion as unknown,
+            valorNuevo: detalles.resultado as unknown,
+          },
+          ...(detalles.metadatos ? [{
+            campo: 'metadatos_basc',
+            valorAnterior: null as unknown,
+            valorNuevo: JSON.stringify(detalles.metadatos) as unknown,
+          }] : []),
+        ],
+        justificacion: `[BASC] ${tipo}: ${detalles.accion} → ${detalles.resultado}`,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined
+      };
+
+      const registro = this.crearRegistroConHash(datosBase);
+      await dbPut('auditoria', registro);
+      cacheRegistros.push(registro);
+
+      devLog(`[BASC-AUDIT] ${tipo}: ${detalles.entidadNombre} — ${detalles.resultado} [Seq: ${registro.numeroSecuencia}]`);
+    } catch (error) {
+      devError('Error registrando evento BASC en auditoría');
+    }
+  }
+
+  /**
+   * Detecta modificaciones post-firma (evento crítico BASC)
+   */
+  static async detectarModificacionPostFirma(
+    liquidacionId: string,
+    campoModificado: string,
+    valorAnterior: unknown,
+    valorNuevo: unknown,
+    operador: string
+  ): Promise<{ bloqueado: boolean; stellaMensaje: string }> {
+    await this.registrarEventoBASC('modificacion_post_firma', {
+      entidadId: liquidacionId,
+      entidadNombre: `Liquidación ${liquidacionId}`,
+      accion: `Modificación de ${campoModificado}`,
+      resultado: 'EVENTO_CRITICO_REPORTADO',
+      operador,
+      metadatos: { campoModificado, valorAnterior, valorNuevo },
+    });
+
+    devWarn(`[BASC] ⚠️ Modificación post-firma detectada en ${liquidacionId} por ${operador}`);
+
+    return {
+      bloqueado: true,
+      stellaMensaje: `Auditoría BASC activa: Se detectó una modificación en "${campoModificado}" después de la firma. Este evento ha sido registrado como incidente crítico en el log inmutable. Cualquier modificación después de la firma será reportada como evento crítico.`,
+    };
+  }
 }
