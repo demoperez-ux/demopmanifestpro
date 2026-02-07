@@ -35,7 +35,8 @@ export type ZonaAduanera =
   | 'zona_libre_colon'             // Zona Libre de Colón (ZLC)
   | 'paso_canoas'                  // Alias: Paso Canoas (Chiriquí)
   | 'guabito'                      // Alias: Guabito (Bocas del Toro)
-  | 'panama_pacifico';             // Área Panamá Pacífico
+  | 'panama_pacifico'              // Área Panamá Pacífico
+  | 'canal_seco_oth';              // Canal Seco "Omar Torrijos Herrera" (Decreto 13/2024)
 
 // ============================================
 // DOCUMENTOS MAESTROS POR MODO
@@ -376,6 +377,15 @@ export const ZONAS_ADUANERAS: Record<ZonaAduanera, InfoZonaAduanera> = {
     provincia: 'Panamá Oeste',
     codigoAduana: 'PPAC',
     modosPermitidos: ['aereo', 'maritimo', 'terrestre']
+  },
+  canal_seco_oth: {
+    id: 'canal_seco_oth',
+    nombre: 'Canal Seco "Omar Torrijos Herrera"',
+    tipo: 'zona_libre',
+    ciudad: 'Panamá',
+    provincia: 'Panamá',
+    codigoAduana: 'CSOTH',
+    modosPermitidos: ['terrestre']
   }
 };
 

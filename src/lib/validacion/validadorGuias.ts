@@ -373,3 +373,85 @@ export function generarReporteValidacion(resultado: ResultadoValidacionLote): st
   
   return lineas.join('\n');
 }
+
+// ============================================
+// VALIDACIÓN DE VEHÍCULO COMERCIAL (Feb 2026)
+// Prohibición de retiro en vehículos particulares
+// para carga courier
+// ============================================
+
+export type TipoVehiculo = 'comercial_registrado' | 'particular' | 'desconocido';
+
+export interface ValidacionVehiculo {
+  esVehiculoComercial: boolean;
+  bloqueado: boolean;
+  motivo: string;
+  sugerencia?: string;
+}
+
+/**
+ * Feb 2026: Regla de bloqueo - Solo vehículos comerciales registrados
+ * pueden retirar carga courier. Vehículos particulares están prohibidos.
+ */
+export function validarVehiculoRetiro(
+  tipoVehiculo: TipoVehiculo,
+  placaVehiculo?: string,
+  registroComercial?: string
+): ValidacionVehiculo {
+  // Vehículo comercial registrado → OK
+  if (tipoVehiculo === 'comercial_registrado' && registroComercial) {
+    return {
+      esVehiculoComercial: true,
+      bloqueado: false,
+      motivo: `Vehículo comercial registrado (Placa: ${placaVehiculo || 'N/A'}, Registro: ${registroComercial})`
+    };
+  }
+
+  // Vehículo particular → BLOQUEADO
+  if (tipoVehiculo === 'particular') {
+    return {
+      esVehiculoComercial: false,
+      bloqueado: true,
+      motivo: '🚫 BLOQUEADO: Prohibido retiro de carga courier en vehículos particulares (Normativa ANA Feb 2026)',
+      sugerencia: 'El retiro debe realizarse exclusivamente con vehículos comerciales registrados ante la ANA.'
+    };
+  }
+
+  // Tipo desconocido → BLOQUEADO (precautorio)
+  return {
+    esVehiculoComercial: false,
+    bloqueado: true,
+    motivo: '⚠️ BLOQUEADO: No se ha verificado el tipo de vehículo. Se requiere vehículo comercial registrado.',
+    sugerencia: 'Proporcione la placa del vehículo comercial y su número de registro ante la ANA para proceder.'
+  };
+}
+
+/**
+ * Valida si una declaración puede procesarse según el tipo de transporte
+ */
+export function validarTransporteDeclaracion(
+  modoTransporte: string,
+  tipoVehiculo?: TipoVehiculo,
+  placaVehiculo?: string,
+  registroComercial?: string
+): { permitido: boolean; errores: string[] } {
+  const errores: string[] = [];
+
+  // Para modo courier/terrestre, validar vehículo comercial
+  if (modoTransporte === 'terrestre' || modoTransporte === 'courier') {
+    const tipo = tipoVehiculo || 'desconocido';
+    const validacion = validarVehiculoRetiro(tipo, placaVehiculo, registroComercial);
+    
+    if (validacion.bloqueado) {
+      errores.push(validacion.motivo);
+      if (validacion.sugerencia) {
+        errores.push(validacion.sugerencia);
+      }
+    }
+  }
+
+  return {
+    permitido: errores.length === 0,
+    errores
+  };
+}

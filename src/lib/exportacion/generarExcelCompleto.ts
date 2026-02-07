@@ -1,16 +1,18 @@
 /**
  * GENERACIÓN DE EXCEL COMPLETO
  * 
- * Genera un reporte Excel con 3 hojas:
+ * Genera un reporte Excel con 4 hojas:
  * - Resumen Ejecutivo
  * - Detalle de Paquetes
  * - Productos Restringidos
+ * - Liquidación y Honorarios (Feb 2026 - Res. 222)
  */
 
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { FilaProcesada } from '@/lib/workers/procesador.worker';
 import { ManifiestoGuardado } from '@/lib/db/database';
+import { calcularHonorarioCorredor } from '@/lib/financiero/honorariosCorredor';
 
 /**
  * Genera Excel completo con todas las hojas
@@ -45,10 +47,9 @@ export async function generarExcelCompleto(
     const valor = p.valorUSD || 0;
     let tributo = 0;
 
-    // Calcular tributo según categoría
     switch (cat) {
       case 'A': tributo = 0; break;
-      case 'B': tributo = 0; break; // De minimis exento
+      case 'B': tributo = 0; break;
       case 'C': tributo = valor * 0.15; break;
       case 'D': tributo = valor * 0.25; break;
       default: tributo = 0;
@@ -63,6 +64,9 @@ export async function generarExcelCompleto(
     tributosTotal += tributo;
   });
 
+  // Honorarios del corredor (Res. 222 de 2025)
+  const honorario = calcularHonorarioCorredor(valorCIFTotal);
+
   const resumenData = [
     ['RESUMEN EJECUTIVO DEL MANIFIESTO'],
     [''],
@@ -76,14 +80,15 @@ export async function generarExcelCompleto(
     ['Valor CIF Total (USD):', `$${valorCIFTotal.toFixed(2)}`],
     ['Peso Total (LB):', `${pesoTotal.toFixed(2)} LB`],
     ['Tributos Totales (USD):', `$${tributosTotal.toFixed(2)}`],
-    ['TOTAL A COBRAR (USD):', `$${(valorCIFTotal + tributosTotal).toFixed(2)}`],
+    ['Honorario Corredor (Res. 222/2025):', `$${honorario.honorarioBase.toFixed(2)}`],
+    ['TOTAL A COBRAR (USD):', `$${(valorCIFTotal + tributosTotal + honorario.honorarioBase).toFixed(2)}`],
     [''],
-    ['DISTRIBUCIÓN POR CATEGORÍA ADUANERA'],
+    ['DISTRIBUCIÓN POR CATEGORÍA ADUANERA (Feb 2026)'],
     ['Categoría', 'Cantidad', 'Valor USD', 'Tributos USD'],
     ['A - Documentos', porCategoria['A'].cantidad, `$${porCategoria['A'].valor.toFixed(2)}`, `$${porCategoria['A'].tributos.toFixed(2)}`],
-    ['B - De Minimis (≤$100)', porCategoria['B'].cantidad, `$${porCategoria['B'].valor.toFixed(2)}`, `$${porCategoria['B'].tributos.toFixed(2)}`],
-    ['C - Medio ($100-$2,000)', porCategoria['C'].cantidad, `$${porCategoria['C'].valor.toFixed(2)}`, `$${porCategoria['C'].tributos.toFixed(2)}`],
-    ['D - Alto (≥$2,000)', porCategoria['D'].cantidad, `$${porCategoria['D'].valor.toFixed(2)}`, `$${porCategoria['D'].tributos.toFixed(2)}`],
+    ['B - De Minimis (≤$100.00)', porCategoria['B'].cantidad, `$${porCategoria['B'].valor.toFixed(2)}`, `$${porCategoria['B'].tributos.toFixed(2)}`],
+    ['C - Tributos (>$100.00 a $2,000.00)', porCategoria['C'].cantidad, `$${porCategoria['C'].valor.toFixed(2)}`, `$${porCategoria['C'].tributos.toFixed(2)}`],
+    ['D - Alto (>$2,000.00 / Restringida)', porCategoria['D'].cantidad, `$${porCategoria['D'].valor.toFixed(2)}`, `$${porCategoria['D'].tributos.toFixed(2)}`],
     [''],
     ['ALERTAS'],
     ['Paquetes con Restricciones:', paquetes.filter(p => p.requierePermiso).length],
@@ -93,9 +98,8 @@ export async function generarExcelCompleto(
 
   const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
   
-  // Ajustar anchos de columna
   wsResumen['!cols'] = [
-    { wch: 35 },
+    { wch: 40 },
     { wch: 20 },
     { wch: 15 },
     { wch: 15 }
@@ -106,7 +110,7 @@ export async function generarExcelCompleto(
   // ═══════════════════════════════════════════════════════
   // HOJA 2: DETALLE DE PAQUETES
   // ═══════════════════════════════════════════════════════
-  onProgress?.(40);
+  onProgress?.(30);
 
   const headersDetalle = [
     '#', 'Guía Aérea', 'Consignatario', 'Identificación',
@@ -121,7 +125,6 @@ export async function generarExcelCompleto(
     const valor = p.valorUSD || 0;
     let dai = 0, isc = 0, itbms = 0;
 
-    // Calcular tributos según categoría
     if (p.categoriaAduanera === 'C') {
       dai = valor * 0.05;
       itbms = valor * 0.07;
@@ -178,7 +181,7 @@ export async function generarExcelCompleto(
   // ═══════════════════════════════════════════════════════
   // HOJA 3: PRODUCTOS RESTRINGIDOS (si hay)
   // ═══════════════════════════════════════════════════════
-  onProgress?.(70);
+  onProgress?.(55);
 
   const paquetesRestringidos = paquetes.filter(p => p.requierePermiso);
 
@@ -213,6 +216,55 @@ export async function generarExcelCompleto(
 
     XLSX.utils.book_append_sheet(wb, wsRestringidos, 'Productos Restringidos');
   }
+
+  // ═══════════════════════════════════════════════════════
+  // HOJA 4: LIQUIDACIÓN Y HONORARIOS (Res. 222/2025)
+  // ═══════════════════════════════════════════════════════
+  onProgress?.(75);
+
+  const liquidacionData = [
+    ['DESGLOSE DE LIQUIDACIÓN Y HONORARIOS'],
+    ['Resolución 222 de 2025 - Autoridad Nacional de Aduanas'],
+    [''],
+    ['COMPONENTES DE TRIBUTOS'],
+    ['Concepto', 'Base', 'Tasa', 'Monto'],
+    ['DAI (Impuesto de Importación)', `$${valorCIFTotal.toFixed(2)}`, 'Variable', `$${(porCategoria['C'].tributos * 0.33 + porCategoria['D'].tributos * 0.4).toFixed(2)}`],
+    ['ISC (Impuesto Selectivo)', '-', 'Variable', `$${(porCategoria['D'].tributos * 0.2).toFixed(2)}`],
+    ['ITBMS (7%)', '-', '7%', `$${(valorCIFTotal * 0.07).toFixed(2)}`],
+    ['Tasa Aduanera (SIGA)', '-', 'B/. 3.00', `$${(paquetes.length * 3).toFixed(2)}`],
+    [''],
+    ['TOTAL TRIBUTOS:', '', '', `$${tributosTotal.toFixed(2)}`],
+    [''],
+    ['HONORARIO DE CORREDOR DE ADUANA (Res. 222/2025)'],
+    ['Valor CIF Total:', `$${valorCIFTotal.toFixed(2)}`],
+    ['Método de Cálculo:', honorario.metodoCalculo === 'fijo' ? 'Fijo (CIF < $2,500.00)' : 'Porcentual (CIF ≥ $2,500.00)'],
+    ['Fórmula Aplicada:', honorario.formulaAplicada],
+    ['Honorario Corredor:', `$${honorario.honorarioBase.toFixed(2)}`],
+    ['Fundamento Legal:', honorario.fundamentoLegal],
+    [''],
+    ['MANEJO POR PAQUETE'],
+    ['Cantidad de Paquetes:', paquetes.length],
+    ['Tarifa por Paquete:', '$5.00'],
+    ['Total Manejo:', `$${(paquetes.length * 5).toFixed(2)}`],
+    [''],
+    ['═══════════════════════════════════════════'],
+    ['RESUMEN TOTAL A COBRAR'],
+    ['Tributos:', `$${tributosTotal.toFixed(2)}`],
+    ['Honorario Corredor:', `$${honorario.honorarioBase.toFixed(2)}`],
+    ['Manejo:', `$${(paquetes.length * 5).toFixed(2)}`],
+    ['TOTAL:', `$${(tributosTotal + honorario.honorarioBase + paquetes.length * 5).toFixed(2)}`],
+  ];
+
+  const wsLiquidacion = XLSX.utils.aoa_to_sheet(liquidacionData);
+  
+  wsLiquidacion['!cols'] = [
+    { wch: 40 },
+    { wch: 20 },
+    { wch: 15 },
+    { wch: 15 }
+  ];
+
+  XLSX.utils.book_append_sheet(wb, wsLiquidacion, 'Liquidación y Honorarios');
 
   // ═══════════════════════════════════════════════════════
   // GENERAR ARCHIVO FINAL

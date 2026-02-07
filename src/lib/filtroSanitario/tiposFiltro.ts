@@ -16,7 +16,7 @@ export type TipoImportacion = 'B2C' | 'B2B';
 
 export interface DocumentoRequerido {
   id: string;
-  tipo: 'receta_medica' | 'carta_relevo' | 'identificacion' | 'registro_sanitario' | 'licencia_importacion';
+  tipo: 'receta_medica' | 'carta_relevo' | 'identificacion' | 'registro_sanitario' | 'licencia_importacion' | 'bioequivalencia_f05' | 'arp_mida';
   nombre: string;
   descripcion: string;
   obligatorio: boolean;

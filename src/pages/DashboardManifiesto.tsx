@@ -205,9 +205,9 @@ export default function DashboardManifiesto() {
 
     return Object.entries(conteo).map(([name, value]) => ({
       name: name === 'A' ? 'A - Documentos' :
-            name === 'B' ? `B - De Minimis (≤$${umbral})` :
-            name === 'C' ? `C - Medio ($${umbral}-$${umbralCorredor})` :
-            name === 'D' ? `D - Alto (≥$${umbralCorredor})` : name,
+            name === 'B' ? `B - De Minimis (≤$${umbral.toFixed(2)})` :
+            name === 'C' ? `C - Tributos (>$${umbral.toFixed(2)} a $${umbralCorredor.toFixed(2)})` :
+            name === 'D' ? `D - Alto (>$${umbralCorredor.toFixed(2)})` : name,
       value,
       color: COLORES_CATEGORIA[name] || COLORES_CATEGORIA['Sin Clasificar']
     }));
