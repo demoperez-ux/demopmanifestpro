@@ -1,4 +1,4 @@
-import { Anchor, BookOpen, History, Home, Inbox, Shield, Sparkles } from 'lucide-react';
+import { Anchor, BookOpen, History, Home, Inbox, Shield, Sparkles, UserPlus } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ export function Header() {
   const isInbox = location.pathname === '/stella-inbox';
   const isHorizonte = location.pathname === '/horizonte-carga';
   const isConsultas = location.pathname === '/consultas-clasificatorias';
+  const isOnboarding = location.pathname === '/onboarding-corredor';
 
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md shadow-lg zenith-border-glow">
@@ -81,6 +82,16 @@ export function Header() {
                 >
                   <BookOpen className="h-4 w-4" />
                   Consultas
+                </Button>
+              </Link>
+              <Link to="/onboarding-corredor">
+                <Button 
+                  variant={isOnboarding ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="gap-2"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Onboarding
                 </Button>
               </Link>
             </nav>

@@ -587,6 +587,199 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_audit_trail: {
+        Row: {
+          accion: string
+          created_at: string
+          detalles: Json | null
+          etapa: number | null
+          hash_content: string | null
+          hash_previous: string | null
+          id: string
+          motivo: string | null
+          proceso_id: string
+          user_id: string
+          user_role: string | null
+        }
+        Insert: {
+          accion: string
+          created_at?: string
+          detalles?: Json | null
+          etapa?: number | null
+          hash_content?: string | null
+          hash_previous?: string | null
+          id?: string
+          motivo?: string | null
+          proceso_id: string
+          user_id: string
+          user_role?: string | null
+        }
+        Update: {
+          accion?: string
+          created_at?: string
+          detalles?: Json | null
+          etapa?: number | null
+          hash_content?: string | null
+          hash_previous?: string | null
+          id?: string
+          motivo?: string | null
+          proceso_id?: string
+          user_id?: string
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_audit_trail_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_procesos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_documentos: {
+        Row: {
+          ai_campos_criticos: Json | null
+          ai_confidence: number | null
+          ai_extracted_data: Json | null
+          created_at: string
+          etapa: number
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          nombre_documento: string
+          proceso_id: string
+          requiere_revision_manual: boolean | null
+          revisado_at: string | null
+          revisado_por: string | null
+          storage_path: string | null
+          tipo_documento: string
+          updated_at: string
+          zod_sello_hash: string | null
+          zod_validado: boolean | null
+        }
+        Insert: {
+          ai_campos_criticos?: Json | null
+          ai_confidence?: number | null
+          ai_extracted_data?: Json | null
+          created_at?: string
+          etapa: number
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          nombre_documento: string
+          proceso_id: string
+          requiere_revision_manual?: boolean | null
+          revisado_at?: string | null
+          revisado_por?: string | null
+          storage_path?: string | null
+          tipo_documento: string
+          updated_at?: string
+          zod_sello_hash?: string | null
+          zod_validado?: boolean | null
+        }
+        Update: {
+          ai_campos_criticos?: Json | null
+          ai_confidence?: number | null
+          ai_extracted_data?: Json | null
+          created_at?: string
+          etapa?: number
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          nombre_documento?: string
+          proceso_id?: string
+          requiere_revision_manual?: boolean | null
+          revisado_at?: string | null
+          revisado_por?: string | null
+          storage_path?: string | null
+          tipo_documento?: string
+          updated_at?: string
+          zod_sello_hash?: string | null
+          zod_validado?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_documentos_proceso_id_fkey"
+            columns: ["proceso_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_procesos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_procesos: {
+        Row: {
+          assigned_to: string | null
+          control_points: Json | null
+          corredor_cedula: string
+          corredor_email: string | null
+          corredor_nombre: string
+          corredor_telefono: string | null
+          created_at: string
+          created_by: string
+          document_completeness_score: number | null
+          empresa_nombre: string | null
+          empresa_ruc: string | null
+          estado: string
+          estado_fianza: string | null
+          etapa_actual: number
+          id: string
+          monto_fianza: number | null
+          notas: string | null
+          risk_score: number | null
+          sla_timestamps: Json | null
+          tipo_fianza: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          control_points?: Json | null
+          corredor_cedula: string
+          corredor_email?: string | null
+          corredor_nombre: string
+          corredor_telefono?: string | null
+          created_at?: string
+          created_by: string
+          document_completeness_score?: number | null
+          empresa_nombre?: string | null
+          empresa_ruc?: string | null
+          estado?: string
+          estado_fianza?: string | null
+          etapa_actual?: number
+          id?: string
+          monto_fianza?: number | null
+          notas?: string | null
+          risk_score?: number | null
+          sla_timestamps?: Json | null
+          tipo_fianza?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          control_points?: Json | null
+          corredor_cedula?: string
+          corredor_email?: string | null
+          corredor_nombre?: string
+          corredor_telefono?: string | null
+          created_at?: string
+          created_by?: string
+          document_completeness_score?: number | null
+          empresa_nombre?: string | null
+          empresa_ruc?: string | null
+          estado?: string
+          estado_fianza?: string | null
+          etapa_actual?: number
+          id?: string
+          monto_fianza?: number | null
+          notas?: string | null
+          risk_score?: number | null
+          sla_timestamps?: Json | null
+          tipo_fianza?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
