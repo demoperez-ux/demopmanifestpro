@@ -8,7 +8,7 @@ import {
   Ship, Plane, Truck, Clock, Shield, Sparkles, RefreshCw,
   AlertTriangle, CheckCircle2, FileText, ChevronRight,
   Anchor, Timer, Package, DollarSign, Search, Filter, X,
-  Scale, ExternalLink, Lock
+  Scale, ExternalLink, Lock, Globe, Snowflake, Leaf
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { SelloAFC } from './SelloAFC';
 
 // ── Types ───────────────────────────────────────────
 interface EmbarqueOrion {
@@ -48,6 +49,7 @@ interface EmbarqueOrion {
   recinto_destino: string | null;
   buque_vuelo: string | null;
   eta: string | null;
+  ata: string | null;
   estado: string;
   salud_documental: number;
   pre_liquidacion: Record<string, unknown> | null;
@@ -56,6 +58,13 @@ interface EmbarqueOrion {
   zod_duplicado_detectado: boolean;
   stella_notas: string[];
   created_at: string;
+  // AFC fields
+  afc_apto_despacho_anticipado: boolean;
+  afc_certificado_cumplimiento: Record<string, unknown> | null;
+  afc_perecedero: boolean;
+  afc_prioridad_periferia: boolean;
+  afc_alerta_perecedero_emitida: boolean;
+  afc_sello_facilitacion: boolean;
 }
 
 // ── Transport icons ─────────────────────────────────
@@ -131,7 +140,8 @@ export function HorizonteCarga() {
         zod_hallazgos: Array.isArray(row.zod_hallazgos) ? row.zod_hallazgos as string[] : [],
         stella_notas: Array.isArray(row.stella_notas) ? row.stella_notas as string[] : [],
         pre_liquidacion: row.pre_liquidacion as Record<string, unknown> | null,
-      }));
+        afc_certificado_cumplimiento: (row.afc_certificado_cumplimiento || null) as Record<string, unknown> | null,
+      })) as EmbarqueOrion[];
 
       setEmbarques(typed);
     } catch (err) {
@@ -174,8 +184,10 @@ export function HorizonteCarga() {
       ? Math.round(embarques.reduce((sum, e) => sum + e.salud_documental, 0) / embarques.length)
       : 0;
     const zodAlerts = embarques.filter(e => e.zod_hallazgos.length > 0).length;
+    const afcAptos = embarques.filter(e => e.afc_apto_despacho_anticipado).length;
+    const perecederos = embarques.filter(e => e.afc_perecedero).length;
 
-    return { arriving4h, preLiquidados, avgHealth, zodAlerts, total: embarques.length };
+    return { arriving4h, preLiquidados, avgHealth, zodAlerts, afcAptos, perecederos, total: embarques.length };
   }, [embarques]);
 
   const openDrawer = (emb: EmbarqueOrion) => {
@@ -213,7 +225,7 @@ export function HorizonteCarga() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="stat-card">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <Timer className="w-4 h-4 text-destructive" />
@@ -242,7 +254,23 @@ export function HorizonteCarga() {
           </div>
           <span className="stat-value text-zod">{stats.zodAlerts}</span>
         </div>
+        <div className="stat-card">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <Globe className="w-4 h-4 text-stella" />
+            <span className="stat-label">AFC Aptos</span>
+          </div>
+          <span className="stat-value text-stella">{stats.afcAptos}</span>
+        </div>
+        <div className="stat-card">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <Snowflake className="w-4 h-4 text-info" />
+            <span className="stat-label">Perecederos</span>
+          </div>
+          <span className="stat-value text-info">{stats.perecederos}</span>
+        </div>
       </div>
+
+
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
@@ -359,6 +387,14 @@ export function HorizonteCarga() {
                       <Badge variant="outline" className="text-[9px] bg-success/10 text-success border-success/30 gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" /> Validado
                       </Badge>
+                    )}
+                    {emb.afc_perecedero && (
+                      <Badge variant="outline" className="text-[9px] bg-info/10 text-info border-info/30 gap-1 animate-pulse-subtle">
+                        <Snowflake className="w-2.5 h-2.5" /> Perecedero
+                      </Badge>
+                    )}
+                    {emb.afc_apto_despacho_anticipado && (
+                      <SelloAFC activo size="sm" showTooltip={false} />
                     )}
                   </div>
 
@@ -539,6 +575,62 @@ function EmbarqueDrawerContent({
                 <span>{h}</span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* AFC Certification */}
+        {emb.afc_apto_despacho_anticipado && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-stella" />
+              <span className="font-display text-sm font-semibold text-stella">
+                Certificado de Cumplimiento Anticipado
+              </span>
+              <SelloAFC activo size="sm" />
+            </div>
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-2 text-xs">
+              {emb.afc_certificado_cumplimiento && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Estado AFC</span>
+                    <Badge variant="outline" className="text-[9px] bg-success/10 text-success border-success/30">
+                      {String((emb.afc_certificado_cumplimiento as any).estado || 'aprobado').toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Puntaje</span>
+                    <span className="font-mono font-bold text-stella">
+                      {String((emb.afc_certificado_cumplimiento as any).puntajeTotal || 0)}%
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-foreground/70 italic">
+                    {String((emb.afc_certificado_cumplimiento as any).stellaResumen || '')}
+                  </p>
+                </>
+              )}
+              <p className="text-[10px] text-muted-foreground">
+                Ley 26 de 2016 — Art. 7.1 AFC (OMC): Procesamiento Pre-Arribo
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Perishable Alert */}
+        {emb.afc_perecedero && (
+          <div className="p-3 rounded-lg bg-info/5 border border-info/30 flex items-start gap-3 animate-pulse-subtle">
+            <Snowflake className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold text-info">Prioridad Periferia — Art. 7.9 AFC</p>
+              <p className="text-[10px] text-foreground/70 mt-1">
+                Mercancía perecedera detectada. El AFC-OMC exige despacho prioritario. 
+                Si no se liquida dentro de 2h post-arribo, se emitirá alerta crítica.
+              </p>
+              {emb.afc_prioridad_periferia && (
+                <Badge variant="outline" className="text-[8px] mt-1.5 bg-info/10 text-info border-info/20 gap-1">
+                  <Leaf className="w-2 h-2" /> MIDA/AUPSA Prioritario
+                </Badge>
+              )}
+            </div>
           </div>
         )}
 

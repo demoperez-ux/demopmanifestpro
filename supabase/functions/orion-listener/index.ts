@@ -47,6 +47,54 @@ const TRANSPORT_MODE_MAP: Record<string, string> = {
   land: 'terrestre',
 };
 
+// ── AFC Perishable Detection ──────────────────────────
+const PERISHABLE_PATTERNS = [
+  /\b(frutas?|verduras?|hortalizas?|legumbres?|vegetales?)\b/i,
+  /\b(carne|pollo|pescado|mariscos?|camar[oó]n|langosta)\b/i,
+  /\b(leche|l[aá]cteos?|queso|yogur|mantequilla|crema)\b/i,
+  /\b(huevos?|embutidos?|jam[oó]n|chorizo)\b/i,
+  /\b(flores?|plantas?|rosas?|orqu[ií]deas?)\b/i,
+  /\b(vacunas?|insulina|biol[oó]gicos?|sueros?)\b/i,
+  /\b(congelados?|refrigerados?|cadena\s+fr[ií]o)\b/i,
+  /\b(semillas?|fertilizantes?\s+org[aá]nicos?)\b/i,
+];
+
+function isPerishable(cargoDescription: string | undefined): boolean {
+  if (!cargoDescription) return false;
+  return PERISHABLE_PATTERNS.some(p => p.test(cargoDescription));
+}
+
+// ── AFC Pre-Arrival Assessment ────────────────────────
+function evaluateAFCPreArrival(shipment: OrionShipment, docScore: number, zodOk: boolean, preLiq: boolean): {
+  aptoDespachoAnticipado: boolean;
+  certificado: Record<string, unknown> | null;
+  selloFacilitacion: boolean;
+} {
+  const checks = [
+    { criterio: 'Documentación ≥80%', cumple: docScore >= 80, art: 'Art. 7.1 AFC' },
+    { criterio: 'Integridad Zod', cumple: zodOk, art: 'Art. 10.4 AFC' },
+    { criterio: 'Pre-Liquidación', cumple: preLiq, art: 'Art. 7.1 AFC' },
+    { criterio: 'ID Fiscal', cumple: !!shipment.consignee_tax_id, art: 'Art. 10.1 AFC' },
+  ];
+  const score = checks.filter(c => c.cumple).length * 25;
+  const apto = score >= 75;
+
+  return {
+    aptoDespachoAnticipado: apto,
+    certificado: apto ? {
+      fechaEmision: new Date().toISOString(),
+      estado: score === 100 ? 'aprobado' : 'parcial',
+      puntajeTotal: score,
+      verificaciones: checks,
+      fundamentoLegal: 'Ley 26 de 2016 — Art. 7.1 AFC (OMC)',
+      stellaResumen: score === 100
+        ? 'Expediente cumple 100% AFC. Apto para despacho anticipado.'
+        : `Expediente cumple ${score}% AFC. Despacho anticipado con observaciones.`,
+    } : null,
+    selloFacilitacion: score === 100,
+  };
+}
+
 function calculateDocumentHealth(docs: OrionDocument[] | undefined): {
   score: number;
   findings: string[];
@@ -297,7 +345,7 @@ serve(async (req) => {
           estado = 'pre_liquidado';
         }
         if (zodFindings.length > 2) {
-          estado = 'pendiente'; // Too many issues, keep as pending
+          estado = 'pendiente';
         }
 
         // Calculate CIF
@@ -305,6 +353,19 @@ serve(async (req) => {
         const freight = shipment.value_freight ?? Math.round(fob * 0.07 * 100) / 100;
         const insurance = shipment.value_insurance ?? Math.round(fob * 0.01 * 100) / 100;
         const cif = Math.round((fob + freight + insurance) * 100) / 100;
+
+        // ── AFC Protocol ──
+        const perecedero = isPerishable(shipment.cargo_description);
+        const zodOk = zodFindings.length === 0;
+        const afcResult = evaluateAFCPreArrival(shipment, docHealth.score, zodOk, !!preLiquidation);
+
+        // Add perishable Stella note
+        if (perecedero) {
+          docHealth.stellaNotes.push('🧊 Mercancía perecedera detectada. Art. 7.9 AFC exige despacho prioritario. Prioridad Periferia activada.');
+        }
+        if (afcResult.aptoDespachoAnticipado) {
+          docHealth.stellaNotes.push('✅ Expediente apto para Despacho Anticipado (Art. 7.1 AFC). Documentación verificada antes del arribo.');
+        }
 
         // ── Insert into DB ──
         const { error: insertError } = await supabase
@@ -339,6 +400,12 @@ serve(async (req) => {
             zod_hallazgos: zodFindings,
             zod_duplicado_detectado: dupCheck.isDuplicate,
             stella_notas: docHealth.stellaNotes,
+            // AFC fields
+            afc_apto_despacho_anticipado: afcResult.aptoDespachoAnticipado,
+            afc_certificado_cumplimiento: afcResult.certificado,
+            afc_perecedero: perecedero,
+            afc_prioridad_periferia: perecedero,
+            afc_sello_facilitacion: afcResult.selloFacilitacion,
           });
 
         if (insertError) {

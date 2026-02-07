@@ -227,8 +227,83 @@ export type Database = {
         }
         Relationships: []
       }
+      consultas_clasificatorias: {
+        Row: {
+          autoridad_anuente: string | null
+          corredor_id: string
+          created_at: string
+          criterio_ana: string
+          dai_percent: number | null
+          descripcion_arancelaria: string | null
+          descripcion_mercancia: string
+          estado: string
+          fecha_resolucion: string
+          fecha_vigencia_fin: string | null
+          fecha_vigencia_inicio: string | null
+          fundamento_legal: string | null
+          hts_code: string
+          id: string
+          isc_percent: number | null
+          itbms_percent: number | null
+          notas: string | null
+          numero_resolucion: string
+          solicitante: string
+          updated_at: string
+        }
+        Insert: {
+          autoridad_anuente?: string | null
+          corredor_id: string
+          created_at?: string
+          criterio_ana: string
+          dai_percent?: number | null
+          descripcion_arancelaria?: string | null
+          descripcion_mercancia: string
+          estado?: string
+          fecha_resolucion: string
+          fecha_vigencia_fin?: string | null
+          fecha_vigencia_inicio?: string | null
+          fundamento_legal?: string | null
+          hts_code: string
+          id?: string
+          isc_percent?: number | null
+          itbms_percent?: number | null
+          notas?: string | null
+          numero_resolucion: string
+          solicitante: string
+          updated_at?: string
+        }
+        Update: {
+          autoridad_anuente?: string | null
+          corredor_id?: string
+          created_at?: string
+          criterio_ana?: string
+          dai_percent?: number | null
+          descripcion_arancelaria?: string | null
+          descripcion_mercancia?: string
+          estado?: string
+          fecha_resolucion?: string
+          fecha_vigencia_fin?: string | null
+          fecha_vigencia_inicio?: string | null
+          fundamento_legal?: string | null
+          hts_code?: string
+          id?: string
+          isc_percent?: number | null
+          itbms_percent?: number | null
+          notas?: string | null
+          numero_resolucion?: string
+          solicitante?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       embarques_orion: {
         Row: {
+          afc_alerta_perecedero_emitida: boolean
+          afc_apto_despacho_anticipado: boolean
+          afc_certificado_cumplimiento: Json | null
+          afc_perecedero: boolean
+          afc_prioridad_periferia: boolean
+          afc_sello_facilitacion: boolean
           ata: string | null
           bultos: number | null
           buque_vuelo: string | null
@@ -265,6 +340,12 @@ export type Database = {
           zod_validado: boolean
         }
         Insert: {
+          afc_alerta_perecedero_emitida?: boolean
+          afc_apto_despacho_anticipado?: boolean
+          afc_certificado_cumplimiento?: Json | null
+          afc_perecedero?: boolean
+          afc_prioridad_periferia?: boolean
+          afc_sello_facilitacion?: boolean
           ata?: string | null
           bultos?: number | null
           buque_vuelo?: string | null
@@ -301,6 +382,12 @@ export type Database = {
           zod_validado?: boolean
         }
         Update: {
+          afc_alerta_perecedero_emitida?: boolean
+          afc_apto_despacho_anticipado?: boolean
+          afc_certificado_cumplimiento?: Json | null
+          afc_perecedero?: boolean
+          afc_prioridad_periferia?: boolean
+          afc_sello_facilitacion?: boolean
           ata?: string | null
           bultos?: number | null
           buque_vuelo?: string | null

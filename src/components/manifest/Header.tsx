@@ -1,4 +1,4 @@
-import { Anchor, History, Home, Inbox, Shield, Sparkles } from 'lucide-react';
+import { Anchor, BookOpen, History, Home, Inbox, Shield, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ export function Header() {
   const isHistorial = location.pathname === '/historial';
   const isInbox = location.pathname === '/stella-inbox';
   const isHorizonte = location.pathname === '/horizonte-carga';
+  const isConsultas = location.pathname === '/consultas-clasificatorias';
 
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md shadow-lg zenith-border-glow">
@@ -70,6 +71,16 @@ export function Header() {
                 >
                   <History className="h-4 w-4" />
                   Historial
+                </Button>
+              </Link>
+              <Link to="/consultas-clasificatorias">
+                <Button 
+                  variant={isConsultas ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="gap-2"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Consultas
                 </Button>
               </Link>
             </nav>
