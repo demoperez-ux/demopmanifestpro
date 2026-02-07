@@ -1,4 +1,4 @@
-import { History, Home, Shield, Sparkles } from 'lucide-react';
+import { History, Home, Inbox, Shield, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 export function Header() {
   const location = useLocation();
   const isHistorial = location.pathname === '/historial';
+  const isInbox = location.pathname === '/stella-inbox';
 
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md shadow-lg zenith-border-glow">
@@ -37,6 +38,16 @@ export function Header() {
                 >
                   <Home className="h-4 w-4" />
                   Inicio
+                </Button>
+              </Link>
+              <Link to="/stella-inbox">
+                <Button 
+                  variant={isInbox ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="gap-2"
+                >
+                  <Inbox className="h-4 w-4" />
+                  Stella's Inbox
                 </Button>
               </Link>
               <Link to="/historial">

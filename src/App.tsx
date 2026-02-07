@@ -12,6 +12,7 @@ import Historial from "./pages/Historial";
 import DashboardManifiesto from "./pages/DashboardManifiesto";
 import TestDeteccion from "./pages/TestDeteccion";
 import BuscadorAranceles from "./pages/BuscadorAranceles";
+import StellaInbox from "./pages/StellaInbox";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -93,6 +94,12 @@ const App: React.FC = () => {
               <Route path="/aranceles" element={
                 <ProtectedRoute>
                   <BuscadorAranceles />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/stella-inbox" element={
+                <ProtectedRoute>
+                  <StellaInbox />
                 </ProtectedRoute>
               } />
               
