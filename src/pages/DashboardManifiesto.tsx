@@ -19,8 +19,9 @@ import {
   Download, AlertTriangle, Search, Filter,
   ChevronLeft, ChevronRight, ArrowLeft, FileSpreadsheet,
   Plane, CheckCircle2, AlertCircle, TrendingUp, Pill, Barcode, Brain,
-  MapPin, Building2, Map, Shield, Sparkles, Anchor
+  MapPin, Building2, Map, Shield, Sparkles, Anchor, Scale
 } from 'lucide-react';
+import { PortalCorredor } from '@/components/zenith/PortalCorredor';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { COLORES_PROVINCIA } from '@/lib/panamaGeography';
 import * as XLSX from 'xlsx';
@@ -841,8 +842,12 @@ export default function DashboardManifiesto() {
           <CardTitle>Detalle de Paquetes</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="agenteAI" className="w-full">
+          <Tabs defaultValue="portal" className="w-full">
             <TabsList className="flex flex-wrap gap-1 h-auto p-1 mb-4">
+              <TabsTrigger value="portal" className="text-primary">
+                <Scale className="h-3 w-3 mr-1" />
+                Portal del Corredor
+              </TabsTrigger>
               <TabsTrigger value="agenteAI" className="text-primary">
                 <Brain className="h-3 w-3 mr-1" />
                 Agente AI
@@ -887,6 +892,36 @@ export default function DashboardManifiesto() {
                 Rectificación
               </TabsTrigger>
             </TabsList>
+
+            {/* Portal del Corredor — Draft-to-Sign */}
+            <TabsContent value="portal">
+              <PortalCorredor
+                mawb={manifiesto?.mawb || 'N/A'}
+                totalPaquetes={metricas.totalPaquetes}
+                valorCIFTotal={metricas.valorCIFTotal}
+                paisOrigen="US"
+                paquetes={paquetes.map(p => ({
+                  guia: p.tracking || '',
+                  descripcion: p.descripcion || '',
+                  valorUSD: p.valorUSD || 0,
+                  peso: p.peso || 0,
+                  consignatario: p.destinatario || '',
+                  identificacion: p.identificacion || '',
+                  direccion: p.direccion || '',
+                  provincia: p.provincia || '',
+                  requierePermiso: p.requierePermiso,
+                }))}
+                pesoDeclarado={paquetes.reduce((sum, p) => sum + (p.peso || 0), 0)}
+                pesoVerificado={paquetes.reduce((sum, p) => sum + (p.peso || 0), 0)}
+                onAprobado={(hash) => {
+                  toast({
+                    title: '✅ Expediente Aprobado',
+                    description: `El corredor ha dado el Aprobado Final. Hash: ${hash.substring(0, 16)}...`
+                  });
+                }}
+                onExportarSIGA={handleDescargarExcel}
+              />
+            </TabsContent>
 
             <TabsContent value="agenteAI">
               <PanelAgenteAduanal 

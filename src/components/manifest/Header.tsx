@@ -25,7 +25,7 @@ export function Header() {
               <div className="hidden sm:flex flex-col">
                 <span className="text-xl font-bold font-display text-gradient tracking-wider">ZENITH</span>
                 <span className="text-xs font-medium text-muted-foreground tracking-wide">{COMPANY_INFO.tagline}</span>
-                <span className="text-[10px] text-muted-foreground/50 tracking-wider">{PLATFORM_INFO.poweredBy}</span>
+                <span className="text-[10px] text-muted-foreground/50 tracking-wider">{PLATFORM_INFO.role}</span>
               </div>
             </Link>
             <nav className="hidden md:flex items-center gap-2 ml-6 border-l border-border pl-6">
@@ -56,11 +56,11 @@ export function Header() {
             <div className="flex items-center gap-3 text-xs">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
                 <Sparkles className="w-3 h-3 text-stella" />
-                <span className="text-stella-light font-medium">Stella</span>
+                <span className="text-stella-light font-medium">Stella — Consultora Normativa</span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/20">
                 <Shield className="w-3 h-3 text-zod" />
-                <span className="text-zod-light font-medium">Zod</span>
+                <span className="text-zod-light font-medium">Zod — Blindaje Legal</span>
               </div>
             </div>
             <div className="flex flex-col items-end text-right border-l border-border pl-4">

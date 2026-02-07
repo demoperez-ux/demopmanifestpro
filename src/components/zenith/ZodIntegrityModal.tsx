@@ -112,7 +112,7 @@ export function ZodIntegrityModal({ verdict, open, onClose, onOverride }: Props)
 
           {/* Zenith tagline */}
           <p className="text-center text-xs text-muted-foreground/60 italic">
-            "La integridad de los datos no es negociable." — Zod Integrity Engine
+            "Blindaje Legal — La integridad de los datos no es negociable." — Zod Integrity Engine
           </p>
         </div>
 

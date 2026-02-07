@@ -1,4 +1,4 @@
-// ZENITH - Centro de Comando Aduanero
+// ZENITH - Copiloto de Inteligencia Aduanera
 // "La cumbre del control aduanero"
 // Powered by Orion Freight System
 // Developed by DemoPerez © 2025
@@ -7,7 +7,7 @@ export const COMPANY_INFO = {
   name: 'ZENITH',
   shortName: 'ZENITH',
   tradeName: 'ZENITH',
-  tagline: 'La cumbre del control aduanero',
+  tagline: 'Copiloto de Inteligencia Aduanera',
   ruc: '155678901-2-2025',
   location: 'Panamá, República de Panamá',
   country: 'República de Panamá',
@@ -19,34 +19,40 @@ export const COMPANY_INFO = {
   complianceEmail: 'compliance@zenith.pa',
   infoEmail: 'info@zenith.pa',
   website: 'www.zenith.pa',
-  license: 'Agente de Carga Autorizado ANA',
+  license: 'Sistema de Apoyo al Corredor de Aduanas Licenciado',
 };
 
 export const PLATFORM_INFO = {
   name: 'ZENITH',
-  fullName: 'ZENITH — Centro de Comando Aduanero',
-  version: '4.0',
-  description: 'La cumbre del control aduanero',
+  fullName: 'ZENITH — Copiloto de Inteligencia Aduanera',
+  version: '5.0',
+  description: 'Sistema de apoyo al corredor de aduanas licenciado',
   poweredBy: 'Powered by Orion Freight System',
   standard: 'Gold Standard — OEA & BASC v6-2022',
+  role: 'Copiloto — El corredor licenciado da el Aprobado Final',
   engines: {
     stella: {
       name: 'Stella Help',
-      role: 'IA Proactiva — Entrenadora y Asistente Operativa',
+      role: 'Consultora Normativa — RECAUCA, DL 1/2008, TLC',
       color: 'cyan',
-      compliance: 'Monitoreo OEA + Ruta Crítica + Entrenamiento BASC',
+      compliance: 'Notas Técnicas + Base Legal + Sugerencia de Destinación',
     },
     zod: {
       name: 'Zod Integrity Engine',
-      role: 'Guardián de Precisión — Motor de Integridad 0%',
+      role: 'Blindaje Legal — Auditoría de Responsabilidad Solidaria',
       color: 'amber',
-      compliance: 'Debida Diligencia + Sellos/Precintos + Bloqueo OFAC/ONU',
+      compliance: 'Detección de Fraude + Informe de Riesgo + Bloqueo Preventivo',
     },
   },
   compliance: {
     oea: 'Operador Económico Autorizado — Resolución ANA',
     basc: 'Business Alliance for Secure Commerce v6-2022',
     vuce: 'Ventanilla Única de Comercio Exterior (preparado)',
+  },
+  workflow: {
+    draft: 'Preparado por ZENITH',
+    review: 'En Revisión del Corredor',
+    approved: 'Aprobado Final — Listo para Liquidación SIGA',
   },
 };
 
@@ -84,11 +90,14 @@ export const REGULATORY_INFO = {
     },
   },
   laws: [
-    'Código Fiscal de la República de Panamá',
-    'Decreto Ejecutivo No. 266 (Reglamento Aduanero)',
-    'Resoluciones de la Autoridad Nacional de Aduanas',
+    'Decreto Ley 1 de 2008 (Régimen Aduanero de Panamá)',
+    'RECAUCA (Reglamento del Código Aduanero Uniforme Centroamericano)',
+    'Decreto Ejecutivo No. 266 de 2006 (Reglamento Aduanero)',
+    'Ley 30 de 1984 (Actividad de los Corredores de Aduanas)',
+    'Resolución No. 222 ANA (Honorarios del Corredor)',
     'Ley 23 de 1997 (Control de Medicamentos)',
     'Ley 81 de 2019 (Protección de Datos Personales)',
+    'TPA Panamá–EE.UU. (2012)',
   ],
   thresholds: {
     lowValue: 100,
