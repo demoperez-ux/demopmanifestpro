@@ -6,6 +6,10 @@
 
 import { useState, useMemo } from 'react';
 import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
+import {
   Shield, ShieldCheck, ShieldAlert, CheckCircle2, AlertTriangle,
   Users, FileCheck, Lock, Sparkles, ArrowRight, Eye,
   ClipboardCheck, TrendingUp, BarChart3, Activity, Radar
@@ -21,6 +25,7 @@ import { GestorAsociadosNegocio, AsociadoNegocio, ResultadoDebidaDiligencia } fr
 import { RadarRiesgoOEA } from '@/components/zenith/RadarRiesgoOEA';
 import { ParametrosEvaluacion, ResultadoMatrizRiesgo as ResultadoMatrizNueva } from '@/lib/compliance/MatrizRiesgoOEA';
 import { ZodVerdict } from '@/components/zenith/ZodIntegrityModal';
+import { Inspeccion17Puntos } from '@/components/zenith/Inspeccion17Puntos';
 
 interface Props {
   totalPaquetes?: number;
@@ -54,6 +59,7 @@ export function DashboardCumplimiento({
   const [checklist, setChecklist] = useState<ItemChecklistOEA[]>(() => MotorCumplimientoOEA.inicializarChecklist());
   const [activeTab, setActiveTab] = useState('radar');
   const [inspeccionCompletada, setInspeccionCompletada] = useState(false);
+  const [inspeccionModalOpen, setInspeccionModalOpen] = useState(false);
 
   const metricas = useMemo(() => MotorCumplimientoOEA.obtenerMetricas(), [checklist]);
   const metricasBASC = useMemo(() => GestorAsociadosNegocio.obtenerMetricasBASC(), []);
@@ -232,13 +238,13 @@ export function DashboardCumplimiento({
           </TabsTrigger>
         </TabsList>
 
-        {/* Radar OEA - Nuevo */}
+        {/* Radar OEA */}
         <TabsContent value="radar" className="space-y-4 mt-4">
           <RadarRiesgoOEA
             parametros={parametrosRadar}
             onBloqueado={handleZodBloqueo}
             inspeccionCompletada={inspeccionCompletada}
-            onSubirFotosInspeccion={() => setInspeccionCompletada(true)}
+            onAbrirInspeccion={() => setInspeccionModalOpen(true)}
           />
         </TabsContent>
 
@@ -418,6 +424,22 @@ export function DashboardCumplimiento({
           <span>Verificado por Zod Integrity Engine</span>
         </div>
       </div>
+
+      {/* Modal de Inspección de 17 Puntos */}
+      <Dialog open={inspeccionModalOpen} onOpenChange={setInspeccionModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <Inspeccion17Puntos
+            mawb={mawb || 'N/A'}
+            nivelRiesgo={parametrosRadar.paisOrigen}
+            scoreRiesgo={matrizRiesgo.puntuacionGlobal}
+            onCertificado={(hash) => {
+              setInspeccionCompletada(true);
+              setInspeccionModalOpen(false);
+            }}
+            onCerrar={() => setInspeccionModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

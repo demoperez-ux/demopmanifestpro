@@ -34,8 +34,8 @@ interface Props {
   onCanalVerde?: () => void;
   /** Si la inspección de 17 puntos ya fue completada */
   inspeccionCompletada?: boolean;
-  /** Callback para subir fotos de inspección */
-  onSubirFotosInspeccion?: () => void;
+  /** Callback para abrir la inspección de 17 puntos */
+  onAbrirInspeccion?: () => void;
 }
 
 // Colores según nivel
@@ -101,7 +101,7 @@ export function RadarRiesgoOEA({
   onBloqueado,
   onCanalVerde,
   inspeccionCompletada = false,
-  onSubirFotosInspeccion,
+  onAbrirInspeccion,
 }: Props) {
   const resultado = useMemo(() => MatrizRiesgoOEA.evaluar(parametros), [parametros]);
   const datosRadar = useMemo(() => MatrizRiesgoOEA.obtenerDatosRadar(resultado), [resultado]);
@@ -276,25 +276,25 @@ export function RadarRiesgoOEA({
                 <Camera className={`w-5 h-5 ${inspeccionCompletada ? 'text-success' : 'text-destructive'}`} />
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    Inspección de 17 Puntos {inspeccionCompletada ? '— Completada ✓' : '— Requerida'}
+                    Inspección de 17 Puntos {inspeccionCompletada ? '— Certificada ✓' : '— Requerida'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {inspeccionCompletada
-                      ? 'Las fotos de inspección han sido registradas. Puede proceder.'
-                      : 'Suba las fotos de inspección antes de permitir el avance de la liquidación SIGA.'
+                      ? 'La inspección ha sido certificada por Zod Integrity Engine. Puede proceder.'
+                      : 'Complete la inspección de 17 puntos con evidencia fotográfica antes de continuar.'
                     }
                   </p>
                 </div>
               </div>
-              {!inspeccionCompletada && onSubirFotosInspeccion && (
+              {!inspeccionCompletada && onAbrirInspeccion && (
                 <Button
                   size="sm"
                   variant="outline"
                   className="border-destructive/30 text-destructive hover:bg-destructive/10"
-                  onClick={onSubirFotosInspeccion}
+                  onClick={onAbrirInspeccion}
                 >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Subir Fotos
+                  <Shield className="w-4 h-4 mr-2" />
+                  Iniciar Inspección
                 </Button>
               )}
             </div>
