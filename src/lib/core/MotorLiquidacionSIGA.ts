@@ -17,8 +17,8 @@ const SIGA = {
   TASA_FORMULARIO: 5.00,       // B/. 5.00 fijo
   ITBMS_STANDARD: 7,           // 7%
   SEGURO_TEORICO: 1,           // 1% del FOB si no existe
-  UMBRAL_DE_MINIMIS: 100,      // USD 100
-  UMBRAL_CORREDOR: 2000,       // USD 2000
+  UMBRAL_DE_MINIMIS: 100.00,   // USD $100.00 CIF exacto (Feb 2026)
+  UMBRAL_CORREDOR: 2000.00,    // USD $2,000.00 (Feb 2026: > $2,000.00)
   RECARGO_1_DIAS: 5,           // Días para primer recargo
   RECARGO_1_PORCENTAJE: 10,    // 10%
   RECARGO_2_DIAS: 8,           // Días para segundo recargo
@@ -403,14 +403,14 @@ export class MotorLiquidacionSIGA {
       return { categoria: 'A', descripcion: 'Documentos - Exento' };
     }
     
-    // Categoría B: De Minimis
+    // Categoría B: De Minimis (≤ $100.00 CIF)
     if (valorCIF <= SIGA.UMBRAL_DE_MINIMIS) {
-      return { categoria: 'B', descripcion: `De Minimis (≤ $${SIGA.UMBRAL_DE_MINIMIS}) - Exento tributos` };
+      return { categoria: 'B', descripcion: `De Minimis (≤ $${SIGA.UMBRAL_DE_MINIMIS.toFixed(2)}) - Exento tributos` };
     }
     
-    // Categoría D: Alto Valor
-    if (valorCIF >= SIGA.UMBRAL_CORREDOR) {
-      return { categoria: 'D', descripcion: `Alto Valor (≥ $${SIGA.UMBRAL_CORREDOR}) - Requiere Corredor` };
+    // Categoría D: Alto Valor (> $2,000.00) o mercancía restringida
+    if (valorCIF > SIGA.UMBRAL_CORREDOR) {
+      return { categoria: 'D', descripcion: `Alto Valor (> $${SIGA.UMBRAL_CORREDOR.toFixed(2)}) - Requiere Corredor` };
     }
     
     // Categoría C: Bajo Valor

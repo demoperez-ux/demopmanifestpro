@@ -37,15 +37,15 @@ export class ConfigService {
   }
   
   /**
-   * Clasifica un valor según la política de umbrales
+   * Clasifica un valor según la política de umbrales (Feb 2026)
    * POLÍTICA ÚNICA:
-   * - Categoría B (exento): valor <= umbralDeMinimis
-   * - Categoría C (tributos): umbralDeMinimis < valor < umbralCorredorObligatorio
-   * - Categoría D (corredor): valor >= umbralCorredorObligatorio
+   * - Categoría B (exento): valor <= $100.00 CIF
+   * - Categoría C (tributos): $100.00 < valor <= $2,000.00
+   * - Categoría D (corredor): valor > $2,000.00 o mercancía restringida
    */
   static clasificarPorValor(valor: number): 'B' | 'C' | 'D' {
     if (valor <= currentConfig.umbralDeMinimis) return 'B';
-    if (valor >= currentConfig.umbralCorredorObligatorio) return 'D';
+    if (valor > currentConfig.umbralCorredorObligatorio) return 'D';
     return 'C';
   }
   
@@ -57,10 +57,10 @@ export class ConfigService {
   }
   
   /**
-   * Verifica si un valor requiere corredor
+   * Verifica si un valor requiere corredor (> $2,000.00)
    */
   static requiereCorredor(valor: number): boolean {
-    return valor >= currentConfig.umbralCorredorObligatorio;
+    return valor > currentConfig.umbralCorredorObligatorio;
   }
   
   /**

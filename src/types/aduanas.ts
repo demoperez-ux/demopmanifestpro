@@ -204,7 +204,7 @@ export interface ConfiguracionLiquidacion {
 export const DEFAULT_CONFIG_LIQUIDACION: ConfiguracionLiquidacion = {
   tasaSeguroTeorico: 1.5,
   tasaAduaneraCourier: 2.00,
-  umbralDeMinimis: 100,
-  umbralCorredorObligatorio: 2000,
+  umbralDeMinimis: 100.00,      // $100.00 CIF exacto (Feb 2026)
+  umbralCorredorObligatorio: 2000.00, // >$2,000.00 requiere corredor
   itbmsDefault: 7.0
 };

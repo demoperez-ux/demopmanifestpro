@@ -990,6 +990,41 @@ export const PUNTOS_CONTROL_PANAMA: PuntoControlAduanero[] = [
       { tipo: 'producto', descripcion: 'Requiere Contrato de Establecimiento vigente' }
     ],
     documentosRequeridos: ['Declaración de Importación', 'Factura Comercial', 'Contrato de Establecimiento']
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // CANAL SECO "OMAR TORRIJOS HERRERA" (Decreto 13 de 2024)
+  // Zona de tránsito habilitada Atlántico ↔ Pacífico
+  // ═══════════════════════════════════════════════════════════════════
+  
+  {
+    id: 'CANAL_SECO_OTH',
+    nombre: 'Canal Seco "Omar Torrijos Herrera"',
+    codigo: 'CSOTH',
+    tipo: 'zona_especial',
+    administracionRegional: 'zona_oriental',
+    provincia: 'Panamá',
+    zonaAduanera: 'canal_seco_oth',
+    modosTransporte: ['terrestre'],
+    horarioOperacion: '24/7',
+    tieneControlFitosanitario: true,
+    tieneControlZoosanitario: true,
+    tieneControlMINSA: true,
+    tieneCONAPRED: true,
+    tieneRayosX: true,
+    tieneBascula: true,
+    capacidadContenedores: 2000,
+    tasasEspeciales: [
+      { concepto: 'Tasa de Sistema SIGA', monto: 3.00, moneda: 'PAB', aplicaA: 'bulto' },
+      { concepto: 'Peaje Canal Seco', monto: 75, moneda: 'USD', aplicaA: 'contenedor' },
+      { concepto: 'Servicio de Tránsito Intermodal', monto: 120, moneda: 'USD', aplicaA: 'contenedor' }
+    ],
+    restriccionesEspeciales: [
+      { tipo: 'producto', descripcion: 'Zona de tránsito intermodal habilitada por Decreto 13 de 2024' },
+      { tipo: 'producto', descripcion: 'Conecta puertos del Atlántico (Colón) con puertos del Pacífico (Balboa)' },
+      { tipo: 'producto', descripcion: 'Solo carga en contenedores - No admite carga suelta' }
+    ],
+    documentosRequeridos: ['B/L o AWB', 'Factura Comercial', 'Manifiesto de Tránsito', 'Declaración de Tránsito Aduanero', 'Póliza de Seguro de Transporte']
   }
 ];
 

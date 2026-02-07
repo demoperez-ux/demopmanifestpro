@@ -238,6 +238,18 @@ export class MotorFiltroSanitario {
         obligatorio: true,
         subido: false
       });
+      
+      // Feb 2026: F-05-BE-PF-DRS para productos Capítulo 30 que requieran bioequivalencia
+      if (this.requiereBioequivalencia(descripcion)) {
+        documentos.push({
+          id: 'bioequivalencia_f05',
+          tipo: 'bioequivalencia_f05',
+          nombre: 'Formulario F-05-BE-PF-DRS (Bioequivalencia)',
+          descripcion: 'Formulario de bioequivalencia MINSA obligatorio para productos del Capítulo 30 que requieran demostración de equivalencia terapéutica',
+          obligatorio: true,
+          subido: false
+        });
+      }
     } else {
       // B2C - Uso personal
       if (this.requiereRecetaMedica(descripcion)) {
@@ -271,6 +283,19 @@ export class MotorFiltroSanitario {
     }
 
     return documentos;
+  }
+
+  /**
+   * Feb 2026: Determina si un producto del Capítulo 30 requiere formulario F-05-BE-PF-DRS
+   * Aplica a medicamentos genéricos y similares que requieran demostración de bioequivalencia
+   */
+  private requiereBioequivalencia(descripcion: string): boolean {
+    const indicadoresBioequivalencia = [
+      'generic', 'genérico', 'generico', 'similar', 'bioequivalent',
+      'bioequivalente', 'equivalente terapéutico', 'therapeutic equivalent',
+      'multisource', 'copia', 'copy drug'
+    ];
+    return indicadoresBioequivalencia.some(ind => descripcion.includes(ind));
   }
 
   private crearAlertas(estado: EstadoMINSA, keywordsDetectadas: string[], descripcion: string): AlertaSanitaria[] {
@@ -307,6 +332,28 @@ export class MotorFiltroSanitario {
       });
     }
 
+    // Feb 2026: Alerta F-05-BE-PF-DRS para bioequivalencia
+    if (this.requiereBioequivalencia(descripcion)) {
+      alertas.push({
+        id: 'alert_bioequivalencia',
+        tipo: 'warning',
+        titulo: '📋 BIOEQUIVALENCIA REQUERIDA (F-05-BE-PF-DRS)',
+        mensaje: 'Producto del Capítulo 30 requiere formulario F-05-BE-PF-DRS de bioequivalencia según normativa MINSA vigente.',
+        accionRequerida: 'Adjuntar formulario F-05-BE-PF-DRS completado y aprobado por MINSA.'
+      });
+    }
+
+    // Feb 2026: Alerta MIDA ARP (Análisis de Riesgo de Plagas) - 30 días previos
+    if (this.requiereARPMida(descripcion)) {
+      alertas.push({
+        id: 'alert_arp_mida',
+        tipo: 'error',
+        titulo: '🌿 ARP MIDA OBLIGATORIO - 30 DÍAS PREVIOS',
+        mensaje: 'Esta mercancía requiere Análisis de Riesgo de Plagas (ARP) del MIDA. La solicitud debe presentarse con mínimo 30 días de anticipación a la importación.',
+        accionRequerida: 'Verificar que el ARP fue solicitado al MIDA con al menos 30 días de antelación. Sin ARP aprobado, la mercancía NO puede ser liberada.'
+      });
+    }
+
     if (keywordsDetectadas.length > 0 && estado === 'PERSONAL_USE') {
       alertas.push({
         id: 'alert_documents',
@@ -318,6 +365,22 @@ export class MotorFiltroSanitario {
     }
 
     return alertas;
+  }
+
+  /**
+   * Feb 2026: Detecta si la mercancía requiere ARP (Análisis de Riesgo de Plagas) del MIDA
+   * Aplica a productos vegetales, semillas, plantas vivas, madera, suelo, etc.
+   */
+  private requiereARPMida(descripcion: string): boolean {
+    const indicadoresARP = [
+      'seed', 'semilla', 'plant', 'planta', 'live plant', 'planta viva',
+      'wood', 'madera', 'lumber', 'timber', 'soil', 'tierra', 'suelo',
+      'fruit tree', 'arbol frutal', 'seedling', 'plantón', 'cutting', 'esqueje',
+      'grain', 'grano', 'cereal', 'legume', 'leguminosa',
+      'organic matter', 'materia orgánica', 'compost', 'fertilizer', 'fertilizante',
+      'hay', 'heno', 'straw', 'paja'
+    ];
+    return indicadoresARP.some(ind => descripcion.includes(ind));
   }
 
   private crearResultadoAprobado(paquete: ManifestRow): ResultadoFiltroSanitario {
