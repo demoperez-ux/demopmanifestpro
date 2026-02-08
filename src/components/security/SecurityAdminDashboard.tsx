@@ -145,14 +145,24 @@ export const SecurityAdminDashboard: React.FC = () => {
     l.resource_type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const roleLabel: Record<AppRole, string> = {
+  const roleLabel: Record<string, string> = {
+    master_admin: 'Master Admin',
+    senior_broker: 'Senior Broker',
+    it_security: 'IT / Security',
+    asistente: 'Asistente',
+    agente_campo: 'Agente Campo',
     operador: 'Analista',
     revisor: 'Corredor',
     auditor: 'Auditor',
     admin: 'Administrador',
   };
 
-  const roleBadgeClass: Record<AppRole, string> = {
+  const roleBadgeClass: Record<string, string> = {
+    master_admin: 'bg-destructive-light text-destructive',
+    senior_broker: 'bg-success-light text-success',
+    it_security: 'bg-warning-light text-warning',
+    asistente: 'bg-info-light text-info',
+    agente_campo: 'bg-muted text-muted-foreground',
     operador: 'bg-info-light text-info',
     revisor: 'bg-success-light text-success',
     auditor: 'bg-warning-light text-warning',
