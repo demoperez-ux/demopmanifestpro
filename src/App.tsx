@@ -22,6 +22,8 @@ import RedCumplimientoUNCAP from "./pages/RedCumplimientoUNCAP";
 import PortalCorredorPage from "./pages/PortalCorredorPage";
 import ZenithPulsePage from "./pages/ZenithPulsePage";
 import ClientePortalPage from "./pages/ClientePortalPage";
+import TaxSimulatorPage from "./pages/TaxSimulatorPage";
+import LexisLogicEnginePage from "./pages/LexisLogicEnginePage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -96,6 +98,8 @@ const App: React.FC = () => {
               } />
               <Route path="/zenith-pulse" element={<ProtectedWithLayout><ZenithPulsePage /></ProtectedWithLayout>} />
               <Route path="/cliente-portal" element={<ProtectedWithLayout><ClientePortalPage /></ProtectedWithLayout>} />
+              <Route path="/tax-simulator" element={<ProtectedWithLayout><TaxSimulatorPage /></ProtectedWithLayout>} />
+              <Route path="/lexis-engine" element={<ProtectedWithLayout><LexisLogicEnginePage /></ProtectedWithLayout>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
