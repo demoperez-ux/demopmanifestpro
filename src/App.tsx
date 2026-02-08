@@ -36,6 +36,7 @@ import AboutZenithPage from "./pages/AboutZenithPage";
 import ERPSyncHistoryPage from "./pages/ERPSyncHistoryPage";
 import SIGAGatewayPage from "./pages/SIGAGatewayPage";
 import SecurityAdminPage from "./pages/SecurityAdminPage";
+import DataIntegrityPage from "./pages/DataIntegrityPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -130,6 +131,11 @@ const App: React.FC = () => {
               <Route path="/security-admin" element={
                 <ProtectedRoute allowedRoles={['admin', 'auditor']}>
                   <AppLayout><SecurityAdminPage /></AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/data-integrity" element={
+                <ProtectedRoute allowedRoles={['admin', 'auditor', 'revisor']}>
+                  <AppLayout><DataIntegrityPage /></AppLayout>
                 </ProtectedRoute>
               } />
               
