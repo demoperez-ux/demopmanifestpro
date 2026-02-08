@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { AppSidebar } from './AppSidebar';
+import { StellaHelpChat } from '@/components/stella/StellaHelpChat';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -12,6 +13,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main className="flex-1 min-w-0 overflow-auto">
         {children}
       </main>
+      <StellaHelpChat />
     </div>
   );
 }
