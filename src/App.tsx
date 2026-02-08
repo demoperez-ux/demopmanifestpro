@@ -38,6 +38,7 @@ import SIGAGatewayPage from "./pages/SIGAGatewayPage";
 import SecurityAdminPage from "./pages/SecurityAdminPage";
 import DataIntegrityPage from "./pages/DataIntegrityPage";
 import IdentityCommandPage from "./pages/IdentityCommandPage";
+import SystemHealthPage from "./pages/SystemHealthPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -173,6 +174,11 @@ const App: React.FC = () => {
               <Route path="/stress-test" element={
                 <ProtectedRoute allowedRoles={['master_admin']}>
                   <AppLayout><StressTestPage /></AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/system-health" element={
+                <ProtectedRoute allowedRoles={['master_admin', 'it_security']}>
+                  <AppLayout><SystemHealthPage /></AppLayout>
                 </ProtectedRoute>
               } />
 
