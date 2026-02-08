@@ -58,6 +58,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: ShieldAlert,
     items: [
       { label: 'Customs Shield', to: '/customs-shield', icon: ShieldAlert },
+      { label: 'Data Integrity', to: '/data-integrity', icon: Shield },
       { label: 'ERP Sync History', to: '/erp-sync-history', icon: CloudUpload },
       { label: 'Historial', to: '/historial', icon: History },
       { label: 'Consultas', to: '/consultas-clasificatorias', icon: BookOpen },
