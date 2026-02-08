@@ -1,11 +1,11 @@
 /**
- * MANIFEST SNIFFER COURIER — LEXIS Module
+ * MANIFEST SNIFFER — LEXIS Module
  * 
  * Motor de detección y clasificación de manifiestos de paquetería aérea.
  * Identifica relaciones Guía Madre (MAWB) ↔ Guía Hija (HAWB) y
- * normaliza formatos de múltiples carriers (Amazon, DHL, FedEx, UPS).
+ * normaliza formatos de múltiples carriers por patrones técnicos IATA.
  * 
- * Fundamento: Resolución ANA 049-2025 — Régimen Courier Panamá
+ * Fundamento: Resolución ANA 049-2025 — Régimen Express Panamá
  */
 
 import { devLog, devWarn } from '@/lib/logger';
@@ -60,9 +60,9 @@ const IATA_PREFIXES: Record<string, string> = {
   '006': 'Delta Air Lines',
   '074': 'KLM',
   '220': 'Lufthansa',
-  '618': 'DHL Aviation',
-  '023': 'FedEx',
-  '406': 'UPS Airlines',
+  '618': 'IATA-618',
+  '023': 'IATA-023',
+  '406': 'IATA-406',
   '580': 'Atlas Air',
   '235': 'Turkish Airlines',
   '160': 'Cathay Pacific',
@@ -77,23 +77,23 @@ const IATA_PREFIXES: Record<string, string> = {
 // ─── Patrones de tracking por carrier ───────────────────
 
 const CARRIER_PATTERNS: { carrier: string; pattern: RegExp; tipo: TipoGuia }[] = [
-  // Amazon
-  { carrier: 'Amazon', pattern: /^TBA\d{10,15}$/i, tipo: 'TRACKING' },
-  { carrier: 'Amazon', pattern: /^AMZ[A-Z0-9]{8,}$/i, tipo: 'TRACKING' },
-  // DHL
-  { carrier: 'DHL', pattern: /^\d{10}$/, tipo: 'TRACKING' },
-  { carrier: 'DHL', pattern: /^JJD\d{18,}$/i, tipo: 'TRACKING' },
-  // FedEx
-  { carrier: 'FedEx', pattern: /^\d{12,15}$/, tipo: 'TRACKING' },
-  { carrier: 'FedEx', pattern: /^\d{20,22}$/, tipo: 'TRACKING' },
-  // UPS
-  { carrier: 'UPS', pattern: /^1Z[A-Z0-9]{16}$/i, tipo: 'TRACKING' },
-  // USPS
-  { carrier: 'USPS', pattern: /^(?:9[2-5]\d{20,}|[A-Z]{2}\d{9}[A-Z]{2})$/i, tipo: 'TRACKING' },
+  // E-commerce fulfillment tracking
+  { carrier: 'Fulfillment-A', pattern: /^TBA\d{10,15}$/i, tipo: 'TRACKING' },
+  { carrier: 'Fulfillment-A', pattern: /^AMZ[A-Z0-9]{8,}$/i, tipo: 'TRACKING' },
+  // Express carrier — 10-digit tracking
+  { carrier: 'Express-B', pattern: /^\d{10}$/, tipo: 'TRACKING' },
+  { carrier: 'Express-B', pattern: /^JJD\d{18,}$/i, tipo: 'TRACKING' },
+  // Express carrier — 12-15 digit tracking
+  { carrier: 'Express-C', pattern: /^\d{12,15}$/, tipo: 'TRACKING' },
+  { carrier: 'Express-C', pattern: /^\d{20,22}$/, tipo: 'TRACKING' },
+  // Express carrier — 1Z format
+  { carrier: 'Express-D', pattern: /^1Z[A-Z0-9]{16}$/i, tipo: 'TRACKING' },
+  // National postal service
+  { carrier: 'Postal', pattern: /^(?:9[2-5]\d{20,}|[A-Z]{2}\d{9}[A-Z]{2})$/i, tipo: 'TRACKING' },
   // IATA MAWB: XXX-XXXXXXXX
   { carrier: 'IATA', pattern: /^\d{3}-\d{8}$/, tipo: 'MAWB' },
-  // HAWB genérico
-  { carrier: 'Courier', pattern: /^[A-Z]{2,4}\d{6,10}$/i, tipo: 'HAWB' },
+  // Generic HAWB
+  { carrier: 'Express', pattern: /^[A-Z]{2,4}\d{6,10}$/i, tipo: 'HAWB' },
 ];
 
 // ─── Keywords para detectar manifiestos courier ─────────
@@ -103,7 +103,7 @@ const COURIER_KEYWORDS = [
   'guia madre', 'guia hija', 'master', 'house', 'hawb', 'mawb',
   'air waybill', 'tracking', 'shipment', 'consolidado', 'deconsolidado',
   'paquete', 'package', 'parcel', 'bulto', 'pieza',
-  'amazon', 'dhl', 'fedex', 'ups', 'usps',
+  'express', 'logistics', 'carrier', 'fulfillment',
 ];
 
 // ─── ManifestSnifferCourier ─────────────────────────────

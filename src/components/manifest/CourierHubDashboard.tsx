@@ -41,7 +41,8 @@ import {
 import {
   partnerManager,
   type PartnerConfig,
-  type ExportFormat
+  type ExportFormat,
+  type OperationType
 } from '@/lib/courier/partnerConfig';
 import type { ManifestRow } from '@/types/manifest';
 
@@ -111,7 +112,7 @@ function generarDemoMasivo(total: number = 1000): ManifestRow[] {
     const mawbNum = (10000000 + mawbIdx).toString();
     return {
       id: crypto.randomUUID(),
-      trackingNumber: `TBA${(300000000000 + i).toString()}`,
+      trackingNumber: `EXP${(300000000000 + i).toString()}`,
       mawb: `618-${mawbNum}`,
       description: item.desc,
       valueUSD: item.val + (i % 7) * 2,
@@ -163,7 +164,7 @@ export default function CourierHubDashboard() {
   const [ordenValor, setOrdenValor] = useState<'asc' | 'desc' | null>(null);
   const [paginaActual, setPaginaActual] = useState(0);
   const [detalleAbierto, setDetalleAbierto] = useState<AnalisisGuiaCourier | null>(null);
-  const [activePartnerId, setActivePartnerId] = useState<string>('generic');
+  const [activePartnerId, setActivePartnerId] = useState<string>('standard');
 
   // Partner activo
   const activePartner: PartnerConfig = useMemo(() => {
@@ -246,11 +247,11 @@ export default function CourierHubDashboard() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Partner Selector */}
+          {/* Operational Profile Selector */}
           <Select value={activePartnerId} onValueChange={setActivePartnerId}>
-            <SelectTrigger className="w-[180px] h-9 text-xs gap-1.5">
+            <SelectTrigger className="w-[220px] h-9 text-xs gap-1.5">
               <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
-              <SelectValue placeholder="Socio Logístico" />
+              <SelectValue placeholder="Operational Profile" />
             </SelectTrigger>
             <SelectContent>
               {allPartners.map(p => (
@@ -261,12 +262,12 @@ export default function CourierHubDashboard() {
             </SelectContent>
           </Select>
 
-          {/* Dynamic Export Dropdown */}
+          {/* Export Actions */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="default" size="sm" className="gap-1.5 text-xs">
                 <Download className="w-3.5 h-3.5" />
-                Generar Interfaz ERP para {activePartner.name}
+                📤 Sync with External ERP Standard
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -277,7 +278,7 @@ export default function CourierHubDashboard() {
                   className="text-xs gap-2"
                 >
                   {FORMAT_ICONS[fmt]}
-                  Exportar {fmt.toUpperCase()} — {activePartner.erpSystemName}
+                  📊 Generate Global Logistics Manifest ({fmt.toUpperCase()})
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -285,22 +286,24 @@ export default function CourierHubDashboard() {
         </div>
       </div>
 
-      {/* ── Partner Badge ────────────────────────────── */}
+      {/* ── Profile Badge ────────────────────────────── */}
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="text-[10px] bg-primary/5 border-primary/20 text-primary">
-          Socio Activo: {activePartner.name}
+          Operational Profile: {activePartner.name}
         </Badge>
         <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground">
           ERP: {activePartner.erpSystemName}
         </Badge>
         <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground">
-          Formatos: {activePartner.exportFormats.map(f => f.toUpperCase()).join(', ')}
+          Formats: {activePartner.exportFormats.map(f => f.toUpperCase()).join(', ')}
         </Badge>
-        {activePartner.iataCode && (
-          <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground">
-            IATA: {activePartner.iataCode}
-          </Badge>
-        )}
+        <Badge variant="outline" className={`text-[10px] ${
+          activePartner.operationType === 'alto_volumen' ? 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600'
+            : activePartner.operationType === 'sensible' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700'
+            : 'bg-primary/5 text-primary border-primary/20'
+        }`}>
+          {activePartner.operationType === 'alto_volumen' ? 'High Volume' : activePartner.operationType === 'sensible' ? 'Sensitive Cargo' : 'General Cargo'}
+        </Badge>
       </div>
 
       {/* ── KPI Strip ───────────────────────────────── */}
@@ -595,7 +598,7 @@ export default function CourierHubDashboard() {
                 {/* Partner info */}
                 <div className="p-2 rounded bg-muted/50 border border-border/50">
                   <p className="text-[10px] text-muted-foreground">
-                    Exportación configurada para <span className="font-medium text-foreground">{activePartner.name}</span> · {activePartner.erpSystemName}
+                    Operational Profile: <span className="font-medium text-foreground">{activePartner.name}</span> · {activePartner.erpSystemName} · EDIFACT/XML OMA Standard
                   </p>
                 </div>
               </div>

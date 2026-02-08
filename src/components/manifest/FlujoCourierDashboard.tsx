@@ -1,5 +1,5 @@
 /**
- * FLUJO COURIER ALTO VOLUMEN — Dashboard
+ * OPERATIONS FLOW — High Volume Dashboard
  * 
  * Panel unificado con 3 pestañas:
  * 1. Manifest Sniffer — Detección MAWB/HAWB
@@ -62,7 +62,7 @@ function generarDemoManifest(): ManifestRow[] {
     const consig = consignatarios[i % consignatarios.length];
     return {
       id: crypto.randomUUID(),
-      trackingNumber: `TBA${(300000000000 + i).toString()}`,
+      trackingNumber: `EXP${(300000000000 + i).toString()}`,
       mawb: i < 15 ? '618-12345678' : '230-87654321',
       description: item.desc,
       valueUSD: item.val + Math.random() * 20,
@@ -113,7 +113,7 @@ export default function FlujoCourierDashboard() {
           </div>
           <div>
             <h1 className="text-2xl font-bold font-display tracking-wide text-foreground">
-              Flujo Courier Alto Volumen
+              Operations Flow — High Volume
             </h1>
             <p className="text-sm text-muted-foreground">
               LEXIS Manifest Sniffer · Agrupador · Alerta Sensible

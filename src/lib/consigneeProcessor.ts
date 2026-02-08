@@ -295,7 +295,7 @@ export function formatConsolidatedForExport(deliveries: ConsolidatedDelivery[]):
         'ID Consignatario': delivery.consignee.id,
         'Total Paquetes': delivery.consignee.totalPackages,
         'Paquete #': index + 1,
-        'Guía Individual': pkg.trackingNumber, // Guía del paquete Amazon/courier
+        'Guía Individual': pkg.trackingNumber, // Guía individual del paquete
         'MAWB (Referencia)': pkg.mawb || 'N/A', // Solo referencia del manifiesto
         'Descripción': pkg.description,
         'Valor USD': pkg.valueUSD,
