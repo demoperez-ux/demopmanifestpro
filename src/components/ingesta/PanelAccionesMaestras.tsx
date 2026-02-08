@@ -1,19 +1,13 @@
 /**
  * PANEL DE ACCIONES MAESTRAS — ZENITH
- * 
- * Sidebar con botones principales de acción:
- * - Nueva Declaración (flujo manual)
- * - Carga Masiva (manifiestos Excel)
- * - Biblioteca Normativa (aranceles y SOPs)
+ * Clean enterprise action panel.
  */
 
 import { Link } from 'react-router-dom';
-import {
-  FilePlus, Upload, BookOpen, Sparkles, Shield,
-  FileSpreadsheet, Search, Award, Scale
-} from 'lucide-react';
+import { FilePlus, Upload, BookOpen, Search, Award, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 interface PanelAccionesMaestrasProps {
@@ -21,25 +15,6 @@ interface PanelAccionesMaestrasProps {
   onCargaMasiva: () => void;
   className?: string;
 }
-
-const ACCIONES = [
-  {
-    id: 'nueva-declaracion',
-    label: 'Nueva Declaración',
-    descripcion: 'Captura manual de datos aduaneros',
-    icon: FilePlus,
-    variant: 'default' as const,
-    glow: true,
-  },
-  {
-    id: 'carga-masiva',
-    label: 'Carga Masiva',
-    descripcion: 'Sube manifiestos en Excel',
-    icon: Upload,
-    variant: 'outline' as const,
-    glow: false,
-  },
-];
 
 const ACCESOS_RAPIDOS = [
   { label: 'Buscador Aranceles', to: '/aranceles', icon: Search },
@@ -54,74 +29,51 @@ export function PanelAccionesMaestras({
   className,
 }: PanelAccionesMaestrasProps) {
   return (
-    <aside className={cn('space-y-6', className)}>
-      {/* Acciones Principales */}
-      <div className="card-elevated p-5 space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Shield className="w-4 h-4 text-zod" />
-          <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase">
-            Acciones
-          </h3>
-        </div>
+    <aside className={cn('space-y-4', className)}>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">Acciones</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Button className="w-full justify-start gap-3" onClick={onNuevaDeclaracion}>
+            <FilePlus className="w-4 h-4" />
+            Nueva Declaración
+          </Button>
+          <Button variant="outline" className="w-full justify-start gap-3" onClick={onCargaMasiva}>
+            <Upload className="w-4 h-4" />
+            Carga Masiva
+          </Button>
+        </CardContent>
+      </Card>
 
-        {ACCIONES.map((accion) => {
-          const Icon = accion.icon;
-          const handler = accion.id === 'nueva-declaracion' ? onNuevaDeclaracion : onCargaMasiva;
-          return (
-            <Button
-              key={accion.id}
-              variant={accion.variant}
-              className={cn(
-                'w-full justify-start gap-3 h-auto py-3 px-4',
-                accion.glow && 'zenith-border-glow'
-              )}
-              onClick={handler}
-            >
-              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                <Icon className="w-5 h-5 text-primary" />
-              </div>
-              <div className="text-left">
-                <span className="block text-sm font-medium">{accion.label}</span>
-                <span className="block text-[11px] text-muted-foreground">{accion.descripcion}</span>
-              </div>
-            </Button>
-          );
-        })}
-      </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">Biblioteca Normativa</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {ACCESOS_RAPIDOS.map((acceso) => {
+            const Icon = acceso.icon;
+            return (
+              <Link key={acceso.to} to={acceso.to}>
+                <Button variant="ghost" className="w-full justify-start gap-2 h-9 text-sm" size="sm">
+                  <Icon className="w-4 h-4 text-muted-foreground" />
+                  {acceso.label}
+                </Button>
+              </Link>
+            );
+          })}
+        </CardContent>
+      </Card>
 
-      {/* Biblioteca Normativa */}
-      <div className="card-elevated p-5 space-y-3">
-        <div className="flex items-center gap-2 mb-1">
-          <BookOpen className="w-4 h-4 text-stella" />
-          <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase">
-            Biblioteca Normativa
-          </h3>
-        </div>
-
-        {ACCESOS_RAPIDOS.map((acceso) => {
-          const Icon = acceso.icon;
-          return (
-            <Link key={acceso.to} to={acceso.to}>
-              <Button variant="ghost" className="w-full justify-start gap-2 h-9 text-sm" size="sm">
-                <Icon className="w-4 h-4 text-muted-foreground" />
-                {acceso.label}
-              </Button>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Indicador Stella */}
-      <div className="glass-panel-stella p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4 text-stella stella-pulse" />
-          <span className="text-xs font-medium text-stella-light">Stella Activa</span>
-        </div>
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Al cargar documentos, Stella ejecutará pre-clasificación automática, OCR
-          y validación con el motor Zod antes de la captura.
-        </p>
-      </div>
+      <Card className="panel-stella">
+        <CardContent className="p-4">
+          <p className="text-xs font-medium text-foreground mb-1">Notificación de Cumplimiento</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Al cargar documentos, el sistema ejecutará clasificación automática
+            y validación de integridad antes de la captura.
+          </p>
+        </CardContent>
+      </Card>
     </aside>
   );
 }
