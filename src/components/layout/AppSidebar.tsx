@@ -1,7 +1,7 @@
 import {
   Home, Inbox, History, Anchor, BookOpen, UserPlus, Award,
   ShieldCheck, FileSignature, TrendingUp, Search, Moon, Sun,
-  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap
+  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -28,6 +28,7 @@ const NAV_ADMIN = [
   { label: 'Red LEXIS', to: '/red-cumplimiento', icon: ShieldCheck },
   { label: 'Portal Corredor', to: '/portal-corredor', icon: FileSignature, roles: ['revisor', 'admin'] as string[] },
   { label: 'TLC Knowledge', to: '/tlc-knowledge', icon: DatabaseZap, roles: ['revisor', 'admin'] as string[] },
+  { label: 'CAUCA/RECAUCA', to: '/cauca-recauca', icon: Scale },
   { label: 'Pulse', to: '/zenith-pulse', icon: TrendingUp },
 ];
 

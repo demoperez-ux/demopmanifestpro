@@ -1097,6 +1097,74 @@ export type Database = {
         }
         Relationships: []
       }
+      regimenes_temporales: {
+        Row: {
+          alertas_enviadas: Json | null
+          consignatario: string
+          corredor_id: string
+          created_at: string
+          descripcion_mercancia: string | null
+          embarque_id: string | null
+          estado: string
+          fecha_ingreso: string
+          fecha_vencimiento: string
+          id: string
+          notas: string | null
+          reexportacion_referencia: string | null
+          referencia: string
+          regimen_codigo: number
+          regimen_nombre: string
+          updated_at: string
+          valor_cif: number | null
+        }
+        Insert: {
+          alertas_enviadas?: Json | null
+          consignatario: string
+          corredor_id: string
+          created_at?: string
+          descripcion_mercancia?: string | null
+          embarque_id?: string | null
+          estado?: string
+          fecha_ingreso?: string
+          fecha_vencimiento: string
+          id?: string
+          notas?: string | null
+          reexportacion_referencia?: string | null
+          referencia: string
+          regimen_codigo?: number
+          regimen_nombre?: string
+          updated_at?: string
+          valor_cif?: number | null
+        }
+        Update: {
+          alertas_enviadas?: Json | null
+          consignatario?: string
+          corredor_id?: string
+          created_at?: string
+          descripcion_mercancia?: string | null
+          embarque_id?: string | null
+          estado?: string
+          fecha_ingreso?: string
+          fecha_vencimiento?: string
+          id?: string
+          notas?: string | null
+          reexportacion_referencia?: string | null
+          referencia?: string
+          regimen_codigo?: number
+          regimen_nombre?: string
+          updated_at?: string
+          valor_cif?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regimenes_temporales_embarque_id_fkey"
+            columns: ["embarque_id"]
+            isOneToOne: false
+            referencedRelation: "embarques_orion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tarifarios_corredor: {
         Row: {
           activo: boolean
@@ -1197,6 +1265,74 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      validaciones_kyc: {
+        Row: {
+          aviso_operacion_numero: string | null
+          aviso_operacion_verificado: boolean | null
+          consignatario_id: string | null
+          corredor_id: string
+          created_at: string
+          documento_coincide_firma: boolean | null
+          documento_representante: string | null
+          estado: string
+          fecha_validacion: string | null
+          id: string
+          nombre_cliente: string
+          notas: string | null
+          poder_representacion_verificado: boolean | null
+          ruc_activo: boolean | null
+          ruc_cedula: string
+          updated_at: string
+          validacion_zod_hash: string | null
+        }
+        Insert: {
+          aviso_operacion_numero?: string | null
+          aviso_operacion_verificado?: boolean | null
+          consignatario_id?: string | null
+          corredor_id: string
+          created_at?: string
+          documento_coincide_firma?: boolean | null
+          documento_representante?: string | null
+          estado?: string
+          fecha_validacion?: string | null
+          id?: string
+          nombre_cliente: string
+          notas?: string | null
+          poder_representacion_verificado?: boolean | null
+          ruc_activo?: boolean | null
+          ruc_cedula: string
+          updated_at?: string
+          validacion_zod_hash?: string | null
+        }
+        Update: {
+          aviso_operacion_numero?: string | null
+          aviso_operacion_verificado?: boolean | null
+          consignatario_id?: string | null
+          corredor_id?: string
+          created_at?: string
+          documento_coincide_firma?: boolean | null
+          documento_representante?: string | null
+          estado?: string
+          fecha_validacion?: string | null
+          id?: string
+          nombre_cliente?: string
+          notas?: string | null
+          poder_representacion_verificado?: boolean | null
+          ruc_activo?: boolean | null
+          ruc_cedula?: string
+          updated_at?: string
+          validacion_zod_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validaciones_kyc_consignatario_id_fkey"
+            columns: ["consignatario_id"]
+            isOneToOne: false
+            referencedRelation: "consignatarios_fiscales"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
