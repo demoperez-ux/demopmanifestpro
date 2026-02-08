@@ -26,6 +26,7 @@ import TaxSimulatorPage from "./pages/TaxSimulatorPage";
 import LexisLogicEnginePage from "./pages/LexisLogicEnginePage";
 import TLCKnowledgeBasePage from "./pages/TLCKnowledgeBasePage";
 import CaucaRecaucaPage from "./pages/CaucaRecaucaPage";
+import FlujoCourierPage from "./pages/FlujoCourierPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -108,6 +109,7 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } />
               <Route path="/cauca-recauca" element={<ProtectedWithLayout><CaucaRecaucaPage /></ProtectedWithLayout>} />
+              <Route path="/flujo-courier" element={<ProtectedWithLayout><FlujoCourierPage /></ProtectedWithLayout>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
