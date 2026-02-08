@@ -268,6 +268,84 @@ export type Database = {
         }
         Relationships: []
       }
+      clientes_importadores: {
+        Row: {
+          aviso_operacion: string | null
+          cedula_representante: string | null
+          ciudad: string | null
+          corredor_id: string
+          created_at: string
+          direccion: string | null
+          dv: string | null
+          email: string | null
+          estado: string
+          id: string
+          kyc_fecha: string | null
+          kyc_verificado: boolean | null
+          nombre_comercial: string | null
+          notas: string | null
+          pais: string | null
+          provincia: string | null
+          razon_social: string
+          registro_publico: string | null
+          representante_legal: string | null
+          ruc: string
+          telefono: string | null
+          tipo_persona: string
+          updated_at: string
+        }
+        Insert: {
+          aviso_operacion?: string | null
+          cedula_representante?: string | null
+          ciudad?: string | null
+          corredor_id: string
+          created_at?: string
+          direccion?: string | null
+          dv?: string | null
+          email?: string | null
+          estado?: string
+          id?: string
+          kyc_fecha?: string | null
+          kyc_verificado?: boolean | null
+          nombre_comercial?: string | null
+          notas?: string | null
+          pais?: string | null
+          provincia?: string | null
+          razon_social: string
+          registro_publico?: string | null
+          representante_legal?: string | null
+          ruc: string
+          telefono?: string | null
+          tipo_persona?: string
+          updated_at?: string
+        }
+        Update: {
+          aviso_operacion?: string | null
+          cedula_representante?: string | null
+          ciudad?: string | null
+          corredor_id?: string
+          created_at?: string
+          direccion?: string | null
+          dv?: string | null
+          email?: string | null
+          estado?: string
+          id?: string
+          kyc_fecha?: string | null
+          kyc_verificado?: boolean | null
+          nombre_comercial?: string | null
+          notas?: string | null
+          pais?: string | null
+          provincia?: string | null
+          razon_social?: string
+          registro_publico?: string | null
+          representante_legal?: string | null
+          ruc?: string
+          telefono?: string | null
+          tipo_persona?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       consignatarios_fiscales: {
         Row: {
           activo: boolean | null
@@ -1097,6 +1175,78 @@ export type Database = {
         }
         Relationships: []
       }
+      proveedores_internacionales: {
+        Row: {
+          ciudad: string | null
+          contacto_email: string | null
+          contacto_nombre: string | null
+          contacto_telefono: string | null
+          corredor_id: string
+          created_at: string
+          direccion: string | null
+          estado: string
+          id: string
+          incoterm_preferido: string | null
+          moneda_preferida: string | null
+          nombre_comercial: string | null
+          nombre_empresa: string
+          notas: string | null
+          pais_origen: string
+          sancion_lista: string | null
+          sancion_verificada_at: string | null
+          tax_id: string | null
+          tipo_proveedor: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          ciudad?: string | null
+          contacto_email?: string | null
+          contacto_nombre?: string | null
+          contacto_telefono?: string | null
+          corredor_id: string
+          created_at?: string
+          direccion?: string | null
+          estado?: string
+          id?: string
+          incoterm_preferido?: string | null
+          moneda_preferida?: string | null
+          nombre_comercial?: string | null
+          nombre_empresa: string
+          notas?: string | null
+          pais_origen: string
+          sancion_lista?: string | null
+          sancion_verificada_at?: string | null
+          tax_id?: string | null
+          tipo_proveedor?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          ciudad?: string | null
+          contacto_email?: string | null
+          contacto_nombre?: string | null
+          contacto_telefono?: string | null
+          corredor_id?: string
+          created_at?: string
+          direccion?: string | null
+          estado?: string
+          id?: string
+          incoterm_preferido?: string | null
+          moneda_preferida?: string | null
+          nombre_comercial?: string | null
+          nombre_empresa?: string
+          notas?: string | null
+          pais_origen?: string
+          sancion_lista?: string | null
+          sancion_verificada_at?: string | null
+          tax_id?: string | null
+          tipo_proveedor?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       regimenes_temporales: {
         Row: {
           alertas_enviadas: Json | null
@@ -1234,6 +1384,54 @@ export type Database = {
           updated_at?: string
           vigente_desde?: string | null
           vigente_hasta?: string | null
+        }
+        Relationships: []
+      }
+      sys_audit_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          description: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string
+          session_id: string | null
+          severity: string
+          user_agent: string | null
+          user_id: string
+          user_role: Database["public"]["Enums"]["app_role"] | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          session_id?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id: string
+          user_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          session_id?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string
+          user_role?: Database["public"]["Enums"]["app_role"] | null
         }
         Relationships: []
       }
