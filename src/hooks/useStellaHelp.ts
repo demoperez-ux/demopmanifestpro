@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { getArticlesForRoute, serializeKnowledgeForAI } from '@/lib/stella/StellaKnowledgeBase';
 
 export interface StellaMessage {
   id: string;
@@ -72,6 +73,10 @@ export function useStellaHelp() {
         { role: 'user' as const, content: input },
       ];
 
+      // Get knowledge base articles relevant to current route
+      const relevantArticles = getArticlesForRoute(location.pathname);
+      const knowledgeContext = serializeKnowledgeForAI(relevantArticles.slice(0, 5));
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -80,7 +85,11 @@ export function useStellaHelp() {
         },
         body: JSON.stringify({
           messages: allMessages,
-          context: { ...stellaContext, currentRoute: location.pathname },
+          context: {
+            ...stellaContext,
+            currentRoute: location.pathname,
+            knowledgeContext: knowledgeContext || undefined,
+          },
         }),
         signal: controller.signal,
       });
