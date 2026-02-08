@@ -1,7 +1,7 @@
 import {
   Home, Inbox, History, Anchor, BookOpen, UserPlus, Award,
   ShieldCheck, FileSignature, TrendingUp, Search, Moon, Sun,
-  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck, Zap, Receipt, Radar, ShieldAlert, FolderInput
+  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck, Zap, Receipt, Radar, ShieldAlert, FolderInput, Info
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { label: 'Enterprise Billing', to: '/enterprise-billing', icon: Receipt },
   { label: 'Stress-Test Demo', to: '/stress-test', icon: Radar },
   { label: 'Customs Shield', to: '/customs-shield', icon: ShieldAlert },
+  { label: 'About ZENITH', to: '/about', icon: Info },
 ];
 
 const NAV_ADMIN = [
