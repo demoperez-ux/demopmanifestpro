@@ -1,15 +1,15 @@
 /**
  * PRE-INVOICE TEMPLATE — Plantilla de Pre-Factura ZENITH
- * Desglose de honorarios, servicios, gastos reembolsables
- * Área de Soportes de Terceros con referencia a PDFs
- * Botón de aprobación del cliente con auditoría Zod
+ * Reglas Fiscales DGI/ANA: ITBMS 7% solo servicios, Res. 222
+ * Campos: RUC + DV, Número Liquidación, Soportes con PDF
  */
 
 import { useState, useMemo } from 'react';
 import {
-  FileText, CheckCircle2, XCircle, Shield, Sparkles, Download,
-  FileSpreadsheet, Send, Clock, Eye, Lock, AlertTriangle,
-  Receipt, ExternalLink, Hash, Stamp, User, Calendar,
+  FileText, CheckCircle2, XCircle, Shield, Sparkles,
+  FileSpreadsheet, Send, Lock, AlertTriangle,
+  Receipt, ExternalLink, Hash, Stamp, User,
+  ShieldAlert, FileCheck2, FileMinus2, Scale,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,12 +29,15 @@ import {
   type PreFactura,
   type BillingStatus,
   type ValidacionPreFactura,
+  type BloqueoZod,
   BILLING_STATUS_LABELS,
   zodValidarPreFactura,
   generarHashIntegridad,
   generarTokenAprobacion,
   validarTransicion,
   generarPreFacturaDemo,
+  calcularITBMSPorCategoria,
+  calcularHonorarioMinimoRes222,
 } from '@/lib/financiero/MotorPreFactura';
 import {
   generarArchivoSAPB1,
@@ -47,15 +50,18 @@ import { toast } from 'sonner';
 // ─── Componente Principal ───
 
 export function PreInvoiceTemplate() {
-  const { hasPermission, role } = useAuth();
+  const { role } = useAuth();
   const [preFactura, setPreFactura] = useState<PreFactura>(generarPreFacturaDemo());
   const [rechazoMotivo, setRechazoMotivo] = useState('');
   const [showRechazo, setShowRechazo] = useState(false);
   const [showAprobacion, setShowAprobacion] = useState(false);
 
   const validacion = useMemo(() => zodValidarPreFactura(preFactura), [preFactura]);
-
-  const esCorredor = role === 'revisor' || role === 'admin';
+  const itbmsDetalle = useMemo(() => calcularITBMSPorCategoria(preFactura.lineas), [preFactura.lineas]);
+  const res222 = useMemo(
+    () => preFactura.valorCIF ? calcularHonorarioMinimoRes222(preFactura.valorCIF) : null,
+    [preFactura.valorCIF]
+  );
 
   // ─── Handlers ───
 
@@ -99,7 +105,7 @@ export function PreInvoiceTemplate() {
       billingStatus: 'APPROVED' as BillingStatus,
       aprobadoPorCliente: true,
       clienteAprobacionTimestamp: new Date().toISOString(),
-      clienteAprobacionIP: '192.168.1.100', // Demo — en producción se captura del request
+      clienteAprobacionIP: '192.168.1.100',
       clienteAprobacionNombre: prev.consignatario,
       updatedAt: new Date().toISOString(),
     }));
@@ -152,11 +158,13 @@ export function PreInvoiceTemplate() {
       docDate: new Date().toISOString().split('T')[0],
       cardCode: `C-PA-${preFactura.ruc?.slice(0, 6) || '000'}`,
       cardName: preFactura.razonSocial || preFactura.consignatario,
-      ruc: preFactura.ruc || '',
+      ruc: `${preFactura.ruc || ''} DV${preFactura.dv || ''}`,
       referencia: preFactura.mawb,
       moneda: preFactura.moneda,
       lineas: preFactura.lineas.map(l => ({
-        descripcion: l.descripcion,
+        descripcion: preFactura.numLiquidacion
+          ? `${l.descripcion} — Liq. ${preFactura.numLiquidacion}`
+          : l.descripcion,
         cantidad: l.cantidad,
         precioUnitario: l.precioUnitario,
         total: l.total,
@@ -177,23 +185,17 @@ export function PreInvoiceTemplate() {
       ...prev,
       billingStatus: 'SENT_TO_SAP' as BillingStatus,
       sapExportado: true,
-      sapExportado_at: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }));
 
-    toast.success('Archivo SAP B1 generado. Estado actualizado a SENT_TO_SAP.');
+    toast.success('Archivo SAP B1 generado con Liquidación ANA en descripción. Estado: SENT_TO_SAP.');
   };
 
   const statusInfo = BILLING_STATUS_LABELS[preFactura.billingStatus];
 
   // ─── Categorías de líneas ───
-  const honorarios = preFactura.lineas.filter(l => l.categoria === 'honorarios');
-  const handling = preFactura.lineas.filter(l => l.categoria === 'handling');
-  const recargos = preFactura.lineas.filter(l => l.categoria === 'recargo');
-  const reembolsables = preFactura.lineas.filter(l => l.categoria === 'reembolsable');
-
-  const subtotalServicios = [...honorarios, ...handling, ...recargos].reduce((s, l) => s + l.total, 0);
-  const subtotalReembolsables = reembolsables.reduce((s, l) => s + l.total, 0);
+  const lineasGravables = preFactura.lineas.filter(l => l.itbmsAplicable);
+  const lineasExentas = preFactura.lineas.filter(l => !l.itbmsAplicable);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -205,13 +207,13 @@ export function PreInvoiceTemplate() {
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
             {preFactura.docNum} — MAWB {preFactura.mawb}
+            {preFactura.numLiquidacion && (
+              <span className="ml-2 text-primary">• Liq. {preFactura.numLiquidacion}</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className={`${statusInfo.color} border-current/30 gap-1`}
-          >
+          <Badge variant="outline" className={`${statusInfo.color} border-current/30 gap-1`}>
             <span>{statusInfo.icon}</span>
             {statusInfo.label}
           </Badge>
@@ -243,99 +245,174 @@ export function PreInvoiceTemplate() {
         </Card>
       )}
 
-      {/* Validación Zod */}
+      {/* Validación Zod + Bloqueos Res. 222 */}
       <ZodValidacionPanel validacion={validacion} />
 
-      {/* Datos del Consignatario */}
+      {/* Bloqueos Res. 222 */}
+      {validacion.bloqueos.length > 0 && (
+        <Card className="glass-panel-zod border-destructive/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-display text-destructive tracking-wide flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4" /> Bloqueo Normativo — Zod
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {validacion.bloqueos.map((bloqueo, idx) => (
+              <div key={idx} className="p-3 rounded-lg bg-destructive/5 border border-destructive/20">
+                <p className="text-sm font-semibold text-destructive">{bloqueo.titulo}</p>
+                <p className="text-xs text-muted-foreground mt-1">{bloqueo.descripcion}</p>
+                <p className="text-[10px] text-muted-foreground/70 mt-1.5 italic flex items-center gap-1">
+                  <Scale className="w-3 h-3" /> {bloqueo.fundamento}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Datos del Consignatario + Fiscales DGI */}
       <Card className="glass-panel">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-display text-foreground tracking-wide flex items-center gap-2">
-            <User className="w-4 h-4 text-primary" /> Datos del Consignatario
+            <User className="w-4 h-4 text-primary" /> Datos Fiscales del Consignatario (DGI/ANA)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
             <InfoField label="Consignatario" value={preFactura.consignatario} />
-            <InfoField label="RUC / Cédula" value={preFactura.ruc || '—'} />
-            <InfoField label="MAWB / BL" value={preFactura.mawb} />
+            <InfoField label="RUC" value={preFactura.ruc || '—'} />
+            <InfoField label="DV" value={preFactura.dv || '—'} highlight />
+            <InfoField label="MAWB / BL" value={preFactura.mawb} mono />
+            <InfoField label="Liquidación ANA" value={preFactura.numLiquidacion || '—'} mono highlight />
             <InfoField label="Moneda" value={preFactura.moneda} />
           </div>
+          {res222 && (
+            <div className="mt-3 p-2 rounded bg-muted/20 border border-border/30">
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Scale className="w-3 h-3 text-zod" />
+                <span className="font-semibold text-zod">Res. 222:</span>
+                {res222.rango} — Mínimo legal: <span className="font-bold text-foreground">${res222.minimo.toFixed(2)}</span>
+                <span className="ml-1">({res222.formula})</span>
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Desglose de Servicios */}
+      {/* Desglose — Servicios Gravables (ITBMS 7%) */}
       <Card className="glass-panel">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-display text-foreground tracking-wide">
-            Desglose de Honorarios y Servicios
+          <CardTitle className="text-sm font-display text-foreground tracking-wide flex items-center gap-2">
+            Servicios de Corretaje
+            <Badge variant="outline" className="border-primary/30 text-primary text-[10px] ml-auto">
+              ITBMS 7%
+            </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Honorarios */}
-          {honorarios.length > 0 && (
-            <SeccionLineas titulo="Honorarios de Corretaje" lineas={honorarios} color="text-primary" />
-          )}
-
-          {/* Handling */}
-          {handling.length > 0 && (
-            <SeccionLineas titulo="Manejo de Carga" lineas={handling} color="text-primary" />
-          )}
-
-          {/* Recargos */}
-          {recargos.length > 0 && (
-            <SeccionLineas titulo="Recargos por Servicios Especiales" lineas={recargos} color="text-zod" />
-          )}
-
-          <Separator className="bg-border/50" />
-
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Subtotal Servicios</span>
-            <span className="font-bold text-foreground">${subtotalServicios.toFixed(2)}</span>
+        <CardContent className="space-y-3">
+          {/* Table Header */}
+          <div className="flex items-center text-[10px] text-muted-foreground uppercase tracking-wider px-2 pb-1 border-b border-border/30">
+            <span className="flex-1">Descripción</span>
+            <span className="w-10 text-center">Cant.</span>
+            <span className="w-20 text-right">P. Unit.</span>
+            <span className="w-20 text-right">Subtotal</span>
+            <span className="w-16 text-right">ITBMS</span>
           </div>
-
-          {/* Reembolsables */}
-          {reembolsables.length > 0 && (
-            <>
-              <Separator className="bg-border/50" />
-              <SeccionLineas titulo="Gastos Reembolsables (Terceros)" lineas={reembolsables} color="text-amber-400" />
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Subtotal Reembolsables</span>
-                <span className="font-bold text-foreground">${subtotalReembolsables.toFixed(2)}</span>
+          {lineasGravables.map((linea, idx) => (
+            <div key={idx} className="flex items-center text-sm py-1.5 px-2 rounded hover:bg-muted/20">
+              <div className="flex-1 min-w-0">
+                <span className="text-foreground">{linea.descripcion}</span>
               </div>
-            </>
-          )}
-
-          <Separator className="bg-primary/20" />
-
-          {/* Totales */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Subtotal General</span>
-              <span className="font-medium text-foreground">${preFactura.subtotal.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground w-10 text-center">{linea.cantidad}</span>
+              <span className="text-xs text-muted-foreground w-20 text-right">${linea.precioUnitario.toFixed(2)}</span>
+              <span className="font-medium text-foreground w-20 text-right">${linea.total.toFixed(2)}</span>
+              <span className="text-xs text-primary w-16 text-right">${linea.itbmsLinea.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">ITBMS (7% sobre servicios)</span>
-              <span className="font-medium text-foreground">${preFactura.itbms.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center text-base pt-2 border-t border-primary/20">
-              <span className="font-bold text-foreground">TOTAL</span>
-              <span className="font-bold text-primary text-lg">${preFactura.total.toFixed(2)}</span>
-            </div>
+          ))}
+          <Separator className="bg-border/30" />
+          <div className="flex justify-between items-center text-sm px-2">
+            <span className="text-muted-foreground">Subtotal Servicios Gravables</span>
+            <span className="font-bold text-foreground">${itbmsDetalle.subtotalGravable.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm px-2">
+            <span className="text-primary text-xs">ITBMS (7%)</span>
+            <span className="font-medium text-primary">${itbmsDetalle.itbms.toFixed(2)}</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Soportes de Terceros */}
+      {/* Gastos Exentos / Reembolsables (0% ITBMS) */}
+      {lineasExentas.length > 0 && (
+        <Card className="glass-panel">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-display text-foreground tracking-wide flex items-center gap-2">
+              Gastos Reembolsables — Exentos ITBMS
+              <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-[10px] ml-auto">
+                ITBMS 0%
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-[10px] text-muted-foreground">
+              Tasas ANA, Aranceles, Almacenaje de terceros y otros gastos no sujetos a ITBMS (Art. 1057-V Código Fiscal).
+            </p>
+            <div className="flex items-center text-[10px] text-muted-foreground uppercase tracking-wider px-2 pb-1 border-b border-border/30">
+              <span className="flex-1">Descripción</span>
+              <span className="w-20 text-right">Monto</span>
+              <span className="w-16 text-right">ITBMS</span>
+            </div>
+            {lineasExentas.map((linea, idx) => (
+              <div key={idx} className="flex items-center text-sm py-1.5 px-2 rounded hover:bg-muted/20">
+                <div className="flex-1 min-w-0">
+                  <span className="text-foreground">{linea.descripcion}</span>
+                </div>
+                <span className="font-medium text-foreground w-20 text-right">${linea.total.toFixed(2)}</span>
+                <span className="text-xs text-muted-foreground w-16 text-right">$0.00</span>
+              </div>
+            ))}
+            <Separator className="bg-border/30" />
+            <div className="flex justify-between items-center text-sm px-2">
+              <span className="text-muted-foreground">Subtotal Exento</span>
+              <span className="font-bold text-foreground">${itbmsDetalle.subtotalExento.toFixed(2)}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Totales Consolidados */}
+      <Card className="glass-panel border-primary/20">
+        <CardContent className="pt-4 space-y-2">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Subtotal Servicios (Gravable)</span>
+            <span className="text-foreground">${itbmsDetalle.subtotalGravable.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Subtotal Reembolsables (Exento)</span>
+            <span className="text-foreground">${itbmsDetalle.subtotalExento.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-primary">ITBMS (7% sobre servicios)</span>
+            <span className="text-primary">${itbmsDetalle.itbms.toFixed(2)}</span>
+          </div>
+          <Separator className="bg-primary/20" />
+          <div className="flex justify-between items-center text-base pt-1">
+            <span className="font-bold text-foreground">TOTAL</span>
+            <span className="font-bold text-primary text-lg">${preFactura.total.toFixed(2)}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Soportes de Terceros con indicador PDF */}
       <Card className="glass-panel">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-display text-foreground tracking-wide flex items-center gap-2">
             <Receipt className="w-4 h-4 text-zod" /> Soportes de Terceros
+            <span className="text-[10px] text-muted-foreground font-normal ml-auto">
+              Stella verifica PDFs antes de enviar
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-xs text-muted-foreground mb-3">
-            Recibos y comprobantes de pagos realizados a terceros vinculados a este despacho.
-          </p>
           <div className="space-y-2">
             {preFactura.soportesTerceros.map((soporte) => (
               <div
@@ -343,19 +420,31 @@ export function PreInvoiceTemplate() {
                 className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50"
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                  {soporte.tienePDF ? (
+                    <FileCheck2 className="w-4 h-4 text-green-400 shrink-0" />
+                  ) : (
+                    <FileMinus2 className="w-4 h-4 text-destructive shrink-0" />
+                  )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{soporte.descripcion}</p>
                     <p className="text-xs text-muted-foreground">
                       Ref: {soporte.referencia} • {soporte.fecha}
+                      {!soporte.tienePDF && (
+                        <span className="ml-2 text-destructive font-medium">⚠ Sin PDF</span>
+                      )}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
+                  <Badge variant="outline" className="border-amber-500/20 text-amber-400 text-[10px]">
+                    Exento
+                  </Badge>
                   <span className="text-sm font-bold text-foreground">${soporte.monto.toFixed(2)}</span>
-                  <Button variant="ghost" size="icon" className="w-7 h-7">
-                    <ExternalLink className="w-3.5 h-3.5 text-primary" />
-                  </Button>
+                  {soporte.tienePDF && (
+                    <Button variant="ghost" size="icon" className="w-7 h-7">
+                      <ExternalLink className="w-3.5 h-3.5 text-primary" />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -394,7 +483,6 @@ export function PreInvoiceTemplate() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Enviar a Aprobación (Operador) */}
           {preFactura.billingStatus === 'DRAFT' && (
             <Button
               size="sm"
@@ -407,7 +495,6 @@ export function PreInvoiceTemplate() {
             </Button>
           )}
 
-          {/* Aprobar / Rechazar (Cliente/Corredor) */}
           {preFactura.billingStatus === 'PENDING_APPROVAL' && (
             <>
               <Dialog open={showAprobacion} onOpenChange={setShowAprobacion}>
@@ -424,31 +511,36 @@ export function PreInvoiceTemplate() {
                       Confirmar Aprobación
                     </DialogTitle>
                     <DialogDescription>
-                      Al aprobar, confirma que ha revisado el desglose de servicios y acepta los montos indicados.
-                      Zod registrará el timestamp e IP como método de auditoría.
+                      Al aprobar, confirma que ha revisado el desglose. Zod registrará timestamp e IP como auditoría.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="p-4 rounded-lg bg-muted/30 border border-border/50 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Total a Facturar</span>
-                      <span className="font-bold text-primary">${preFactura.total.toFixed(2)} {preFactura.moneda}</span>
+                      <span className="text-muted-foreground">Servicios (7% ITBMS)</span>
+                      <span className="text-foreground">${itbmsDetalle.subtotalGravable.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Consignatario</span>
-                      <span className="text-foreground">{preFactura.consignatario}</span>
+                      <span className="text-muted-foreground">Reembolsables (Exento)</span>
+                      <span className="text-foreground">${itbmsDetalle.subtotalExento.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">MAWB</span>
-                      <span className="text-foreground font-mono">{preFactura.mawb}</span>
+                      <span className="text-muted-foreground">ITBMS</span>
+                      <span className="text-primary">${itbmsDetalle.itbms.toFixed(2)}</span>
+                    </div>
+                    <Separator className="bg-border/30" />
+                    <div className="flex justify-between text-sm font-bold">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="text-primary">${preFactura.total.toFixed(2)} {preFactura.moneda}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">RUC</span>
+                      <span className="text-foreground font-mono">{preFactura.ruc} DV{preFactura.dv}</span>
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowAprobacion(false)}>
-                      Cancelar
-                    </Button>
+                    <Button variant="outline" onClick={() => setShowAprobacion(false)}>Cancelar</Button>
                     <Button className="bg-green-600 hover:bg-green-700 gap-1.5" onClick={handleAprobarCliente}>
-                      <CheckCircle2 className="w-4 h-4" />
-                      Confirmar Aprobación
+                      <CheckCircle2 className="w-4 h-4" /> Confirmar Aprobación
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -457,18 +549,16 @@ export function PreInvoiceTemplate() {
               <Dialog open={showRechazo} onOpenChange={setShowRechazo}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline" className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10">
-                    <XCircle className="w-4 h-4" />
-                    Rechazar
+                    <XCircle className="w-4 h-4" /> Rechazar
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 font-display">
-                      <XCircle className="w-5 h-5 text-destructive" />
-                      Rechazar Pre-Factura
+                      <XCircle className="w-5 h-5 text-destructive" /> Rechazar Pre-Factura
                     </DialogTitle>
                     <DialogDescription>
-                      Indique el motivo del rechazo. Stella notificará al operador para que realice los ajustes.
+                      Indique el motivo. Stella notificará al operador para que realice los ajustes.
                     </DialogDescription>
                   </DialogHeader>
                   <Textarea
@@ -478,12 +568,9 @@ export function PreInvoiceTemplate() {
                     className="min-h-[100px]"
                   />
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowRechazo(false)}>
-                      Cancelar
-                    </Button>
+                    <Button variant="outline" onClick={() => setShowRechazo(false)}>Cancelar</Button>
                     <Button variant="destructive" className="gap-1.5" onClick={handleRechazar}>
-                      <XCircle className="w-4 h-4" />
-                      Confirmar Rechazo
+                      <XCircle className="w-4 h-4" /> Confirmar Rechazo
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -491,7 +578,6 @@ export function PreInvoiceTemplate() {
             </>
           )}
 
-          {/* Generar CSV para SAP (Solo si APPROVED + Corredor) */}
           <Button
             size="sm"
             variant="outline"
@@ -517,7 +603,7 @@ export function PreInvoiceTemplate() {
               <div>
                 <p className="text-sm font-medium text-foreground">Pre-Factura exportada a SAP B1</p>
                 <p className="text-xs text-muted-foreground">
-                  El archivo ha sido generado con mapeo OINV/INV1. El expediente está sellado por Zod.
+                  Archivo generado con mapeo OINV/INV1. Liquidación ANA incluida en descripción. Sellado por Zod.
                 </p>
               </div>
             </div>
@@ -537,7 +623,7 @@ function ZodValidacionPanel({ validacion }: { validacion: ValidacionPreFactura }
     <Card className={`glass-panel-zod ${!validacion.valida ? 'border-destructive/20' : 'border-zod/20'}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-display text-zod tracking-wide flex items-center gap-2">
-          <Shield className="w-4 h-4" /> Zod Integrity — Validación Pre-Factura
+          <Shield className="w-4 h-4" /> Zod Integrity — Reglas Fiscales DGI/ANA
           <Badge variant="outline" className={`text-xs ml-auto ${
             validacion.valida ? 'border-green-500/30 text-green-400' : 'border-destructive/30 text-destructive'
           }`}>
@@ -563,35 +649,11 @@ function ZodValidacionPanel({ validacion }: { validacion: ValidacionPreFactura }
   );
 }
 
-function SeccionLineas({ titulo, lineas, color }: {
-  titulo: string;
-  lineas: { descripcion: string; cantidad: number; precioUnitario: number; total: number }[];
-  color: string;
+function InfoField({ label, value, mono = false, highlight = false }: {
+  label: string; value: string; mono?: boolean; highlight?: boolean;
 }) {
   return (
-    <div>
-      <p className={`text-xs font-semibold ${color} mb-2 uppercase tracking-wider`}>{titulo}</p>
-      <div className="space-y-1">
-        {lineas.map((linea, idx) => (
-          <div key={idx} className="flex items-center justify-between text-sm py-1.5 px-2 rounded hover:bg-muted/20">
-            <div className="flex-1 min-w-0">
-              <span className="text-foreground">{linea.descripcion}</span>
-            </div>
-            <div className="flex items-center gap-4 shrink-0 text-right">
-              <span className="text-xs text-muted-foreground w-12 text-center">{linea.cantidad}</span>
-              <span className="text-xs text-muted-foreground w-20 text-right">${linea.precioUnitario.toFixed(2)}</span>
-              <span className="font-medium text-foreground w-24 text-right">${linea.total.toFixed(2)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function InfoField({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="p-2 rounded bg-muted/30">
+    <div className={`p-2 rounded ${highlight ? 'bg-primary/5 border border-primary/10' : 'bg-muted/30'}`}>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={`font-medium text-foreground text-sm ${mono ? 'font-mono text-xs' : ''}`}>{value}</p>
     </div>
