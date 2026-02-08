@@ -75,6 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Historial', to: '/historial', icon: History },
       { label: 'Consultas', to: '/consultas-clasificatorias', icon: BookOpen },
       { label: 'System Health', to: '/system-health', icon: Activity, allowedRoles: ADMIN_SECURITY },
+      { label: 'Resiliencia', to: '/resilience', icon: Shield, allowedRoles: ADMIN_SECURITY },
       { label: 'ROI Demo', to: '/stress-test', icon: Radar, allowedRoles: ['master_admin'] },
     ],
   },
