@@ -1,5 +1,5 @@
 /**
- * STELLA CHECKLIST — ZENITH
+ * LEXIS: Compliance Checklist — ZENITH
  * Professional compliance checklist panel.
  */
 
@@ -43,7 +43,7 @@ function ZodCrossCheckPanel({ resultado }: { resultado: ResultadoConsistenciaCru
           ) : (
             <ShieldAlert className="w-4 h-4 text-warning" />
           )}
-          <span className="text-xs font-semibold text-foreground">Verificación de Integridad</span>
+          <span className="text-xs font-semibold text-foreground">LEXIS: Certificación de Integridad</span>
           <Badge variant={resultado.consistente ? 'secondary' : 'destructive'} className="text-[10px]">
             {resultado.score}%
           </Badge>
@@ -111,9 +111,9 @@ export function StellaChecklist({
     const cuerpo = `Estimado cliente,\n\nEn relación al expediente ${expediente.referencia}, se requiere la siguiente documentación:\n\n${todosFaltantes.map((doc, i) => `  ${i + 1}. ${doc}`).join('\n')}\n\nSaludos cordiales,\nDepartamento de Operaciones`;
     try {
       await navigator.clipboard.writeText(`Asunto: ${asunto}\n\n${cuerpo}`);
-      toast.success('Solicitud copiada al portapapeles', { duration: 5000 });
+      toast.success('LEXIS: Solicitud de documentación copiada al portapapeles', { duration: 5000 });
     } catch {
-      toast.info('Solicitud generada');
+      toast.info('LEXIS: Solicitud generada');
     }
     onSolicitarCliente(expediente.id, todosFaltantes);
     setGenerandoCorreo(false);
@@ -126,7 +126,7 @@ export function StellaChecklist({
   return (
     <Card className={cn('flex flex-col h-full max-h-[600px]', className)}>
       <CardHeader className="p-4 pb-3 flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-sm font-semibold">Checklist de Cumplimiento</CardTitle>
+        <CardTitle className="text-sm font-semibold">LEXIS: Checklist de Cumplimiento</CardTitle>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
           <X className="w-3.5 h-3.5" />
         </Button>

@@ -1,5 +1,5 @@
 /**
- * INGESTA UNIVERSAL DASHBOARD — ZENITH
+ * LEXIS: Intelligence Ingress — ZENITH
  * Enterprise orchestration component for document intake.
  */
 
@@ -105,8 +105,8 @@ export function IngestaUniversalDashboard() {
       }
 
       if (nuevosHuerfanos.length > 0) {
-        toast('Notificación de Cumplimiento', {
-          description: `${nuevosHuerfanos.length} documento(s) pendiente(s) de asignación`,
+        toast('LEXIS: Pending Classification', {
+          description: `${nuevosHuerfanos.length} documento(s) pendiente(s) de clasificación`,
           duration: 5000,
         });
       }
@@ -130,7 +130,7 @@ export function IngestaUniversalDashboard() {
           paisOrigen: 'CN',
         }],
       });
-      toast.success('Datos extraídos automáticamente. Formulario pre-llenado disponible.', { duration: 5000 });
+      toast.success('LEXIS ha extraído datos automáticamente. Formulario pre-llenado disponible.', { duration: 5000 });
     }
   }, []);
 
@@ -172,9 +172,9 @@ export function IngestaUniversalDashboard() {
         })
       );
       setHuerfanos(prev => prev.filter(h => h.id !== docId));
-      toast.success('Verificación de Integridad: Documento vinculado correctamente', { duration: 5000 });
+      toast.success('LEXIS: Certificación de Integridad — Documento vinculado correctamente', { duration: 5000 });
     } else {
-      toast.error('Verificación de Integridad: Documento devuelto', { description: resultado.mensaje, duration: 7000 });
+      toast.error('LEXIS: Alerta de Riesgo Legal — Documento devuelto', { description: resultado.mensaje, duration: 7000 });
     }
   }, [huerfanos, expedientesExternos]);
 
@@ -235,9 +235,9 @@ export function IngestaUniversalDashboard() {
     setExpedientesExternos(prev => prev.map(e => e.id === expedienteId ? { ...e, consistenciaCruzada: resultado } : e));
     setExpedienteSeleccionado({ ...exp, consistenciaCruzada: resultado });
     if (resultado.consistente) {
-      toast.success('Verificación de Integridad completada', { description: resultado.dictamen, duration: 6000 });
+      toast.success('LEXIS: Certificación de Integridad completada', { description: resultado.dictamen, duration: 6000 });
     } else {
-      toast.warning('Discrepancias detectadas en verificación', { description: resultado.dictamen, duration: 8000 });
+      toast.warning('LEXIS: Discrepancia detectada. Acción bloqueada por integridad tributaria.', { description: resultado.dictamen, duration: 8000 });
     }
   }, [expedientesExternos]);
 
@@ -261,13 +261,13 @@ export function IngestaUniversalDashboard() {
             </Button>
           )}
           <div>
-            <h2 className="text-lg font-semibold text-foreground">
-              {vista === 'inicio' && 'Ingesta Universal'}
+          <h2 className="text-lg font-semibold text-foreground">
+              {vista === 'inicio' && 'LEXIS: Intelligence Ingress'}
               {vista === 'formulario-manual' && 'Nueva Declaración Manual'}
               {vista === 'carga-masiva' && 'Carga Masiva'}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {vista === 'inicio' && 'Clasificación automática, asociación y validación de documentos'}
+              {vista === 'inicio' && 'Clasificación automática, asociación y validación documental'}
               {vista === 'formulario-manual' && 'Captura de datos con validación en tiempo real'}
               {vista === 'carga-masiva' && 'Importación de manifiestos Excel'}
             </p>
@@ -305,13 +305,13 @@ export function IngestaUniversalDashboard() {
           <div className="flex-1 min-w-0">
             <Tabs value={tabActiva} onValueChange={(v) => setTabActiva(v as 'ingesta' | 'monitor')}>
               <TabsList>
-                <TabsTrigger value="ingesta" className="gap-2">
+              <TabsTrigger value="ingesta" className="gap-2">
                   <Inbox className="w-3.5 h-3.5" />
-                  Zona de Carga
+                  LEXIS: Zona de Carga
                 </TabsTrigger>
                 <TabsTrigger value="monitor" className="gap-2">
                   <Radar className="w-3.5 h-3.5" />
-                  Monitor Externo
+                  LEXIS: Monitor Externo
                   {expedientesExternos.length > 0 && (
                     <Badge variant="secondary" className="text-[10px] ml-1">{expedientesExternos.length}</Badge>
                   )}
@@ -452,7 +452,7 @@ function MonitorCargaExternaConDrop({
       <CardHeader className="p-4 pb-3 flex-row items-center justify-between space-y-0">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <Tag className="w-4 h-4 text-muted-foreground" />
-          Monitor de Carga Externa
+          LEXIS: Monitor de Carga Externa
           <Badge variant="outline" className="text-[10px]">Origen Externo</Badge>
         </CardTitle>
         {draggingDocId && (

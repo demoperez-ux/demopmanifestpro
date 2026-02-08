@@ -67,9 +67,9 @@ export function PanelAccionesMaestras({
 
       <Card className="panel-stella">
         <CardContent className="p-4">
-          <p className="text-xs font-medium text-foreground mb-1">Notificación de Cumplimiento</p>
+          <p className="text-xs font-medium text-foreground mb-1">LEXIS: Notificación de Cumplimiento</p>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Al cargar documentos, el sistema ejecutará clasificación automática
+            Al cargar documentos, LEXIS ejecutará clasificación automática
             y validación de integridad antes de la captura.
           </p>
         </CardContent>
