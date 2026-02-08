@@ -13,7 +13,7 @@ import { useState, useMemo, useCallback } from 'react';
 import {
   Package, FileJson, FileSpreadsheet, FileCode2, Search,
   ShieldAlert, CheckCircle2, AlertTriangle, Sparkles, Shield,
-  ArrowUpDown, X, Zap, BarChart3, Eye, Settings2, Download
+  ArrowUpDown, X, Zap, BarChart3, Eye, Settings2, Download, CloudUpload
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +45,7 @@ import {
   type OperationType
 } from '@/lib/courier/partnerConfig';
 import type { ManifestRow } from '@/types/manifest';
+import { toast } from 'sonner';
 
 // ─── Generador de demo data (1,000 guías) ───────────────
 
@@ -216,6 +217,12 @@ export default function CourierHubDashboard() {
 
   const handleExportar = useCallback((formato: ExportFormat) => {
     MotorCourierHub.descargarExportacion(analisis, activePartner, formato);
+    toast('Reconciliación exitosa. Datos transmitidos al ecosistema externo bajo protocolo seguro.', {
+      description: `Formato: ${formato.toUpperCase()} · Perfil: ${activePartner.name}`,
+      duration: 5000,
+      icon: <Sparkles className="w-4 h-4 text-primary" />,
+      className: 'border border-primary/20',
+    });
   }, [analisis, activePartner]);
 
   const limpiarFiltros = () => {
@@ -265,9 +272,9 @@ export default function CourierHubDashboard() {
           {/* Export Actions */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="default" size="sm" className="gap-1.5 text-xs">
-                <Download className="w-3.5 h-3.5" />
-                📤 Sync with External ERP Standard
+              <Button variant="default" size="sm" className="gap-2 text-xs font-medium">
+                <CloudUpload className="w-4 h-4" />
+                Sync with External ERP Standard
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -278,7 +285,7 @@ export default function CourierHubDashboard() {
                   className="text-xs gap-2"
                 >
                   {FORMAT_ICONS[fmt]}
-                  📊 Generate Global Logistics Manifest ({fmt.toUpperCase()})
+                  Generate Global Logistics Manifest ({fmt.toUpperCase()})
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
