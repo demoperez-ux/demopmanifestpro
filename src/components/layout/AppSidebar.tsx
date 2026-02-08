@@ -1,7 +1,7 @@
 import {
   Home, Inbox, History, Anchor, BookOpen, UserPlus, Award,
   ShieldCheck, FileSignature, TrendingUp, Search, Moon, Sun,
-  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck, Zap, Receipt, Radar
+  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck, Zap, Receipt, Radar, ShieldAlert
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { label: 'Universal Gateway', to: '/courier-hub', icon: Zap },
   { label: 'Enterprise Billing', to: '/enterprise-billing', icon: Receipt },
   { label: 'Stress-Test Demo', to: '/stress-test', icon: Radar },
+  { label: 'Customs Shield', to: '/customs-shield', icon: ShieldAlert },
 ];
 
 const NAV_ADMIN = [
