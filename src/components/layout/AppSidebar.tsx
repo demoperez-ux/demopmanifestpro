@@ -1,7 +1,7 @@
 import {
   Home, Inbox, History, Anchor, BookOpen, UserPlus, Award,
   ShieldCheck, FileSignature, TrendingUp, Search, Moon, Sun,
-  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck, Zap
+  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck, Zap, Receipt
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { label: 'LEXIS Engine', to: '/lexis-engine', icon: Brain },
   { label: 'Flujo Courier', to: '/flujo-courier', icon: Truck },
   { label: 'Universal Gateway', to: '/courier-hub', icon: Zap },
+  { label: 'Enterprise Billing', to: '/enterprise-billing', icon: Receipt },
 ];
 
 const NAV_ADMIN = [
