@@ -1,8 +1,10 @@
 import { Header } from '@/components/manifest/Header';
 import { DashboardCorredorAprobaciones } from '@/components/zenith/DashboardCorredorAprobaciones';
+import { ReporteAuditoriaZod } from '@/components/zenith/ReporteAuditoriaZod';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
-import { Lock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Lock, ClipboardList, Shield } from 'lucide-react';
 
 export default function PortalCorredorPage() {
   const { role } = useAuth();
@@ -26,7 +28,25 @@ export default function PortalCorredorPage() {
             </div>
           </div>
         )}
-        <DashboardCorredorAprobaciones />
+
+        <Tabs defaultValue="aprobaciones">
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+            <TabsTrigger value="aprobaciones" className="gap-1.5">
+              <ClipboardList className="w-3.5 h-3.5" /> Aprobaciones
+            </TabsTrigger>
+            <TabsTrigger value="auditoria-zod" className="gap-1.5">
+              <Shield className="w-3.5 h-3.5" /> Auditoría Zod
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="aprobaciones">
+            <DashboardCorredorAprobaciones />
+          </TabsContent>
+
+          <TabsContent value="auditoria-zod">
+            <ReporteAuditoriaZod />
+          </TabsContent>
+        </Tabs>
       </main>
       <footer className="border-t border-border mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
