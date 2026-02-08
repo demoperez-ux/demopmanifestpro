@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  Home, Inbox, History, Anchor, BookOpen, UserPlus, Award,
+  Home, History, Anchor, BookOpen, UserPlus, Award,
   ShieldCheck, FileSignature, TrendingUp, Search, Moon, Sun,
   ChevronLeft, ChevronRight, Calculator, Brain, Scale, Truck, Zap, Receipt,
   Radar, ShieldAlert, FolderInput, Info, ChevronDown, Settings,
-  Sparkles, Shield, Lightbulb, Activity
+  Sparkles, Shield, Lightbulb, Activity, CloudUpload
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
@@ -57,6 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: ShieldAlert,
     items: [
       { label: 'Customs Shield', to: '/customs-shield', icon: ShieldAlert },
+      { label: 'ERP Sync History', to: '/erp-sync-history', icon: CloudUpload },
       { label: 'Historial', to: '/historial', icon: History },
       { label: 'Consultas', to: '/consultas-clasificatorias', icon: BookOpen },
       { label: 'ROI Demo', to: '/stress-test', icon: Radar },
