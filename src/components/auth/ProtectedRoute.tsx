@@ -1,19 +1,15 @@
 // ============================================
 // ProtectedRoute - Protección de rutas por autenticación y permisos
-// H02: Enforcement de acceso a rutas
+// RBAC Enforcement con 5 roles
 // 
-// SECURITY NOTE: This component provides client-side route protection for UX purposes.
-// It controls UI visibility and redirects but is NOT a security boundary.
-// Actual security is enforced by:
-// - RLS (Row Level Security) policies on all database tables
-// - Server-side role checks via has_role() database function
-// - Edge Functions authentication via supabase.auth.getUser()
+// SECURITY NOTE: Client-side route protection for UX only.
+// Actual security: RLS policies, has_role() DB function, Edge Functions auth.
 // ============================================
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth, Permission, AppRole } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { useAuth, Permission, AppRole, ROLE_DISPLAY_NAMES } from '@/contexts/AuthContext';
+import { Loader2, ShieldAlert } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -28,10 +24,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole,
   allowedRoles
 }) => {
-  const { isAuthenticated, loading, hasPermission, hasRole, role } = useAuth();
+  const { isAuthenticated, loading, hasPermission, hasRole, hasAnyRole, role } = useAuth();
   const location = useLocation();
 
-  // Mostrar loading mientras se verifica autenticación
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -43,67 +38,45 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Si no está autenticado, redirigir a login
   if (!isAuthenticated) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Verificar permiso específico
+  // Check specific permission
   if (requiredPermission && !hasPermission(requiredPermission)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center p-8 max-w-md">
-          <h2 className="text-2xl font-bold text-destructive mb-4">Acceso Denegado</h2>
-          <p className="text-muted-foreground mb-4">
-            No tienes permiso para acceder a esta sección.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Tu rol actual: <span className="font-semibold">{role || 'Sin rol'}</span>
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Permiso requerido: <span className="font-semibold">{requiredPermission}</span>
-          </p>
-        </div>
-      </div>
-    );
+    return <AccessDenied role={role} detail={`Permiso requerido: ${requiredPermission}`} />;
   }
 
-  // Verificar rol específico
+  // Check specific role
   if (requiredRole && !hasRole(requiredRole)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center p-8 max-w-md">
-          <h2 className="text-2xl font-bold text-destructive mb-4">Acceso Denegado</h2>
-          <p className="text-muted-foreground mb-4">
-            Se requiere el rol de <span className="font-semibold">{requiredRole}</span>.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Tu rol actual: <span className="font-semibold">{role || 'Sin rol'}</span>
-          </p>
-        </div>
-      </div>
-    );
+    return <AccessDenied role={role} detail={`Rol requerido: ${ROLE_DISPLAY_NAMES[requiredRole] || requiredRole}`} />;
   }
 
-  // Verificar lista de roles permitidos
-  if (allowedRoles && allowedRoles.length > 0 && role && !allowedRoles.includes(role)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center p-8 max-w-md">
-          <h2 className="text-2xl font-bold text-destructive mb-4">Acceso Denegado</h2>
-          <p className="text-muted-foreground mb-4">
-            Esta sección está restringida a ciertos roles.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Tu rol: <span className="font-semibold">{role}</span> | 
-            Roles permitidos: <span className="font-semibold">{allowedRoles.join(', ')}</span>
-          </p>
-        </div>
-      </div>
-    );
+  // Check allowed roles list
+  if (allowedRoles && allowedRoles.length > 0 && !hasAnyRole(allowedRoles)) {
+    const allowed = allowedRoles.map(r => ROLE_DISPLAY_NAMES[r] || r).join(', ');
+    return <AccessDenied role={role} detail={`Roles permitidos: ${allowed}`} />;
   }
 
   return <>{children}</>;
 };
+
+function AccessDenied({ role, detail }: { role: string | null; detail: string }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center p-8 max-w-md">
+        <ShieldAlert className="w-12 h-12 text-destructive mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-destructive mb-4">Acceso Denegado</h2>
+        <p className="text-muted-foreground mb-4">
+          No tienes permiso para acceder a esta sección.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Tu rol: <span className="font-semibold">{role ? (ROLE_DISPLAY_NAMES[role] || role) : 'Sin rol'}</span>
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">{detail}</p>
+      </div>
+    </div>
+  );
+}
 
 export default ProtectedRoute;
