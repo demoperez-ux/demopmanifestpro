@@ -32,6 +32,7 @@ import CourierHubPage from "./pages/CourierHubPage";
 import EnterpriseBillingPage from "./pages/EnterpriseBillingPage";
 import StressTestPage from "./pages/StressTestPage";
 import CustomsShieldPage from "./pages/CustomsShieldPage";
+import AboutZenithPage from "./pages/AboutZenithPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -120,6 +121,7 @@ const App: React.FC = () => {
               <Route path="/enterprise-billing" element={<ProtectedWithLayout><EnterpriseBillingPage /></ProtectedWithLayout>} />
               <Route path="/stress-test" element={<ProtectedWithLayout><StressTestPage /></ProtectedWithLayout>} />
               <Route path="/customs-shield" element={<ProtectedWithLayout><CustomsShieldPage /></ProtectedWithLayout>} />
+              <Route path="/about" element={<ProtectedWithLayout><AboutZenithPage /></ProtectedWithLayout>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

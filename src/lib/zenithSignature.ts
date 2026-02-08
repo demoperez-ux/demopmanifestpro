@@ -1,0 +1,32 @@
+/**
+ * ZENITH Console Signature
+ * Prints architectural branding on app initialization.
+ */
+
+export function printZenithSignature() {
+  const styles = [
+    'color: #002D62',
+    'font-family: sans-serif',
+    'font-weight: bold',
+    'font-size: 14px',
+    'padding: 8px 16px',
+    'border-left: 4px solid #002D62',
+    'background: linear-gradient(90deg, rgba(0,45,98,0.06) 0%, transparent 100%)',
+  ].join(';');
+
+  const subtitleStyles = [
+    'color: #64748B',
+    'font-family: sans-serif',
+    'font-size: 10px',
+    'padding: 4px 16px 8px',
+  ].join(';');
+
+  console.log(
+    '%cZENITH v2.0 | Conceived & Directed by Demostenes Perez Castillero | Powered by Lexis AI Architecture.',
+    styles
+  );
+  console.log(
+    '%cSystemic DNA by Demostenes Perez Castillero | v2.0.26 | © 2026 All Rights Reserved',
+    subtitleStyles
+  );
+}
