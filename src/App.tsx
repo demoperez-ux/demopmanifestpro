@@ -37,6 +37,7 @@ import ERPSyncHistoryPage from "./pages/ERPSyncHistoryPage";
 import SIGAGatewayPage from "./pages/SIGAGatewayPage";
 import SecurityAdminPage from "./pages/SecurityAdminPage";
 import DataIntegrityPage from "./pages/DataIntegrityPage";
+import IdentityCommandPage from "./pages/IdentityCommandPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -217,6 +218,11 @@ const App: React.FC = () => {
               <Route path="/security-admin" element={
                 <ProtectedRoute allowedRoles={['master_admin', 'it_security']}>
                   <AppLayout><SecurityAdminPage /></AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/identity-command" element={
+                <ProtectedRoute allowedRoles={['master_admin']}>
+                  <AppLayout><IdentityCommandPage /></AppLayout>
                 </ProtectedRoute>
               } />
 

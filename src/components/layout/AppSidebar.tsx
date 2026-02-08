@@ -101,6 +101,7 @@ const NAV_ADMIN: NavItem[] = [
   { label: 'TLC Knowledge', to: '/tlc-knowledge', icon: BookOpen, allowedRoles: BROKER_PLUS },
   { label: 'Pulse', to: '/zenith-pulse', icon: TrendingUp, allowedRoles: ['master_admin', 'senior_broker'] },
   { label: 'Security Core', to: '/security-admin', icon: Lock, allowedRoles: ADMIN_SECURITY },
+  { label: 'Identity Center', to: '/identity-command', icon: UserPlus, allowedRoles: ['master_admin'] },
 ];
 
 // ─── AI Status Component ────────────────────────────────
