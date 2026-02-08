@@ -4,7 +4,7 @@ import {
   ShieldCheck, FileSignature, TrendingUp, Search, Moon, Sun,
   ChevronLeft, ChevronRight, Calculator, Brain, Scale, Truck, Zap, Receipt,
   Radar, ShieldAlert, FolderInput, Info, ChevronDown, Settings,
-  Sparkles, Shield, Lightbulb, Activity, CloudUpload, Radio
+  Sparkles, Shield, Lightbulb, Activity, CloudUpload, Radio, Lock
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
@@ -86,6 +86,7 @@ const NAV_ADMIN: (NavItem & { roles?: string[] })[] = [
   { label: 'Portal Corredor', to: '/portal-corredor', icon: FileSignature, roles: ['revisor', 'admin'] },
   { label: 'TLC Knowledge', to: '/tlc-knowledge', icon: BookOpen, roles: ['revisor', 'admin'] },
   { label: 'Pulse', to: '/zenith-pulse', icon: TrendingUp },
+  { label: 'Security Core', to: '/security-admin', icon: Lock, roles: ['admin', 'auditor'] },
 ];
 
 // ─── AI Status Component ────────────────────────────────

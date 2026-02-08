@@ -35,6 +35,7 @@ import CustomsShieldPage from "./pages/CustomsShieldPage";
 import AboutZenithPage from "./pages/AboutZenithPage";
 import ERPSyncHistoryPage from "./pages/ERPSyncHistoryPage";
 import SIGAGatewayPage from "./pages/SIGAGatewayPage";
+import SecurityAdminPage from "./pages/SecurityAdminPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -126,6 +127,11 @@ const App: React.FC = () => {
               <Route path="/about" element={<ProtectedWithLayout><AboutZenithPage /></ProtectedWithLayout>} />
               <Route path="/erp-sync-history" element={<ProtectedWithLayout><ERPSyncHistoryPage /></ProtectedWithLayout>} />
               <Route path="/siga-gateway" element={<ProtectedWithLayout><SIGAGatewayPage /></ProtectedWithLayout>} />
+              <Route path="/security-admin" element={
+                <ProtectedRoute allowedRoles={['admin', 'auditor']}>
+                  <AppLayout><SecurityAdminPage /></AppLayout>
+                </ProtectedRoute>
+              } />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
