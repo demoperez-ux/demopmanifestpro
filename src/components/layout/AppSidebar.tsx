@@ -4,7 +4,7 @@ import {
   ShieldCheck, FileSignature, TrendingUp, Search, Moon, Sun,
   ChevronLeft, ChevronRight, Calculator, Brain, Scale, Truck, Zap, Receipt,
   Radar, ShieldAlert, FolderInput, Info, ChevronDown, Settings,
-  Sparkles, Shield, Lightbulb, Activity, CloudUpload
+  Sparkles, Shield, Lightbulb, Activity, CloudUpload, Radio
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
@@ -37,6 +37,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Horizonte de Carga', to: '/horizonte-carga', icon: Anchor },
       { label: 'LEXIS Ingress', to: '/lexis-ingress', icon: FolderInput },
       { label: 'Universal Gateway', to: '/courier-hub', icon: Zap },
+      { label: 'SIGA Gateway', to: '/siga-gateway', icon: Radio },
       { label: 'Operations Flow', to: '/flujo-courier', icon: Truck },
     ],
   },

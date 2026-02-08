@@ -34,6 +34,7 @@ import StressTestPage from "./pages/StressTestPage";
 import CustomsShieldPage from "./pages/CustomsShieldPage";
 import AboutZenithPage from "./pages/AboutZenithPage";
 import ERPSyncHistoryPage from "./pages/ERPSyncHistoryPage";
+import SIGAGatewayPage from "./pages/SIGAGatewayPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -124,6 +125,7 @@ const App: React.FC = () => {
               <Route path="/customs-shield" element={<ProtectedWithLayout><CustomsShieldPage /></ProtectedWithLayout>} />
               <Route path="/about" element={<ProtectedWithLayout><AboutZenithPage /></ProtectedWithLayout>} />
               <Route path="/erp-sync-history" element={<ProtectedWithLayout><ERPSyncHistoryPage /></ProtectedWithLayout>} />
+              <Route path="/siga-gateway" element={<ProtectedWithLayout><SIGAGatewayPage /></ProtectedWithLayout>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
