@@ -1,14 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Calculator, Info, ShieldCheck, AlertTriangle, FileText } from 'lucide-react';
+import { Calculator, Info, ShieldCheck, AlertTriangle, FileText, Sparkles } from 'lucide-react';
 import { calcularLiquidacionOficial } from '@/lib/liquidacion/calculadoraOficial';
 import { CONSTANTES_ANA } from '@/types/declaracionOficial';
+import { useTradeAdvisor, type EstrategiaFiscal } from '@/hooks/useTradeAdvisor';
+import { TradeAdvisorPanel } from '@/components/trade/TradeAdvisorPanel';
+import { toast } from '@/hooks/use-toast';
 
 // DAI presets by common HS categories
 const DAI_PRESETS = [
@@ -37,6 +41,19 @@ const ISC_OPTIONS = [
   { label: '10%', value: 10 },
   { label: '15%', value: 15 },
   { label: '20%', value: 20 },
+];
+
+const PAISES_COMUNES = [
+  { label: 'Estados Unidos', value: 'US' },
+  { label: 'China', value: 'CN' },
+  { label: 'México', value: 'MX' },
+  { label: 'Alemania', value: 'DE' },
+  { label: 'Costa Rica', value: 'CR' },
+  { label: 'Guatemala', value: 'GT' },
+  { label: 'Colombia', value: 'CO' },
+  { label: 'Japón', value: 'JP' },
+  { label: 'Corea del Sur', value: 'KR' },
+  { label: 'Otro', value: '' },
 ];
 
 function formatBalboas(amount: number): string {
@@ -92,26 +109,61 @@ export default function TaxSimulatorPage() {
   const [incluirTasa, setIncluirTasa] = useState(true);
   const [autoInsurance, setAutoInsurance] = useState(false);
 
+  // Trade Advisor fields
+  const [hsCode, setHsCode] = useState<string>('');
+  const [paisOrigen, setPaisOrigen] = useState<string>('US');
+  const [estrategiaAplicada, setEstrategiaAplicada] = useState<EstrategiaFiscal | null>(null);
+
+  const { estrategias, loading, buscado, buscarEstrategias, limpiar } = useTradeAdvisor();
+
   const numFob = parseFloat(fob) || 0;
   const numFreight = parseFloat(freight) || 0;
   const rawInsurance = parseFloat(insurance) || 0;
   const numInsurance = autoInsurance ? numFob * (CONSTANTES_ANA.SEGURO_TEORICO_PERCENT / 100) : rawInsurance;
 
+  const effectiveDai = estrategiaAplicada ? estrategiaAplicada.acuerdo.arancel_preferencial : daiPercent;
+
   const result = useMemo(() => {
     if (numFob <= 0) return null;
     return calcularLiquidacionOficial(numFob, numFreight, numInsurance, {
-      daiPercent,
+      daiPercent: effectiveDai,
       iscPercent,
       itbmPercent,
       incluirTasaSistema: incluirTasa,
     });
-  }, [numFob, numFreight, numInsurance, daiPercent, iscPercent, itbmPercent, incluirTasa]);
+  }, [numFob, numFreight, numInsurance, effectiveDai, iscPercent, itbmPercent, incluirTasa]);
 
   const categoria = getCategoria(result?.valorCIF ?? 0);
-  const stellaInsight = getStellaInsight(daiPercent, itbmPercent, iscPercent, result?.valorCIF ?? 0);
+  const stellaInsight = getStellaInsight(effectiveDai, itbmPercent, iscPercent, result?.valorCIF ?? 0);
+
+  const handleOptimizar = useCallback(() => {
+    if (!hsCode.trim() || numFob <= 0) {
+      toast({
+        title: 'Datos incompletos',
+        description: 'Ingrese la partida arancelaria y un valor FOB para buscar estrategias.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setEstrategiaAplicada(null);
+    buscarEstrategias(hsCode, paisOrigen, numFob, numFreight, numInsurance, daiPercent, iscPercent, itbmPercent);
+  }, [hsCode, paisOrigen, numFob, numFreight, numInsurance, daiPercent, iscPercent, itbmPercent, buscarEstrategias]);
+
+  const handleAplicarEstrategia = useCallback((estrategia: EstrategiaFiscal) => {
+    setEstrategiaAplicada(estrategia);
+    toast({
+      title: 'LEXIS: Documento Requerido',
+      description: `Certificado de Origen (${estrategia.acuerdo.tratado_codigo}) añadido como documento obligatorio al Monitor de Carga Externa.`,
+    });
+  }, []);
+
+  const handleResetEstrategia = useCallback(() => {
+    setEstrategiaAplicada(null);
+    limpiar();
+  }, [limpiar]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-[1400px] mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -123,15 +175,23 @@ export default function TaxSimulatorPage() {
             Calculadora de Liquidación Aduanera — Modelo Oficial ANA 2026
           </p>
         </div>
-        {result && (
-          <Badge variant={categoria.color as any} className="text-xs">
-            {categoria.label}
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {estrategiaAplicada && (
+            <Badge variant="outline" className="text-[10px] bg-success-light text-success border-success/20 gap-1">
+              <Sparkles className="w-3 h-3" />
+              {estrategiaAplicada.acuerdo.tratado_codigo} aplicado
+            </Badge>
+          )}
+          {result && (
+            <Badge variant={categoria.color as any} className="text-xs">
+              {categoria.label}
+            </Badge>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column — Input */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Column 1 — Input */}
         <div className="space-y-4">
           <Card className="border border-border">
             <CardHeader className="pb-3">
@@ -140,37 +200,17 @@ export default function TaxSimulatorPage() {
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">Valor FOB (USD)</Label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={fob}
-                  onChange={e => setFob(e.target.value)}
-                  className="font-mono text-sm"
-                  min="0"
-                  step="0.01"
-                />
+                <Input type="number" placeholder="0.00" value={fob} onChange={e => setFob(e.target.value)} className="font-mono text-sm" min="0" step="0.01" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">Flete (USD)</Label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={freight}
-                  onChange={e => setFreight(e.target.value)}
-                  className="font-mono text-sm"
-                  min="0"
-                  step="0.01"
-                />
+                <Input type="number" placeholder="0.00" value={freight} onChange={e => setFreight(e.target.value)} className="font-mono text-sm" min="0" step="0.01" />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-medium text-muted-foreground">Seguro (USD)</Label>
                   <div className="flex items-center gap-1.5">
-                    <Switch
-                      checked={autoInsurance}
-                      onCheckedChange={setAutoInsurance}
-                      className="scale-75"
-                    />
+                    <Switch checked={autoInsurance} onCheckedChange={setAutoInsurance} className="scale-75" />
                     <span className="text-[10px] text-muted-foreground">Teórico ({CONSTANTES_ANA.SEGURO_TEORICO_PERCENT}%)</span>
                   </div>
                 </div>
@@ -179,18 +219,9 @@ export default function TaxSimulatorPage() {
                     {numInsurance.toFixed(2)}
                   </div>
                 ) : (
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={insurance}
-                    onChange={e => setInsurance(e.target.value)}
-                    className="font-mono text-sm"
-                    min="0"
-                    step="0.01"
-                  />
+                  <Input type="number" placeholder="0.00" value={insurance} onChange={e => setInsurance(e.target.value)} className="font-mono text-sm" min="0" step="0.01" />
                 )}
               </div>
-
               {result && (
                 <div className="pt-2 border-t border-border">
                   <div className="flex items-center justify-between">
@@ -208,11 +239,36 @@ export default function TaxSimulatorPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">DAI — Impuesto de Importación</Label>
-                <Select value={String(daiPercent)} onValueChange={v => setDaiPercent(Number(v))}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Label className="text-xs font-medium text-muted-foreground">Partida Arancelaria (HS Code)</Label>
+                <Input placeholder="Ej: 3304" value={hsCode} onChange={e => setHsCode(e.target.value)} className="font-mono text-sm" maxLength={12} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">País de Origen</Label>
+                <Select value={paisOrigen} onValueChange={setPaisOrigen}>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PAISES_COMUNES.map(p => (
+                      <SelectItem key={p.value || 'other'} value={p.value || 'OTHER'}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  DAI — Impuesto de Importación
+                  {estrategiaAplicada && (
+                    <span className="text-success ml-1">(TLC: {estrategiaAplicada.acuerdo.arancel_preferencial}%)</span>
+                  )}
+                </Label>
+                <Select
+                  value={String(daiPercent)}
+                  onValueChange={v => { setDaiPercent(Number(v)); handleResetEstrategia(); }}
+                  disabled={!!estrategiaAplicada}
+                >
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {DAI_PRESETS.map(p => (
                       <SelectItem key={p.value} value={String(p.value)}>{p.label}</SelectItem>
@@ -220,13 +276,10 @@ export default function TaxSimulatorPage() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">ITBM</Label>
                 <Select value={String(itbmPercent)} onValueChange={v => setItbmPercent(Number(v))}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {ITBM_OPTIONS.map(p => (
                       <SelectItem key={p.value} value={String(p.value)}>{p.label}</SelectItem>
@@ -234,13 +287,10 @@ export default function TaxSimulatorPage() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">ISC — Impuesto Selectivo</Label>
                 <Select value={String(iscPercent)} onValueChange={v => setIscPercent(Number(v))}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {ISC_OPTIONS.map(p => (
                       <SelectItem key={p.value} value={String(p.value)}>{p.label}</SelectItem>
@@ -248,7 +298,6 @@ export default function TaxSimulatorPage() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="flex items-center justify-between pt-2 border-t border-border">
                 <Label className="text-xs font-medium text-muted-foreground">Tasa SIGA (B/. 3.00)</Label>
                 <Switch checked={incluirTasa} onCheckedChange={setIncluirTasa} className="scale-75" />
@@ -257,7 +306,7 @@ export default function TaxSimulatorPage() {
           </Card>
         </div>
 
-        {/* Center Column — Results */}
+        {/* Column 2 — Results */}
         <div className="space-y-4">
           <Card className="border border-border">
             <CardHeader className="pb-3">
@@ -273,7 +322,6 @@ export default function TaxSimulatorPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {/* Valores base */}
                   <div className="space-y-1.5 text-sm">
                     <Row label="F.O.B." value={formatBalboas(result.valorFOB)} muted />
                     <Row label="Flete" value={formatBalboas(result.valorFlete)} muted />
@@ -281,38 +329,29 @@ export default function TaxSimulatorPage() {
                     <Separator className="my-2" />
                     <Row label="Valor CIF" value={formatBalboas(result.valorCIF)} bold />
                   </div>
-
                   <Separator />
-
-                  {/* Tributos */}
                   <div className="space-y-1.5 text-sm">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Tributos</p>
-                    <Row label={`DAI (${daiPercent}%)`} value={formatBalboas(result.montoDAI)} />
+                    <Row label={`DAI (${effectiveDai}%)`} value={formatBalboas(result.montoDAI)} highlight={!!estrategiaAplicada} />
                     <Row label={`ISC (${iscPercent}%)`} value={formatBalboas(result.montoISC)} />
                     <Row label={`ITBM (${itbmPercent}%)`} value={formatBalboas(result.montoITBM)} />
                     <Row label="ICCDP" value={formatBalboas(result.montoICCDP)} muted />
                     <Separator className="my-2" />
                     <Row label="Total Tributos" value={formatBalboas(result.totalTributos)} bold />
                   </div>
-
                   {incluirTasa && (
                     <>
                       <Separator />
                       <Row label="Tasa SIGA" value={formatBalboas(result.tasaSistema)} muted />
                     </>
                   )}
-
                   <Separator />
-
-                  {/* Total */}
                   <div className="bg-primary/5 border border-primary/10 rounded-md p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-foreground">Total a Pagar</span>
                       <span className="text-lg font-bold font-mono text-primary">{formatBalboas(result.totalAPagar)}</span>
                     </div>
                   </div>
-
-                  {/* Recargos */}
                   <div className="space-y-1.5">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Escenarios de Recargo</p>
                     <Row label="Recargo 10% (6–10 días)" value={formatBalboas(result.montoRecargo10)} />
@@ -323,7 +362,6 @@ export default function TaxSimulatorPage() {
             </CardContent>
           </Card>
 
-          {/* Cascada fiscal visual */}
           {result && (
             <Card className="border border-border">
               <CardHeader className="pb-3">
@@ -332,7 +370,7 @@ export default function TaxSimulatorPage() {
               <CardContent>
                 <div className="space-y-2 text-xs font-mono">
                   <CascadeStep label="CIF" formula="FOB + Flete + Seguro" result={formatBalboas(result.valorCIF)} />
-                  <CascadeStep label="DAI" formula={`CIF × ${daiPercent}%`} result={formatBalboas(result.montoDAI)} indent />
+                  <CascadeStep label="DAI" formula={`CIF × ${effectiveDai}%`} result={formatBalboas(result.montoDAI)} indent />
                   <CascadeStep label="ISC" formula={`(CIF + DAI) × ${iscPercent}%`} result={formatBalboas(result.montoISC)} indent />
                   <CascadeStep label="ITBM" formula={`(CIF + DAI + ISC) × ${itbmPercent}%`} result={formatBalboas(result.montoITBM)} indent />
                 </div>
@@ -341,7 +379,51 @@ export default function TaxSimulatorPage() {
           )}
         </div>
 
-        {/* Right Column — Stella Insights */}
+        {/* Column 3 — Trade Advisor */}
+        <div className="space-y-4">
+          <Card className="border border-primary/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Trade Advisor Engine
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Consulta acuerdos comerciales vigentes para optimizar la carga tributaria.
+              </p>
+              <Button
+                size="sm"
+                className="w-full text-xs gap-1.5"
+                onClick={handleOptimizar}
+                disabled={loading || !result}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Optimizar Estrategia Fiscal
+              </Button>
+              {estrategiaAplicada && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full text-xs"
+                  onClick={handleResetEstrategia}
+                >
+                  Remover Preferencia
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          <TradeAdvisorPanel
+            estrategias={estrategias}
+            loading={loading}
+            buscado={buscado}
+            onAplicar={handleAplicarEstrategia}
+            estrategiaAplicada={estrategiaAplicada}
+          />
+        </div>
+
+        {/* Column 4 — Stella & Zod */}
         <div className="space-y-4">
           <Card className="border border-primary/15 bg-info-light">
             <CardHeader className="pb-3">
@@ -354,9 +436,7 @@ export default function TaxSimulatorPage() {
               {result ? (
                 <div className="space-y-3">
                   {stellaInsight.split('\n\n').map((paragraph, i) => (
-                    <p key={i} className="text-xs text-foreground/80 leading-relaxed">
-                      {paragraph}
-                    </p>
+                    <p key={i} className="text-xs text-foreground/80 leading-relaxed">{paragraph}</p>
                   ))}
                 </div>
               ) : (
@@ -376,9 +456,7 @@ export default function TaxSimulatorPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Badge variant={categoria.color as any} className="text-xs">
-                  {categoria.label}
-                </Badge>
+                <Badge variant={categoria.color as any} className="text-xs">{categoria.label}</Badge>
                 <p className="text-xs text-muted-foreground">{categoria.desc}</p>
               </CardContent>
             </Card>
@@ -396,8 +474,7 @@ export default function TaxSimulatorPage() {
                 <p className="text-xs text-foreground/80 leading-relaxed">
                   El valor CIF de {formatBalboas(result.valorCIF)} excede el umbral de B/. 2,000.00.
                   De acuerdo con el Decreto 41 de 2002, esta importación requiere la intervención
-                  obligatoria de un Corredor de Aduanas licenciado. La declaración no puede ser
-                  procesada sin la firma digital del corredor autorizado.
+                  obligatoria de un Corredor de Aduanas licenciado.
                 </p>
               </CardContent>
             </Card>
@@ -409,11 +486,11 @@ export default function TaxSimulatorPage() {
 }
 
 // Subcomponents
-function Row({ label, value, bold, muted }: { label: string; value: string; bold?: boolean; muted?: boolean }) {
+function Row({ label, value, bold, muted, highlight }: { label: string; value: string; bold?: boolean; muted?: boolean; highlight?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <span className={`text-xs ${muted ? 'text-muted-foreground' : 'text-foreground/80'}`}>{label}</span>
-      <span className={`font-mono text-xs ${bold ? 'font-semibold text-foreground' : muted ? 'text-muted-foreground' : 'text-foreground/80'}`}>
+      <span className={`font-mono text-xs ${bold ? 'font-semibold text-foreground' : highlight ? 'font-semibold text-success' : muted ? 'text-muted-foreground' : 'text-foreground/80'}`}>
         {value}
       </span>
     </div>
