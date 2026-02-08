@@ -23,7 +23,7 @@ const NAV_ITEMS = [
 const NAV_ADMIN = [
   { label: 'Onboarding', to: '/onboarding-corredor', icon: UserPlus },
   { label: 'Licenciamiento', to: '/licenciamiento-aca', icon: Award },
-  { label: 'Red UNCAP', to: '/red-cumplimiento', icon: ShieldCheck },
+  { label: 'Red LEXIS', to: '/red-cumplimiento', icon: ShieldCheck },
   { label: 'Portal Corredor', to: '/portal-corredor', icon: FileSignature, roles: ['revisor', 'admin'] as string[] },
   { label: 'Pulse', to: '/zenith-pulse', icon: TrendingUp },
 ];
@@ -61,20 +61,20 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        'h-screen sticky top-0 flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-200',
+        'h-screen sticky top-0 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-200',
         collapsed ? 'w-16' : 'w-60'
       )}
     >
       {/* Logo */}
       <div className={cn('flex items-center gap-3 px-4 h-16 border-b border-sidebar-border', collapsed && 'justify-center px-2')}>
         <Link to="/" className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-primary-foreground">Z</span>
+          <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0">
+            <span className="text-sm font-bold text-sidebar-primary-foreground">Z</span>
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <span className="text-sm font-bold text-foreground tracking-wide">ZENITH</span>
-              <p className="text-[10px] text-muted-foreground truncate">{COMPANY_INFO.tagline}</p>
+              <span className="text-sm font-bold text-sidebar-foreground tracking-wider">ZENITH</span>
+              <p className="text-[10px] text-sidebar-foreground/50 truncate">{COMPANY_INFO.tagline}</p>
             </div>
           )}
         </Link>
@@ -83,7 +83,7 @@ export function AppSidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1 scrollbar-thin">
         <p className={cn(
-          'text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2',
+          'text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-medium mb-2',
           collapsed ? 'text-center' : 'px-2'
         )}>
           {collapsed ? '—' : 'Principal'}
@@ -99,8 +99,8 @@ export function AppSidebar() {
                   'flex items-center gap-3 rounded-md text-sm font-medium transition-colors',
                   collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2',
                   active
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    ? 'bg-sidebar-primary/15 text-sidebar-primary'
+                    : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent'
                 )}
                 title={collapsed ? item.label : undefined}
               >
@@ -111,10 +111,10 @@ export function AppSidebar() {
           );
         })}
 
-        <Separator className="my-3" />
+        <Separator className="my-3 bg-sidebar-border" />
 
         <p className={cn(
-          'text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2',
+          'text-[10px] uppercase tracking-wider text-sidebar-foreground/40 font-medium mb-2',
           collapsed ? 'text-center' : 'px-2'
         )}>
           {collapsed ? '—' : 'Gestión'}
@@ -131,8 +131,8 @@ export function AppSidebar() {
                   'flex items-center gap-3 rounded-md text-sm font-medium transition-colors',
                   collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2',
                   active
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    ? 'bg-sidebar-primary/15 text-sidebar-primary'
+                    : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent'
                 )}
                 title={collapsed ? item.label : undefined}
               >
@@ -151,7 +151,7 @@ export function AppSidebar() {
           size="sm"
           onClick={toggleTheme}
           className={cn(
-            'w-full gap-2 text-muted-foreground hover:text-foreground',
+            'w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent',
             collapsed ? 'justify-center px-0' : 'justify-start'
           )}
         >
@@ -164,7 +164,7 @@ export function AppSidebar() {
           size="sm"
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
-            'w-full gap-2 text-muted-foreground hover:text-foreground',
+            'w-full gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent',
             collapsed ? 'justify-center px-0' : 'justify-start'
           )}
         >
@@ -173,7 +173,7 @@ export function AppSidebar() {
         </Button>
 
         {!collapsed && (
-          <p className="text-[10px] text-muted-foreground text-center py-1">
+          <p className="text-[10px] text-sidebar-foreground/40 text-center py-1">
             v{PLATFORM_INFO.version}
           </p>
         )}

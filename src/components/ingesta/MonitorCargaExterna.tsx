@@ -1,5 +1,5 @@
 /**
- * MONITOR DE CARGA EXTERNA — ZENITH
+ * LEXIS: Monitor de Carga Externa — ZENITH
  * Dense data table with professional pill-style status indicators.
  */
 
@@ -110,7 +110,7 @@ export function MonitorCargaExterna({
         <CardHeader className="p-4 pb-3 flex-row items-center justify-between space-y-0">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Tag className="w-4 h-4 text-muted-foreground" />
-            Monitor de Carga Externa
+            LEXIS: Monitor de Carga Externa
             <Badge variant="outline" className="text-[10px]">Origen Externo</Badge>
           </CardTitle>
           <span className="text-xs text-muted-foreground">

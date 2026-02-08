@@ -180,7 +180,7 @@ export default function Index() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold text-foreground">Centro de Operaciones</h1>
-            <p className="text-sm text-muted-foreground">Ingesta, clasificación y validación de documentos aduaneros</p>
+            <p className="text-sm text-muted-foreground">LEXIS — Clasificación, análisis e integridad documental</p>
           </div>
           {step === 'upload' && (
             <div className="flex items-center gap-2">
@@ -215,7 +215,7 @@ export default function Index() {
               <TabsList>
                 <TabsTrigger value="ingesta" className="gap-2">
                   <Inbox className="w-4 h-4" />
-                  Ingesta Universal
+                  LEXIS: Intelligence Ingress
                 </TabsTrigger>
                 <TabsTrigger value="unificado" className="gap-2">
                   <Sparkles className="w-4 h-4" />

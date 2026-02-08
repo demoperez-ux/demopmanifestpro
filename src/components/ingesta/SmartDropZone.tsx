@@ -1,8 +1,8 @@
 /**
- * SMART DROP ZONE — ZENITH
+ * SMART DROP ZONE — ZENITH LEXIS
  * 
  * Minimal enterprise drag-and-drop zone supporting PDF, JPG, PNG, XLSX.
- * Stella classifies automatically with professional status indicators.
+ * LEXIS classifies automatically with professional status indicators.
  */
 
 import { useState, useCallback, useRef } from 'react';
@@ -160,23 +160,18 @@ export function SmartDropZone({ onFilesClassified, className }: SmartDropZonePro
         />
         <div className="flex flex-col items-center gap-3">
           <div className={cn(
-            'w-12 h-12 rounded-lg flex items-center justify-center transition-all',
+            'w-10 h-10 rounded-lg flex items-center justify-center transition-all',
             isDragging ? 'bg-primary/10' : 'bg-muted'
           )}>
-            <Upload className={cn('w-6 h-6', isDragging ? 'text-primary' : 'text-muted-foreground')} />
+            <Upload className={cn('w-5 h-5', isDragging ? 'text-primary' : 'text-muted-foreground')} />
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">
-              {isDragging ? 'Suelte los documentos aquí' : 'Arrastre documentos o haga clic para seleccionar'}
+              {isDragging ? 'Suelte los documentos aquí' : 'Deposite la documentación para análisis LEXIS'}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               PDF, JPG, PNG, XLSX — Máx. 20MB por archivo
             </p>
-          </div>
-          <div className="flex gap-1.5">
-            <Badge variant="outline" className="text-[10px]">PDF</Badge>
-            <Badge variant="outline" className="text-[10px]">JPG / PNG</Badge>
-            <Badge variant="outline" className="text-[10px]">XLSX</Badge>
           </div>
         </div>
       </div>
@@ -255,7 +250,7 @@ export function SmartDropZone({ onFilesClassified, className }: SmartDropZonePro
         onClick={() => inputRef.current?.click()}
       >
         <Upload className="w-4 h-4" />
-        Subida Masiva Segura
+        Subida Masiva Segura — LEXIS
       </Button>
     </div>
   );

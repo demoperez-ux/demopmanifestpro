@@ -1,5 +1,5 @@
 /**
- * GAVETA DE HUÉRFANOS — ZENITH
+ * LEXIS: Pending Classification — ZENITH
  * Executive inbox-style panel for unassigned documents.
  */
 
@@ -100,8 +100,8 @@ function TarjetaHuerfano({
             <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
               {TIPO_LABELS_SHORT[huerfano.resultado.tipoDetectado]}
             </Badge>
-            <Badge variant="outline" className="text-[9px] px-1.5 py-0">
-              Pendiente de Clasificación
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+              LEXIS: Pending
             </Badge>
           </div>
         </div>
@@ -167,9 +167,9 @@ function ZodResultadoOverlay({
           ) : (
             <ShieldAlert className="w-4 h-4 text-warning" />
           )}
-          <span className="text-xs font-semibold text-foreground">
-            Verificación de Integridad: {resultado.exito ? 'Aprobado' : 'Rechazado'}
-          </span>
+           <span className="text-xs font-semibold text-foreground">
+             LEXIS: Certificación de Integridad — {resultado.exito ? 'Aprobada' : 'Rechazada'}
+           </span>
         </div>
         <Button variant="ghost" size="icon" className="h-5 w-5" onClick={onClose}>
           <X className="w-3 h-3" />
@@ -200,12 +200,12 @@ export function GavetaHuerfanos({
     setUltimoResultado(resultado);
 
     if (resultado.exito) {
-      toast.success('Verificación de Integridad: Documento vinculado correctamente', {
+      toast.success('LEXIS: Certificación de Integridad — Documento vinculado', {
         description: `Asociado al expediente ${sugerencia.referencia}`,
         duration: 5000,
       });
     } else {
-      toast.error('Verificación de Integridad: Documento devuelto', {
+      toast.error('LEXIS: Alerta de Riesgo Legal — Documento devuelto', {
         description: resultado.mensaje,
         duration: 7000,
       });
@@ -243,7 +243,7 @@ export function GavetaHuerfanos({
       <CardHeader className="p-3 pb-2 flex-row items-center justify-between space-y-0">
         <CardTitle className="text-xs font-semibold flex items-center gap-2">
           <Inbox className="w-4 h-4 text-muted-foreground" />
-          Documentos Pendientes
+          LEXIS: Pending Classification
           {huerfanos.length > 0 && (
             <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{huerfanos.length}</Badge>
           )}
@@ -254,7 +254,7 @@ export function GavetaHuerfanos({
       </CardHeader>
 
       <p className="px-3 pb-2 text-[10px] text-muted-foreground border-b border-border">
-        Documentos sin trámite asignado. Arrastre a un expediente o use las sugerencias.
+        Documentación sin trámite asignado. Arrastre a un expediente o utilice las sugerencias de LEXIS.
       </p>
 
       {ultimoResultado && (
