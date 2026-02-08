@@ -28,6 +28,7 @@ import TLCKnowledgeBasePage from "./pages/TLCKnowledgeBasePage";
 import CaucaRecaucaPage from "./pages/CaucaRecaucaPage";
 import FlujoCourierPage from "./pages/FlujoCourierPage";
 import CourierHubPage from "./pages/CourierHubPage";
+import EnterpriseBillingPage from "./pages/EnterpriseBillingPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -112,6 +113,7 @@ const App: React.FC = () => {
               <Route path="/cauca-recauca" element={<ProtectedWithLayout><CaucaRecaucaPage /></ProtectedWithLayout>} />
               <Route path="/flujo-courier" element={<ProtectedWithLayout><FlujoCourierPage /></ProtectedWithLayout>} />
               <Route path="/courier-hub" element={<ProtectedWithLayout><CourierHubPage /></ProtectedWithLayout>} />
+              <Route path="/enterprise-billing" element={<ProtectedWithLayout><EnterpriseBillingPage /></ProtectedWithLayout>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1165,6 +1165,78 @@ export type Database = {
           },
         ]
       }
+      service_contracts: {
+        Row: {
+          activo: boolean
+          cliente_nombre: string
+          cliente_ruc: string | null
+          corredor_id: string
+          created_at: string
+          descuento_volumen_10: number
+          descuento_volumen_100: number
+          descuento_volumen_50: number
+          honorario_minimo: number
+          id: string
+          notas: string | null
+          porcentaje_cif: number
+          precio_guia_courier: number
+          precio_tramite_formal: number
+          recargo_almacenaje_dia: number
+          recargo_fumigacion: number
+          recargo_inspeccion: number
+          recargo_permiso_especial: number
+          updated_at: string
+          vigente_desde: string | null
+          vigente_hasta: string | null
+        }
+        Insert: {
+          activo?: boolean
+          cliente_nombre: string
+          cliente_ruc?: string | null
+          corredor_id: string
+          created_at?: string
+          descuento_volumen_10?: number
+          descuento_volumen_100?: number
+          descuento_volumen_50?: number
+          honorario_minimo?: number
+          id?: string
+          notas?: string | null
+          porcentaje_cif?: number
+          precio_guia_courier?: number
+          precio_tramite_formal?: number
+          recargo_almacenaje_dia?: number
+          recargo_fumigacion?: number
+          recargo_inspeccion?: number
+          recargo_permiso_especial?: number
+          updated_at?: string
+          vigente_desde?: string | null
+          vigente_hasta?: string | null
+        }
+        Update: {
+          activo?: boolean
+          cliente_nombre?: string
+          cliente_ruc?: string | null
+          corredor_id?: string
+          created_at?: string
+          descuento_volumen_10?: number
+          descuento_volumen_100?: number
+          descuento_volumen_50?: number
+          honorario_minimo?: number
+          id?: string
+          notas?: string | null
+          porcentaje_cif?: number
+          precio_guia_courier?: number
+          precio_tramite_formal?: number
+          recargo_almacenaje_dia?: number
+          recargo_fumigacion?: number
+          recargo_inspeccion?: number
+          recargo_permiso_especial?: number
+          updated_at?: string
+          vigente_desde?: string | null
+          vigente_hasta?: string | null
+        }
+        Relationships: []
+      }
       tarifarios_corredor: {
         Row: {
           activo: boolean
