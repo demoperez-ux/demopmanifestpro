@@ -1,4 +1,4 @@
-import { Anchor, BookOpen, History, Home, Inbox, Shield, Sparkles, UserPlus, ShieldCheck, FileSignature } from 'lucide-react';
+import { Anchor, BookOpen, History, Home, Inbox, Shield, Sparkles, UserPlus, ShieldCheck, FileSignature, TrendingUp } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ export function Header() {
   const isOnboarding = location.pathname === '/onboarding-corredor';
   const isCumplimiento = location.pathname === '/red-cumplimiento';
   const isPortalCorredor = location.pathname === '/portal-corredor';
+  const isPulse = location.pathname === '/zenith-pulse';
 
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-md shadow-lg zenith-border-glow">
@@ -123,6 +124,16 @@ export function Header() {
                   </Button>
                 </Link>
               )}
+              <Link to="/zenith-pulse">
+                <Button 
+                  variant={isPulse ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="gap-2"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  Pulse
+                </Button>
+              </Link>
             </nav>
           </div>
           <div className="hidden lg:flex items-center gap-4">

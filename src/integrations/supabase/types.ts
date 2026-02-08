@@ -870,6 +870,83 @@ export type Database = {
         }
         Relationships: []
       }
+      tarifarios_corredor: {
+        Row: {
+          activo: boolean
+          corredor_id: string
+          created_at: string
+          descripcion: string | null
+          handling_por_paquete: number | null
+          id: string
+          nombre: string
+          porcentaje_cif: number | null
+          recargo_almacenaje_dia: number | null
+          recargo_courier: number | null
+          recargo_fumigacion: number | null
+          recargo_inspeccion: number | null
+          recargo_peligrosos: number | null
+          recargo_perecederos: number | null
+          tarifa_minima: number | null
+          tarifa_plana: number | null
+          tipo_formula: string
+          updated_at: string
+          vigente_desde: string | null
+          vigente_hasta: string | null
+        }
+        Insert: {
+          activo?: boolean
+          corredor_id: string
+          created_at?: string
+          descripcion?: string | null
+          handling_por_paquete?: number | null
+          id?: string
+          nombre: string
+          porcentaje_cif?: number | null
+          recargo_almacenaje_dia?: number | null
+          recargo_courier?: number | null
+          recargo_fumigacion?: number | null
+          recargo_inspeccion?: number | null
+          recargo_peligrosos?: number | null
+          recargo_perecederos?: number | null
+          tarifa_minima?: number | null
+          tarifa_plana?: number | null
+          tipo_formula?: string
+          updated_at?: string
+          vigente_desde?: string | null
+          vigente_hasta?: string | null
+        }
+        Update: {
+          activo?: boolean
+          corredor_id?: string
+          created_at?: string
+          descripcion?: string | null
+          handling_por_paquete?: number | null
+          id?: string
+          nombre?: string
+          porcentaje_cif?: number | null
+          recargo_almacenaje_dia?: number | null
+          recargo_courier?: number | null
+          recargo_fumigacion?: number | null
+          recargo_inspeccion?: number | null
+          recargo_peligrosos?: number | null
+          recargo_perecederos?: number | null
+          tarifa_minima?: number | null
+          tarifa_plana?: number | null
+          tipo_formula?: string
+          updated_at?: string
+          vigente_desde?: string | null
+          vigente_hasta?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarifarios_corredor_corredor_id_fkey"
+            columns: ["corredor_id"]
+            isOneToOne: false
+            referencedRelation: "corredores_acreditados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

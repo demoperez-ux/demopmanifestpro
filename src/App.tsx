@@ -18,6 +18,7 @@ import ConsultasClasificatoriasPage from "./pages/ConsultasClasificatorias";
 import OnboardingCorredor from "./pages/OnboardingCorredor";
 import RedCumplimientoUNCAP from "./pages/RedCumplimientoUNCAP";
 import PortalCorredorPage from "./pages/PortalCorredorPage";
+import ZenithPulsePage from "./pages/ZenithPulsePage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -136,6 +137,13 @@ const App: React.FC = () => {
               <Route path="/portal-corredor" element={
                 <ProtectedRoute allowedRoles={['revisor', 'admin']}>
                   <PortalCorredorPage />
+                </ProtectedRoute>
+              } />
+              
+              {/* Zenith Pulse — Dashboard Financiero */}
+              <Route path="/zenith-pulse" element={
+                <ProtectedRoute>
+                  <ZenithPulsePage />
                 </ProtectedRoute>
               } />
               
