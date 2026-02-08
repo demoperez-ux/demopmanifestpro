@@ -74,6 +74,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'ERP Sync History', to: '/erp-sync-history', icon: CloudUpload },
       { label: 'Historial', to: '/historial', icon: History },
       { label: 'Consultas', to: '/consultas-clasificatorias', icon: BookOpen },
+      { label: 'System Health', to: '/system-health', icon: Activity, allowedRoles: ADMIN_SECURITY },
       { label: 'ROI Demo', to: '/stress-test', icon: Radar, allowedRoles: ['master_admin'] },
     ],
   },
