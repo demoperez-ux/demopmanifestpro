@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      acuerdos_comerciales: {
+        Row: {
+          activo: boolean
+          arancel_general: number
+          arancel_preferencial: number
+          codigo_arancelario: string
+          created_at: string
+          id: string
+          notas: string | null
+          pais_origen: string
+          requisitos_origen: string | null
+          tratado_codigo: string
+          tratado_nombre: string
+          updated_at: string
+          vigente_desde: string | null
+          vigente_hasta: string | null
+        }
+        Insert: {
+          activo?: boolean
+          arancel_general?: number
+          arancel_preferencial?: number
+          codigo_arancelario: string
+          created_at?: string
+          id?: string
+          notas?: string | null
+          pais_origen: string
+          requisitos_origen?: string | null
+          tratado_codigo: string
+          tratado_nombre: string
+          updated_at?: string
+          vigente_desde?: string | null
+          vigente_hasta?: string | null
+        }
+        Update: {
+          activo?: boolean
+          arancel_general?: number
+          arancel_preferencial?: number
+          codigo_arancelario?: string
+          created_at?: string
+          id?: string
+          notas?: string | null
+          pais_origen?: string
+          requisitos_origen?: string | null
+          tratado_codigo?: string
+          tratado_nombre?: string
+          updated_at?: string
+          vigente_desde?: string | null
+          vigente_hasta?: string | null
+        }
+        Relationships: []
+      }
       alertas_peso: {
         Row: {
           created_at: string
