@@ -19,6 +19,7 @@ import OnboardingCorredor from "./pages/OnboardingCorredor";
 import RedCumplimientoUNCAP from "./pages/RedCumplimientoUNCAP";
 import PortalCorredorPage from "./pages/PortalCorredorPage";
 import ZenithPulsePage from "./pages/ZenithPulsePage";
+import ClientePortalPage from "./pages/ClientePortalPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -144,6 +145,13 @@ const App: React.FC = () => {
               <Route path="/zenith-pulse" element={
                 <ProtectedRoute>
                   <ZenithPulsePage />
+                </ProtectedRoute>
+              } />
+              
+              {/* Portal Cliente — Aprobación de Pre-Factura (acceso autenticado) */}
+              <Route path="/cliente-portal" element={
+                <ProtectedRoute>
+                  <ClientePortalPage />
                 </ProtectedRoute>
               } />
               
