@@ -27,6 +27,7 @@ import LexisLogicEnginePage from "./pages/LexisLogicEnginePage";
 import TLCKnowledgeBasePage from "./pages/TLCKnowledgeBasePage";
 import CaucaRecaucaPage from "./pages/CaucaRecaucaPage";
 import FlujoCourierPage from "./pages/FlujoCourierPage";
+import LexisIngressPage from "./pages/LexisIngressPage";
 import CourierHubPage from "./pages/CourierHubPage";
 import EnterpriseBillingPage from "./pages/EnterpriseBillingPage";
 import StressTestPage from "./pages/StressTestPage";
@@ -113,6 +114,7 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } />
               <Route path="/cauca-recauca" element={<ProtectedWithLayout><CaucaRecaucaPage /></ProtectedWithLayout>} />
+              <Route path="/lexis-ingress" element={<ProtectedWithLayout><LexisIngressPage /></ProtectedWithLayout>} />
               <Route path="/flujo-courier" element={<ProtectedWithLayout><FlujoCourierPage /></ProtectedWithLayout>} />
               <Route path="/courier-hub" element={<ProtectedWithLayout><CourierHubPage /></ProtectedWithLayout>} />
               <Route path="/enterprise-billing" element={<ProtectedWithLayout><EnterpriseBillingPage /></ProtectedWithLayout>} />

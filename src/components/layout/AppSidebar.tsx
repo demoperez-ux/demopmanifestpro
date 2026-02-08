@@ -1,7 +1,7 @@
 import {
   Home, Inbox, History, Anchor, BookOpen, UserPlus, Award,
   ShieldCheck, FileSignature, TrendingUp, Search, Moon, Sun,
-  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck, Zap, Receipt, Radar, ShieldAlert
+  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck, Zap, Receipt, Radar, ShieldAlert, FolderInput
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { label: 'Aranceles', to: '/aranceles', icon: Search },
   { label: 'Tax Simulator', to: '/tax-simulator', icon: Calculator },
   { label: 'LEXIS Engine', to: '/lexis-engine', icon: Brain },
+  { label: 'LEXIS Ingress', to: '/lexis-ingress', icon: FolderInput },
   { label: 'Flujo Courier', to: '/flujo-courier', icon: Truck },
   { label: 'Universal Gateway', to: '/courier-hub', icon: Zap },
   { label: 'Enterprise Billing', to: '/enterprise-billing', icon: Receipt },
