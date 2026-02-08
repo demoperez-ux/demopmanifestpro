@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Sparkles, Inbox } from 'lucide-react';
 import { Header } from '@/components/manifest/Header';
 import { StellaHelpPanel, StellaContext } from '@/components/zenith/StellaHelpPanel';
 import { FileUpload, MAWBInfo } from '@/components/manifest/FileUpload';
@@ -11,6 +11,7 @@ import { VisualDashboard } from '@/components/manifest/VisualDashboard';
 import { ConfigPanel } from '@/components/manifest/ConfigPanel';
 import { ValidacionGuiasAlert, InfoGuiasVsMAWB } from '@/components/manifest/ValidacionGuiasAlert';
 import { FlujoCargaUnificado } from '@/components/manifest/FlujoCargaUnificado';
+import { IngestaUniversalDashboard } from '@/components/ingesta/IngestaUniversalDashboard';
 import { SelectorModoTransporte, useTransportMode } from '@/components/transporte/SelectorModoTransporte';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -46,7 +47,7 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [mawbInfo, setMawbInfo] = useState<MAWBInfo | null>(null);
   const [fileLoaded, setFileLoaded] = useState(false);
-  const [flujoUnificado, setFlujoUnificado] = useState(true); // Nuevo flujo por defecto
+  const [modoFlujo, setModoFlujo] = useState<'ingesta' | 'unificado' | 'clasico'>('ingesta');
   
   // Hook para modo de transporte
   const { modo: modoTransporte, zona: zonaAduanera, setModo, setZona } = useTransportMode();
@@ -183,11 +184,15 @@ export default function Index() {
         {/* Selector de flujo */}
         {step === 'upload' && (
           <div className="mb-6 flex justify-center">
-            <Tabs value={flujoUnificado ? 'unificado' : 'clasico'} onValueChange={(v) => setFlujoUnificado(v === 'unificado')}>
-              <TabsList className="grid w-full max-w-md grid-cols-2">
+            <Tabs value={modoFlujo} onValueChange={(v) => setModoFlujo(v as 'ingesta' | 'unificado' | 'clasico')}>
+              <TabsList className="grid w-full max-w-lg grid-cols-3">
+                <TabsTrigger value="ingesta" className="gap-2">
+                  <Inbox className="w-4 h-4" />
+                  Ingesta Universal
+                </TabsTrigger>
                 <TabsTrigger value="unificado" className="gap-2">
                   <Sparkles className="w-4 h-4" />
-                  Flujo Unificado (Nuevo)
+                  Flujo Unificado
                 </TabsTrigger>
                 <TabsTrigger value="clasico">
                   Flujo Clásico
@@ -197,13 +202,18 @@ export default function Index() {
           </div>
         )}
 
-        {/* Flujo Unificado - Nuevo */}
-        {step === 'upload' && flujoUnificado && (
+        {/* Ingesta Universal - Nuevo */}
+        {step === 'upload' && modoFlujo === 'ingesta' && (
+          <IngestaUniversalDashboard />
+        )}
+
+        {/* Flujo Unificado */}
+        {step === 'upload' && modoFlujo === 'unificado' && (
           <FlujoCargaUnificado />
         )}
 
         {/* Flujo Clásico - Original */}
-        {step === 'upload' && !flujoUnificado && (
+        {step === 'upload' && modoFlujo === 'clasico' && (
           <>
             {/* Step Indicator */}
             <div className="mb-8">
@@ -295,7 +305,7 @@ export default function Index() {
         )}
 
         {/* Config Panel - Show on upload (classic mode) and preview steps */}
-        {((step === 'upload' && !flujoUnificado) || step === 'preview') && (
+        {((step === 'upload' && modoFlujo === 'clasico') || step === 'preview') && (
           <div className="mb-6">
             <ConfigPanel config={config} onConfigChange={setConfig} />
           </div>
@@ -303,7 +313,7 @@ export default function Index() {
 
         {/* Main Content */}
         <div className="space-y-6">
-          {step === 'upload' && !flujoUnificado && (
+          {step === 'upload' && modoFlujo === 'clasico' && (
             <div className="max-w-2xl mx-auto space-y-6">
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-2">
