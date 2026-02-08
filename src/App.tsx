@@ -29,6 +29,7 @@ import CaucaRecaucaPage from "./pages/CaucaRecaucaPage";
 import FlujoCourierPage from "./pages/FlujoCourierPage";
 import CourierHubPage from "./pages/CourierHubPage";
 import EnterpriseBillingPage from "./pages/EnterpriseBillingPage";
+import StressTestPage from "./pages/StressTestPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -114,6 +115,7 @@ const App: React.FC = () => {
               <Route path="/flujo-courier" element={<ProtectedWithLayout><FlujoCourierPage /></ProtectedWithLayout>} />
               <Route path="/courier-hub" element={<ProtectedWithLayout><CourierHubPage /></ProtectedWithLayout>} />
               <Route path="/enterprise-billing" element={<ProtectedWithLayout><EnterpriseBillingPage /></ProtectedWithLayout>} />
+              <Route path="/stress-test" element={<ProtectedWithLayout><StressTestPage /></ProtectedWithLayout>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
