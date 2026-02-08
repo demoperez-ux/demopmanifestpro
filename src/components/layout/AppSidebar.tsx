@@ -1,7 +1,7 @@
 import {
   Home, Inbox, History, Anchor, BookOpen, UserPlus, Award,
   ShieldCheck, FileSignature, TrendingUp, Search, Moon, Sun,
-  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck
+  ChevronLeft, ChevronRight, Calculator, Brain, DatabaseZap, Scale, Truck, Zap
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { label: 'Tax Simulator', to: '/tax-simulator', icon: Calculator },
   { label: 'LEXIS Engine', to: '/lexis-engine', icon: Brain },
   { label: 'Flujo Courier', to: '/flujo-courier', icon: Truck },
+  { label: 'Courier Hub', to: '/courier-hub', icon: Zap },
 ];
 
 const NAV_ADMIN = [
