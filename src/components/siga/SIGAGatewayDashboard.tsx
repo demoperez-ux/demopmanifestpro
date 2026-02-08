@@ -7,12 +7,13 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Send, FileKey2, Archive, Radio, Plug, Activity, Server } from 'lucide-react';
+import { Send, FileKey2, Archive, Radio, Plug, Activity, Server, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import MonitorTransmisionSIGA from './MonitorTransmisionSIGA';
 import FirmaElectronicaPanel from './FirmaElectronicaPanel';
 import BovedaBoletasSIGA from './BovedaBoletasSIGA';
 import ConectividadANAPanel from './ConectividadANAPanel';
+import ConnectorCoreDashboard from './ConnectorCoreDashboard';
 
 export default function SIGAGatewayDashboard() {
   const [entorno, setEntorno] = useState<'sandbox' | 'produccion'>('sandbox');
@@ -80,6 +81,10 @@ export default function SIGAGatewayDashboard() {
             <Plug className="w-3.5 h-3.5" />
             Conectividad ANA
           </TabsTrigger>
+          <TabsTrigger value="connector-core" className="text-xs gap-1.5">
+            <Cpu className="w-3.5 h-3.5" />
+            Connector Core
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="transmision" className="mt-4">
@@ -101,6 +106,10 @@ export default function SIGAGatewayDashboard() {
             entorno={entorno}
             onToggleEntorno={setEntorno}
           />
+        </TabsContent>
+
+        <TabsContent value="connector-core" className="mt-4">
+          <ConnectorCoreDashboard />
         </TabsContent>
       </Tabs>
     </div>
