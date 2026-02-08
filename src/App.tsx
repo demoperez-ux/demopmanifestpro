@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Historial from "./pages/Historial";
@@ -26,11 +27,17 @@ import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
 const queryClient = new QueryClient();
 
+function ProtectedWithLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <AppLayout>{children}</AppLayout>
+    </ProtectedRoute>
+  );
+}
+
 const App: React.FC = () => {
-  // Inicializar sistema de encriptación al arrancar
   useEffect(() => {
     let mounted = true;
-    
     const initSession = async () => {
       try {
         if (mounted) {
@@ -40,23 +47,18 @@ const App: React.FC = () => {
         console.warn('Error inicializando sesión de seguridad');
       }
     };
-    
     initSession();
-    
     return () => {
       mounted = false;
       ProtectorDatos.limpiarSesion();
     };
   }, []);
 
-  // Limpiar al cerrar ventana/pestaña
   useEffect(() => {
     const handleBeforeUnload = () => {
       ProtectorDatos.limpiarSesion();
     };
-    
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
@@ -70,99 +72,31 @@ const App: React.FC = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Ruta pública de autenticación */}
               <Route path="/auth" element={<Auth />} />
               
-              {/* Rutas protegidas */}
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/historial" element={
-                <ProtectedRoute>
-                  <Historial />
-                </ProtectedRoute>
-              } />
-              
+              <Route path="/" element={<ProtectedWithLayout><Index /></ProtectedWithLayout>} />
+              <Route path="/historial" element={<ProtectedWithLayout><Historial /></ProtectedWithLayout>} />
               <Route path="/test-deteccion" element={
                 <ProtectedRoute allowedRoles={['admin', 'revisor']}>
-                  <TestDeteccion />
+                  <AppLayout><TestDeteccion /></AppLayout>
                 </ProtectedRoute>
               } />
-              
-              {/* Dashboard por manifiesto (post-procesamiento) */}
-              <Route path="/dashboard/:manifiestoId" element={
-                <ProtectedRoute>
-                  <DashboardManifiesto />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/aranceles" element={
-                <ProtectedRoute>
-                  <BuscadorAranceles />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/stella-inbox" element={
-                <ProtectedRoute>
-                  <StellaInbox />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/horizonte-carga" element={
-                <ProtectedRoute>
-                  <HorizonteCarga />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/consultas-clasificatorias" element={
-                <ProtectedRoute>
-                  <ConsultasClasificatoriasPage />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/onboarding-corredor" element={
-                <ProtectedRoute>
-                  <OnboardingCorredor />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/licenciamiento-aca" element={
-                <ProtectedRoute>
-                  <LicenciamientoACA />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/red-cumplimiento" element={
-                <ProtectedRoute>
-                  <RedCumplimientoUNCAP />
-                </ProtectedRoute>
-              } />
-              
-              {/* Portal del Corredor — Solo Corredor (revisor) y admin */}
+              <Route path="/dashboard/:manifiestoId" element={<ProtectedWithLayout><DashboardManifiesto /></ProtectedWithLayout>} />
+              <Route path="/aranceles" element={<ProtectedWithLayout><BuscadorAranceles /></ProtectedWithLayout>} />
+              <Route path="/stella-inbox" element={<ProtectedWithLayout><StellaInbox /></ProtectedWithLayout>} />
+              <Route path="/horizonte-carga" element={<ProtectedWithLayout><HorizonteCarga /></ProtectedWithLayout>} />
+              <Route path="/consultas-clasificatorias" element={<ProtectedWithLayout><ConsultasClasificatoriasPage /></ProtectedWithLayout>} />
+              <Route path="/onboarding-corredor" element={<ProtectedWithLayout><OnboardingCorredor /></ProtectedWithLayout>} />
+              <Route path="/licenciamiento-aca" element={<ProtectedWithLayout><LicenciamientoACA /></ProtectedWithLayout>} />
+              <Route path="/red-cumplimiento" element={<ProtectedWithLayout><RedCumplimientoUNCAP /></ProtectedWithLayout>} />
               <Route path="/portal-corredor" element={
                 <ProtectedRoute allowedRoles={['revisor', 'admin']}>
-                  <PortalCorredorPage />
+                  <AppLayout><PortalCorredorPage /></AppLayout>
                 </ProtectedRoute>
               } />
+              <Route path="/zenith-pulse" element={<ProtectedWithLayout><ZenithPulsePage /></ProtectedWithLayout>} />
+              <Route path="/cliente-portal" element={<ProtectedWithLayout><ClientePortalPage /></ProtectedWithLayout>} />
               
-              {/* Zenith Pulse — Dashboard Financiero */}
-              <Route path="/zenith-pulse" element={
-                <ProtectedRoute>
-                  <ZenithPulsePage />
-                </ProtectedRoute>
-              } />
-              
-              {/* Portal Cliente — Aprobación de Pre-Factura (acceso autenticado) */}
-              <Route path="/cliente-portal" element={
-                <ProtectedRoute>
-                  <ClientePortalPage />
-                </ProtectedRoute>
-              } />
-              
-              {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

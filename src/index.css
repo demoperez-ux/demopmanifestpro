@@ -2,10 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
+    --background: 0 0% 100%;
+    --foreground: 215 28% 17%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+
+    --primary: 215 90% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 215 90% 94%;
+    --primary-dark: 215 90% 38%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 28% 35%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 215 28% 17%;
+
+    /* Stella — Compliance Assistant */
+    --stella: 215 90% 48%;
+    --stella-foreground: 0 0% 100%;
+    --stella-light: 215 80% 92%;
+
+    /* Zod — Integrity Engine */
+    --zod: 25 95% 53%;
+    --zod-foreground: 0 0% 100%;
+    --zod-light: 25 90% 94%;
+
+    --success: 152 69% 38%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 152 60% 94%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 20%;
+    --warning-light: 38 90% 94%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-light: 0 70% 95%;
+
+    --info: 215 90% 48%;
+    --info-foreground: 0 0% 100%;
+    --info-light: 215 80% 95%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 215 90% 48%;
+
+    --radius: 0.5rem;
+
+    /* Category Colors */
+    --category-medication: 0 72% 51%;
+    --category-supplements: 152 69% 38%;
+    --category-medical: 215 90% 48%;
+    --category-veterinary: 280 68% 55%;
+    --category-general: 215 16% 47%;
+
+    /* Shadows — Light Mode */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.07), 0 2px 4px -2px hsl(0 0% 0% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.08), 0 4px 6px -4px hsl(0 0% 0% / 0.04);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.08), 0 8px 10px -6px hsl(0 0% 0% / 0.04);
+    --shadow-glow: none;
+    --shadow-glow-stella: none;
+    --shadow-glow-zod: none;
+    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.06), 0 1px 2px -1px hsl(0 0% 0% / 0.06);
+
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 215 28% 17%;
+    --sidebar-primary: 215 90% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 215 28% 17%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 215 90% 48%;
+  }
+
+  .dark {
     --background: 222 47% 6%;
     --foreground: 210 20% 92%;
 
@@ -15,10 +98,10 @@
     --popover: 222 40% 9%;
     --popover-foreground: 210 20% 92%;
 
-    --primary: 187 90% 51%;
-    --primary-foreground: 222 47% 6%;
-    --primary-light: 187 90% 61%;
-    --primary-dark: 187 90% 41%;
+    --primary: 215 90% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 215 40% 18%;
+    --primary-dark: 215 90% 45%;
 
     --secondary: 222 30% 16%;
     --secondary-foreground: 210 20% 85%;
@@ -26,24 +109,20 @@
     --muted: 222 25% 14%;
     --muted-foreground: 215 16% 55%;
 
-    --accent: 187 40% 15%;
-    --accent-foreground: 187 90% 65%;
+    --accent: 222 30% 16%;
+    --accent-foreground: 210 20% 92%;
 
-    /* Stella Cyan */
-    --stella: 187 90% 51%;
-    --stella-foreground: 222 47% 6%;
-    --stella-light: 187 80% 70%;
-    --stella-glow: 187 90% 51%;
+    --stella: 215 90% 55%;
+    --stella-foreground: 0 0% 100%;
+    --stella-light: 215 40% 18%;
 
-    /* Zod Amber */
-    --zod: 38 92% 50%;
-    --zod-foreground: 222 47% 6%;
-    --zod-light: 38 80% 65%;
-    --zod-glow: 38 92% 50%;
+    --zod: 25 95% 53%;
+    --zod-foreground: 0 0% 100%;
+    --zod-light: 25 50% 16%;
 
-    --success: 142 71% 45%;
+    --success: 152 69% 45%;
     --success-foreground: 0 0% 100%;
-    --success-light: 142 40% 18%;
+    --success-light: 152 40% 14%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 222 47% 6%;
@@ -53,50 +132,31 @@
     --destructive-foreground: 0 0% 100%;
     --destructive-light: 0 50% 16%;
 
-    --info: 187 90% 51%;
-    --info-foreground: 222 47% 6%;
-    --info-light: 187 40% 15%;
+    --info: 215 90% 55%;
+    --info-foreground: 0 0% 100%;
+    --info-light: 215 40% 15%;
 
     --border: 222 25% 18%;
     --input: 222 25% 18%;
-    --ring: 187 90% 51%;
+    --ring: 215 90% 55%;
 
-    --radius: 0.625rem;
-
-    /* Category Colors */
-    --category-medication: 0 84% 60%;
-    --category-supplements: 142 71% 45%;
-    --category-medical: 187 90% 51%;
-    --category-veterinary: 280 68% 55%;
-    --category-general: 215 16% 47%;
-
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(187 90% 51%) 0%, hsl(187 90% 35%) 100%);
-    --gradient-header: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 5%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(222 40% 10%) 0%, hsl(222 40% 8%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(142 71% 50%) 0%, hsl(142 71% 40%) 100%);
-    --gradient-stella: linear-gradient(135deg, hsl(187 90% 51%) 0%, hsl(199 89% 48%) 100%);
-    --gradient-zod: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(25 95% 53%) 100%);
-    --gradient-zenith: linear-gradient(135deg, hsl(187 90% 51%) 0%, hsl(222 47% 20%) 50%, hsl(38 92% 50%) 100%);
-
-    /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4);
     --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4);
-    --shadow-glow: 0 0 20px hsl(187 90% 51% / 0.25);
-    --shadow-glow-stella: 0 0 30px hsl(187 90% 51% / 0.2);
-    --shadow-glow-zod: 0 0 30px hsl(38 92% 50% / 0.2);
+    --shadow-glow: none;
+    --shadow-glow-stella: none;
+    --shadow-glow-zod: none;
     --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
 
     --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 210 20% 92%;
-    --sidebar-primary: 187 90% 51%;
-    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-primary: 215 90% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 30% 14%;
     --sidebar-accent-foreground: 210 20% 92%;
     --sidebar-border: 222 25% 18%;
-    --sidebar-ring: 187 90% 51%;
+    --sidebar-ring: 215 90% 55%;
   }
 }
 
@@ -112,14 +172,14 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Rajdhani', 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     @apply font-semibold tracking-tight text-foreground;
   }
 }
 
 @layer components {
   .card-elevated {
-    @apply bg-card rounded-xl border border-border;
+    @apply bg-card rounded-lg border border-border;
     box-shadow: var(--shadow-card);
   }
 
@@ -129,18 +189,7 @@
 
   .card-interactive:hover {
     box-shadow: var(--shadow-md);
-    @apply border-primary/30;
-  }
-
-  .btn-primary {
-    background: var(--gradient-primary);
-    @apply text-primary-foreground font-medium rounded-lg px-4 py-2 transition-all duration-200;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .btn-primary:hover {
-    box-shadow: var(--shadow-md), var(--shadow-glow);
-    @apply opacity-95;
+    @apply border-primary/20;
   }
 
   .status-badge {
@@ -163,28 +212,12 @@
     @apply bg-info-light text-info;
   }
 
-  .glass-panel {
-    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl;
-  }
-
-  .glass-panel-stella {
-    background: linear-gradient(135deg, hsl(187 90% 51% / 0.05) 0%, hsl(222 40% 9% / 0.9) 100%);
-    @apply backdrop-blur-sm border border-primary/20 rounded-xl;
-    box-shadow: var(--shadow-glow-stella);
-  }
-
-  .glass-panel-zod {
-    background: linear-gradient(135deg, hsl(38 92% 50% / 0.05) 0%, hsl(222 40% 9% / 0.9) 100%);
-    @apply backdrop-blur-sm border border-warning/20 rounded-xl;
-    box-shadow: var(--shadow-glow-zod);
-  }
-
   .drop-zone {
-    @apply border-2 border-dashed border-muted-foreground/30 rounded-xl transition-all duration-200;
+    @apply border-2 border-dashed border-border rounded-lg transition-all duration-200;
   }
 
   .drop-zone-active {
-    @apply border-primary bg-accent/50;
+    @apply border-primary bg-primary/5;
   }
 
   .stat-card {
@@ -193,15 +226,10 @@
 
   .stat-value {
     @apply text-2xl font-bold text-foreground;
-    font-family: 'Rajdhani', sans-serif;
   }
 
   .stat-label {
     @apply text-sm text-muted-foreground;
-  }
-
-  .category-tag {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium;
   }
 
   .data-table {
@@ -228,44 +256,23 @@
     @apply h-full bg-primary rounded-full transition-all duration-500 ease-out;
   }
 
-  .tooltip-content {
-    @apply bg-foreground text-background text-xs px-2 py-1 rounded shadow-lg;
+  /* Professional assistant panels */
+  .panel-stella {
+    @apply bg-info-light border border-primary/15 rounded-lg;
   }
 
-  /* Zenith-specific glow effects */
-  .zenith-glow {
-    box-shadow: 0 0 40px hsl(187 90% 51% / 0.15), 0 0 80px hsl(187 90% 51% / 0.05);
-  }
-
-  .zenith-border-glow {
-    @apply border border-primary/30;
-    box-shadow: inset 0 0 20px hsl(187 90% 51% / 0.05), 0 0 20px hsl(187 90% 51% / 0.1);
-  }
-
-  .stella-pulse {
-    animation: stellaPulse 3s ease-in-out infinite;
-  }
-
-  .zod-pulse {
-    animation: zodPulse 2s ease-in-out infinite;
+  .panel-zod {
+    @apply bg-warning-light border border-warning/15 rounded-lg;
   }
 }
 
 @layer utilities {
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.2s ease-out;
   }
 
   .animate-slide-up {
-    animation: slideUp 0.4s ease-out;
-  }
-
-  .animate-pulse-subtle {
-    animation: pulseSubtle 2s ease-in-out infinite;
-  }
-
-  .animate-spin-slow {
-    animation: spin 2s linear infinite;
+    animation: slideUp 0.3s ease-out;
   }
 
   @keyframes fadeIn {
@@ -276,7 +283,7 @@
   @keyframes slideUp {
     from { 
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(8px);
     }
     to { 
       opacity: 1;
@@ -284,34 +291,9 @@
     }
   }
 
-  @keyframes pulseSubtle {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-
-  @keyframes stellaPulse {
-    0%, 100% { box-shadow: 0 0 10px hsl(187 90% 51% / 0.2); }
-    50% { box-shadow: 0 0 25px hsl(187 90% 51% / 0.4); }
-  }
-
-  @keyframes zodPulse {
-    0%, 100% { box-shadow: 0 0 10px hsl(38 92% 50% / 0.2); }
-    50% { box-shadow: 0 0 25px hsl(38 92% 50% / 0.4); }
-  }
-
-  .text-gradient {
-    @apply bg-clip-text text-transparent;
-    background-image: var(--gradient-primary);
-  }
-
-  .text-gradient-zenith {
-    @apply bg-clip-text text-transparent;
-    background-image: var(--gradient-zenith);
-  }
-
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted)) transparent;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -324,11 +306,11 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted));
+    background: hsl(var(--muted-foreground) / 0.3);
     border-radius: 3px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+    background: hsl(var(--muted-foreground) / 0.5);
   }
 }
