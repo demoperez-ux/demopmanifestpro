@@ -76,7 +76,6 @@ const NAV_GROUPS: NavGroup[] = [
 
 const NAV_QUICK: NavItem[] = [
   { label: 'Inicio', to: '/', icon: Home },
-  { label: 'Bandeja', to: '/stella-inbox', icon: Inbox },
 ];
 
 const NAV_ADMIN: (NavItem & { roles?: string[] })[] = [
