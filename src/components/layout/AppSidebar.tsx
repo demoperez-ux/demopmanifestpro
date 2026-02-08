@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { label: 'Tax Simulator', to: '/tax-simulator', icon: Calculator },
   { label: 'LEXIS Engine', to: '/lexis-engine', icon: Brain },
   { label: 'LEXIS Ingress', to: '/lexis-ingress', icon: FolderInput },
-  { label: 'Flujo Courier', to: '/flujo-courier', icon: Truck },
+  { label: 'Operations Flow', to: '/flujo-courier', icon: Truck },
   { label: 'Universal Gateway', to: '/courier-hub', icon: Zap },
   { label: 'Enterprise Billing', to: '/enterprise-billing', icon: Receipt },
   { label: 'Stress-Test Demo', to: '/stress-test', icon: Radar },

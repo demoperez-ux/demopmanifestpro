@@ -62,10 +62,10 @@ const PREFIJOS_IATA: Record<string, { nombre: string; codigo: string }> = {
   '180': { nombre: 'Korean Air', codigo: 'KE' },
   '205': { nombre: 'Avianca', codigo: 'AV' },
   '230': { nombre: 'Avianca Cargo', codigo: 'AV' },
-  '406': { nombre: 'FedEx', codigo: 'FX' },
-  '410': { nombre: 'UPS', codigo: '5X' },
-  '427': { nombre: 'DHL', codigo: 'DH' },
-  '876': { nombre: 'Amazon Prime Air', codigo: '3A' },
+  '406': { nombre: 'IATA-406', codigo: 'FX' },
+  '410': { nombre: 'IATA-410', codigo: '5X' },
+  '427': { nombre: 'IATA-427', codigo: 'DH' },
+  '876': { nombre: 'IATA-876', codigo: '3A' },
   '157': { nombre: 'Qatar Airways', codigo: 'QR' },
   '618': { nombre: 'Emirates', codigo: 'EK' },
   '810': { nombre: 'Amerijet International', codigo: 'M6' },
@@ -107,16 +107,16 @@ const PATRONES_DETECCION: Record<TipoColumna, string[]> = {
     // EXACTO primero
     'local tracking provider', 'local_tracking_provider', 'localtrackingprovider',
     'local tracking', 'local_tracking',
-    'amazon tracking', 'amazon shipment', 'amazon id', 'shipment id',
+    'fulfillment tracking', 'fulfillment shipment', 'fulfillment id', 'shipment id',
     'tracking', 'tracking number', 'track', 'track#',
     'guia', 'guía', 'numero guia', 'número guía', 'tracking id', 'package id', 'tracking#',
-    // Variaciones adicionales
-    'amz', 'amz tracking', 'amazon', 'amazon number', 'amazon order',
+    // Variaciones adicionales — patrones de formato de guía
+    'amz', 'amz tracking', 'ecommerce tracking', 'order tracking', 'order id',
     'package tracking', 'shipment tracking', 'carrier tracking', 'carrier id',
     'local id', 'local number', 'domestic tracking', 'paquete', 'numero paquete',
     'número paquete', 'id paquete', 'order id', 'order number', 'pedido',
     'numero pedido', 'número pedido', 'tracking local', 'rastreo', 'numero rastreo',
-    'tba', 'sp', 'ups tracking', 'fedex tracking', 'dhl tracking', 'usps tracking',
+    'tba', 'sp', 'express tracking', 'carrier tracking', 'logistics tracking', 'postal tracking',
     '1z', 'tracking no', 'seguimiento', 'numero seguimiento', 'número seguimiento'
   ],
   

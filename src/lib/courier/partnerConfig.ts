@@ -1,14 +1,19 @@
 /**
- * PARTNER CONFIGURATION — Multi-Partner Architecture
+ * OPERATIONAL PROFILE CONFIGURATION — White-Label Architecture
  * 
- * Sistema dinámico para gestionar socios logísticos (UPS, DHL, FedEx, Amazon, etc.)
- * Permite configurar nombre, logo, formato de exportación y estándares técnicos
- * sin código hardcodeado.
+ * Sistema agnóstico de perfiles operativos para gestionar tipos de operación logística.
+ * Permite configurar nombre, formato de exportación y estándares técnicos
+ * sin referencia a marcas comerciales externas.
+ * 
+ * Systemic DNA by Demostenes Perez Castillero | v2.0.26
  */
 
 // ─── Tipos ──────────────────────────────────────────────
 
 export type ExportFormat = 'csv' | 'json' | 'xml';
+
+/** Tipo de operación para acentos de interfaz */
+export type OperationType = 'general' | 'alto_volumen' | 'sensible';
 
 export interface PartnerConfig {
   id: string;
@@ -17,72 +22,62 @@ export interface PartnerConfig {
   exportFormats: ExportFormat[];
   defaultExportFormat: ExportFormat;
   trackingPrefix?: string;
-  /** Nombre del sistema ERP del socio para el botón de exportación */
+  /** Nombre del sistema ERP estándar para el botón de exportación */
   erpSystemName: string;
   /** Código IATA de aerolínea asociada (opcional) */
   iataCode?: string;
+  /** Tipo de operación para theming dinámico */
+  operationType: OperationType;
   activo: boolean;
   createdAt: string;
 }
 
-// ─── Socios por Defecto ─────────────────────────────────
+// ─── Perfiles Operativos por Defecto ────────────────────
 
 const DEFAULT_PARTNERS: PartnerConfig[] = [
   {
-    id: 'ups',
-    name: 'UPS',
-    exportFormats: ['csv', 'json'],
-    defaultExportFormat: 'csv',
-    trackingPrefix: '1Z',
-    erpSystemName: 'UPS WorldShip',
-    iataCode: '406',
-    activo: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'dhl',
-    name: 'DHL Express',
-    exportFormats: ['csv', 'json', 'xml'],
-    defaultExportFormat: 'json',
-    trackingPrefix: '',
-    erpSystemName: 'DHL MyBill',
-    iataCode: '155',
-    activo: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'fedex',
-    name: 'FedEx',
-    exportFormats: ['csv', 'json'],
-    defaultExportFormat: 'csv',
-    trackingPrefix: '',
-    erpSystemName: 'FedEx Ship Manager',
-    iataCode: '023',
-    activo: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'amazon',
-    name: 'Amazon Logistics',
-    exportFormats: ['csv', 'json'],
-    defaultExportFormat: 'json',
-    trackingPrefix: 'TBA',
-    erpSystemName: 'Amazon Seller Central',
-    activo: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'generic',
-    name: 'Courier Genérico',
+    id: 'standard',
+    name: 'Standard Gateway',
     exportFormats: ['csv', 'json', 'xml'],
     defaultExportFormat: 'csv',
-    erpSystemName: 'ERP',
+    erpSystemName: 'External ERP Standard',
+    operationType: 'general',
+    activo: true,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'strategic',
+    name: 'Strategic Logistics Ally',
+    exportFormats: ['csv', 'json', 'xml'],
+    defaultExportFormat: 'json',
+    erpSystemName: 'Global Logistics Platform',
+    operationType: 'general',
+    activo: true,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'ecommerce',
+    name: 'E-commerce Fulfillment Node',
+    exportFormats: ['csv', 'json'],
+    defaultExportFormat: 'json',
+    erpSystemName: 'Fulfillment Management System',
+    operationType: 'alto_volumen',
+    activo: true,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'regional',
+    name: 'Express Regional Operator',
+    exportFormats: ['csv', 'json'],
+    defaultExportFormat: 'csv',
+    erpSystemName: 'Regional Operations Console',
+    operationType: 'general',
     activo: true,
     createdAt: new Date().toISOString(),
   },
 ];
 
-// ─── Gestor de Partners (Singleton) ─────────────────────
+// ─── Gestor de Perfiles Operativos (Singleton) ──────────
 
 class PartnerManager {
   private partners: Map<string, PartnerConfig>;
@@ -91,37 +86,37 @@ class PartnerManager {
   constructor() {
     this.partners = new Map();
     DEFAULT_PARTNERS.forEach(p => this.partners.set(p.id, p));
-    this.activePartnerId = 'generic';
+    this.activePartnerId = 'standard';
   }
 
-  /** Lista todos los partners registrados */
+  /** Lista todos los perfiles registrados */
   getAll(): PartnerConfig[] {
     return Array.from(this.partners.values());
   }
 
-  /** Lista partners activos */
+  /** Lista perfiles activos */
   getActive(): PartnerConfig[] {
     return this.getAll().filter(p => p.activo);
   }
 
-  /** Obtiene un partner por ID */
+  /** Obtiene un perfil por ID */
   getById(id: string): PartnerConfig | undefined {
     return this.partners.get(id);
   }
 
-  /** Obtiene el partner actualmente seleccionado */
+  /** Obtiene el perfil actualmente seleccionado */
   getActivePartner(): PartnerConfig {
-    return this.partners.get(this.activePartnerId) || DEFAULT_PARTNERS[DEFAULT_PARTNERS.length - 1];
+    return this.partners.get(this.activePartnerId) || DEFAULT_PARTNERS[0];
   }
 
-  /** Cambia el partner activo */
+  /** Cambia el perfil activo */
   setActivePartner(id: string): void {
     if (this.partners.has(id)) {
       this.activePartnerId = id;
     }
   }
 
-  /** Registra un nuevo partner */
+  /** Registra un nuevo perfil */
   addPartner(config: Omit<PartnerConfig, 'createdAt'>): void {
     this.partners.set(config.id, {
       ...config,
@@ -129,7 +124,7 @@ class PartnerManager {
     });
   }
 
-  /** Actualiza un partner existente */
+  /** Actualiza un perfil existente */
   updatePartner(id: string, updates: Partial<PartnerConfig>): void {
     const existing = this.partners.get(id);
     if (existing) {
@@ -137,13 +132,13 @@ class PartnerManager {
     }
   }
 
-  /** Desactiva un partner */
+  /** Desactiva un perfil */
   deactivatePartner(id: string): void {
     this.updatePartner(id, { activo: false });
   }
 }
 
-/** Instancia global del gestor de partners */
+/** Instancia global del gestor de perfiles operativos */
 export const partnerManager = new PartnerManager();
 
 export default partnerManager;
