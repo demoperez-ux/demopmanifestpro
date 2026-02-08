@@ -1,4 +1,4 @@
-import { Anchor, BookOpen, History, Home, Inbox, Shield, Sparkles, UserPlus, ShieldCheck, FileSignature, TrendingUp } from 'lucide-react';
+import { Anchor, BookOpen, History, Home, Inbox, Shield, Sparkles, UserPlus, ShieldCheck, FileSignature, TrendingUp, Award } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ export function Header() {
   const isHorizonte = location.pathname === '/horizonte-carga';
   const isConsultas = location.pathname === '/consultas-clasificatorias';
   const isOnboarding = location.pathname === '/onboarding-corredor';
+  const isLicenciamiento = location.pathname === '/licenciamiento-aca';
   const isCumplimiento = location.pathname === '/red-cumplimiento';
   const isPortalCorredor = location.pathname === '/portal-corredor';
   const isPulse = location.pathname === '/zenith-pulse';
@@ -99,6 +100,16 @@ export function Header() {
                 >
                   <UserPlus className="h-4 w-4" />
                   Onboarding
+                </Button>
+              </Link>
+              <Link to="/licenciamiento-aca">
+                <Button 
+                  variant={isLicenciamiento ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="gap-2"
+                >
+                  <Award className="h-4 w-4" />
+                  Licenciamiento
                 </Button>
               </Link>
               <Link to="/red-cumplimiento">

@@ -16,6 +16,7 @@ import StellaInbox from "./pages/StellaInbox";
 import HorizonteCarga from "./pages/HorizonteCarga";
 import ConsultasClasificatoriasPage from "./pages/ConsultasClasificatorias";
 import OnboardingCorredor from "./pages/OnboardingCorredor";
+import LicenciamientoACA from "./pages/LicenciamientoACA";
 import RedCumplimientoUNCAP from "./pages/RedCumplimientoUNCAP";
 import PortalCorredorPage from "./pages/PortalCorredorPage";
 import ZenithPulsePage from "./pages/ZenithPulsePage";
@@ -125,6 +126,12 @@ const App: React.FC = () => {
               <Route path="/onboarding-corredor" element={
                 <ProtectedRoute>
                   <OnboardingCorredor />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/licenciamiento-aca" element={
+                <ProtectedRoute>
+                  <LicenciamientoACA />
                 </ProtectedRoute>
               } />
               
