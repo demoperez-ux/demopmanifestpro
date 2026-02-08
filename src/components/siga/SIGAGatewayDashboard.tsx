@@ -4,14 +4,19 @@
 // de Gestión Aduanera — Panel Unificado
 // ============================================
 
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Send, FileKey2, Archive, Radio } from 'lucide-react';
+import { Send, FileKey2, Archive, Radio, Plug, Activity, Server } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import MonitorTransmisionSIGA from './MonitorTransmisionSIGA';
 import FirmaElectronicaPanel from './FirmaElectronicaPanel';
 import BovedaBoletasSIGA from './BovedaBoletasSIGA';
+import ConectividadANAPanel from './ConectividadANAPanel';
 
 export default function SIGAGatewayDashboard() {
+  const [entorno, setEntorno] = useState<'sandbox' | 'produccion'>('sandbox');
+
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Header */}
@@ -30,6 +35,22 @@ export default function SIGAGatewayDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Environment Badge */}
+          <Badge
+            variant="outline"
+            className={cn(
+              'text-[10px] gap-1.5 cursor-default',
+              entorno === 'produccion'
+                ? 'border-success/40 text-success bg-success-light'
+                : 'border-warning/40 text-warning bg-warning-light'
+            )}
+          >
+            {entorno === 'produccion'
+              ? <Server className="w-3 h-3" />
+              : <Activity className="w-3 h-3" />
+            }
+            {entorno === 'produccion' ? 'Producción' : 'Homologación'}
+          </Badge>
           <Badge variant="outline" className="text-[10px] gap-1 border-success/30 text-success">
             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
             Conexión Activa
@@ -55,6 +76,10 @@ export default function SIGAGatewayDashboard() {
             <Archive className="w-3.5 h-3.5" />
             Bóveda de Boletas
           </TabsTrigger>
+          <TabsTrigger value="conectividad" className="text-xs gap-1.5">
+            <Plug className="w-3.5 h-3.5" />
+            Conectividad ANA
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="transmision" className="mt-4">
@@ -69,6 +94,13 @@ export default function SIGAGatewayDashboard() {
 
         <TabsContent value="boletas" className="mt-4">
           <BovedaBoletasSIGA />
+        </TabsContent>
+
+        <TabsContent value="conectividad" className="mt-4">
+          <ConectividadANAPanel
+            entorno={entorno}
+            onToggleEntorno={setEntorno}
+          />
         </TabsContent>
       </Tabs>
     </div>
