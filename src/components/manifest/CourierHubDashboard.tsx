@@ -1,18 +1,19 @@
 /**
- * CUSTOMS COURIER HUB — Dashboard de Operaciones Express
+ * UNIVERSAL GATEWAY — Dashboard de Operaciones Express
  * 
- * Panel unificado con:
- * 1. Tabla masiva virtualizada (+500 filas) con semáforo de cumplimiento
- * 2. Cerebro LEXIS (keyword sniffer: exención DAI + permisos sanitarios)
- * 3. Panel Zod (auditoría de valor / detección de fraude)
- * 4. Exportación SAP/ERP para UPS Systems
+ * Panel unificado multi-socio con:
+ * 1. Selector de socio dinámico ({active_partner_name})
+ * 2. Tabla masiva optimizada (+1,000 filas) con semáforo de cumplimiento
+ * 3. LEXIS Ingress agnóstico (keyword sniffer basado en Arancel de Panamá)
+ * 4. Panel Zod (auditoría valor ↔ descripción)
+ * 5. Exportación dinámica adaptada al socio seleccionado
  */
 
 import { useState, useMemo, useCallback } from 'react';
 import {
-  Package, Download, FileJson, FileSpreadsheet, Search, Filter,
+  Package, FileJson, FileSpreadsheet, FileCode2, Search,
   ShieldAlert, CheckCircle2, AlertTriangle, Sparkles, Shield,
-  ArrowUpDown, X, Zap, BarChart3, Eye
+  ArrowUpDown, X, Zap, BarChart3, Eye, Settings2, Download
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,19 +31,26 @@ import {
 } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
   MotorCourierHub,
   type AnalisisGuiaCourier,
-  type ResumenCourierHub,
   type SemaforoCumplimiento,
 } from '@/lib/courier/MotorCourierHub';
+import {
+  partnerManager,
+  type PartnerConfig,
+  type ExportFormat
+} from '@/lib/courier/partnerConfig';
 import type { ManifestRow } from '@/types/manifest';
 
-// ─── Generador de demo data (689 guías) ─────────────────
+// ─── Generador de demo data (1,000 guías) ───────────────
 
 const DEMO_DESCRIPCIONES: { desc: string; val: number }[] = [
   { desc: 'iPhone 15 Pro Max 256GB', val: 1199 },
   { desc: 'Samsung Galaxy S24 Ultra', val: 1099 },
-  { desc: 'MacBook Pro M3 14-inch', val: 1.00 }, // Fraude
+  { desc: 'MacBook Pro M3 14-inch', val: 1.00 },
   { desc: 'Wireless Bluetooth Headphones', val: 45 },
   { desc: 'USB-C Hub 7-in-1 Adapter', val: 28 },
   { desc: 'Vitamin D3 5000IU Supplement 120caps', val: 18 },
@@ -50,7 +58,7 @@ const DEMO_DESCRIPCIONES: { desc: string; val: number }[] = [
   { desc: 'Face Cream Anti-Aging SPF30', val: 42 },
   { desc: 'Arduino Starter Kit Mega', val: 65 },
   { desc: 'Laptop Stand Aluminum Adjustable', val: 32 },
-  { desc: 'iPad Air 5th Gen 64GB', val: 2.50 }, // Fraude
+  { desc: 'iPad Air 5th Gen 64GB', val: 2.50 },
   { desc: 'Dog Food Premium 15lb Bag', val: 48 },
   { desc: 'Organic Mango Dried 500g', val: 12 },
   { desc: 'Bluetooth Speaker Portable', val: 55 },
@@ -59,12 +67,12 @@ const DEMO_DESCRIPCIONES: { desc: string; val: number }[] = [
   { desc: 'Children Clothing Set 3-Pack', val: 25 },
   { desc: 'Running Shoes Nike Size 10', val: 120 },
   { desc: 'Collagen Peptides Powder', val: 30 },
-  { desc: 'Smart Watch Fitness Tracker', val: 3.00 }, // Fraude
+  { desc: 'Smart Watch Fitness Tracker', val: 3.00 },
   { desc: 'Coffee Beans Organic 1kg', val: 16 },
   { desc: 'PlayStation 5 Controller DualSense', val: 70 },
   { desc: 'LED Monitor 24" Full HD', val: 180 },
   { desc: 'Baby Formula Similac 12oz', val: 32 },
-  { desc: 'Drone Mini Camera 4K', val: 4.50 }, // Fraude
+  { desc: 'Drone Mini Camera 4K', val: 4.50 },
   { desc: 'External SSD 1TB Samsung', val: 89 },
   { desc: 'Mechanical Keyboard RGB', val: 75 },
   { desc: 'Shampoo Natural Coconut Oil', val: 14 },
@@ -73,7 +81,7 @@ const DEMO_DESCRIPCIONES: { desc: string; val: number }[] = [
   { desc: 'Webcam HD 1080p Logitech', val: 60 },
   { desc: 'Power Bank 20000mAh', val: 28 },
   { desc: 'Toothpaste Whitening 3-Pack', val: 9 },
-  { desc: 'AirPods Pro 2nd Generation', val: 1.99 }, // Fraude
+  { desc: 'AirPods Pro 2nd Generation', val: 1.99 },
   { desc: 'Cooking Spice Set Imported', val: 15 },
   { desc: 'GoPro Hero 12 Black', val: 350 },
   { desc: 'Sunscreen SPF 50 Cream', val: 18 },
@@ -95,7 +103,7 @@ const CONSIG_POOL = [
   { name: 'Carmen Ríos', id: '5-444-5555' },
 ];
 
-function generarDemoMasivo(total: number = 689): ManifestRow[] {
+function generarDemoMasivo(total: number = 1000): ManifestRow[] {
   return Array.from({ length: total }, (_, i) => {
     const item = DEMO_DESCRIPCIONES[i % DEMO_DESCRIPCIONES.length];
     const consig = CONSIG_POOL[i % CONSIG_POOL.length];
@@ -133,24 +141,38 @@ function semaforoLabel(estado: SemaforoCumplimiento): string {
   switch (estado) {
     case 'verde': return 'Listo';
     case 'amarillo': return 'Falta Permiso';
-    case 'rojo': return 'Error';
+    case 'rojo': return 'Riesgo de Valor';
   }
 }
+
+const FORMAT_ICONS: Record<ExportFormat, React.ReactNode> = {
+  csv: <FileSpreadsheet className="w-3.5 h-3.5" />,
+  json: <FileJson className="w-3.5 h-3.5" />,
+  xml: <FileCode2 className="w-3.5 h-3.5" />,
+};
 
 // ─── Página principal ───────────────────────────────────
 
 const PAGE_SIZE = 50;
 
 export default function CourierHubDashboard() {
-  const [demoData] = useState<ManifestRow[]>(() => generarDemoMasivo(689));
+  const [demoData] = useState<ManifestRow[]>(() => generarDemoMasivo(1000));
   const [busqueda, setBusqueda] = useState('');
   const [filtroSemaforo, setFiltroSemaforo] = useState<string>('todos');
   const [filtroCategoria, setFiltroCategoria] = useState<string>('todos');
   const [ordenValor, setOrdenValor] = useState<'asc' | 'desc' | null>(null);
   const [paginaActual, setPaginaActual] = useState(0);
   const [detalleAbierto, setDetalleAbierto] = useState<AnalisisGuiaCourier | null>(null);
+  const [activePartnerId, setActivePartnerId] = useState<string>('generic');
 
-  // Análisis completo
+  // Partner activo
+  const activePartner: PartnerConfig = useMemo(() => {
+    return partnerManager.getById(activePartnerId) || partnerManager.getActivePartner();
+  }, [activePartnerId]);
+
+  const allPartners = useMemo(() => partnerManager.getActive(), []);
+
+  // Análisis completo (agnóstico de transportista)
   const { analisis, resumen } = useMemo(() => {
     return MotorCourierHub.analizarManifiesto(demoData);
   }, [demoData]);
@@ -191,9 +213,9 @@ export default function CourierHubDashboard() {
   const totalPages = Math.ceil(filtrados.length / PAGE_SIZE);
   const paginados = filtrados.slice(paginaActual * PAGE_SIZE, (paginaActual + 1) * PAGE_SIZE);
 
-  const handleExportar = useCallback((formato: 'csv' | 'json') => {
-    MotorCourierHub.descargarExportacion(analisis, formato);
-  }, [analisis]);
+  const handleExportar = useCallback((formato: ExportFormat) => {
+    MotorCourierHub.descargarExportacion(analisis, activePartner, formato);
+  }, [analisis, activePartner]);
 
   const limpiarFiltros = () => {
     setBusqueda('');
@@ -207,63 +229,112 @@ export default function CourierHubDashboard() {
 
   return (
     <div className="space-y-5">
-      {/* ── Header ──────────────────────────────────── */}
+      {/* ── Header con Partner Selector ─────────────── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
             <Zap className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold font-display tracking-wide text-foreground">
-              Customs Courier Hub
+            <h1 className="text-2xl font-bold tracking-wide text-foreground">
+              Universal Gateway
             </h1>
             <p className="text-sm text-muted-foreground">
-              Operaciones Express — Tocumen · {resumen.totalGuias} guías
+              Operaciones Express — Tocumen · {resumen.totalGuias.toLocaleString()} guías
             </p>
           </div>
         </div>
+
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleExportar('csv')}>
-            <FileSpreadsheet className="w-3.5 h-3.5" /> CSV UPS
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleExportar('json')}>
-            <FileJson className="w-3.5 h-3.5" /> JSON ERP
-          </Button>
+          {/* Partner Selector */}
+          <Select value={activePartnerId} onValueChange={setActivePartnerId}>
+            <SelectTrigger className="w-[180px] h-9 text-xs gap-1.5">
+              <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
+              <SelectValue placeholder="Socio Logístico" />
+            </SelectTrigger>
+            <SelectContent>
+              {allPartners.map(p => (
+                <SelectItem key={p.id} value={p.id} className="text-xs">
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Dynamic Export Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="default" size="sm" className="gap-1.5 text-xs">
+                <Download className="w-3.5 h-3.5" />
+                Generar Interfaz ERP para {activePartner.name}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {activePartner.exportFormats.map(fmt => (
+                <DropdownMenuItem
+                  key={fmt}
+                  onClick={() => handleExportar(fmt)}
+                  className="text-xs gap-2"
+                >
+                  {FORMAT_ICONS[fmt]}
+                  Exportar {fmt.toUpperCase()} — {activePartner.erpSystemName}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+      </div>
+
+      {/* ── Partner Badge ────────────────────────────── */}
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="text-[10px] bg-primary/5 border-primary/20 text-primary">
+          Socio Activo: {activePartner.name}
+        </Badge>
+        <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground">
+          ERP: {activePartner.erpSystemName}
+        </Badge>
+        <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground">
+          Formatos: {activePartner.exportFormats.map(f => f.toUpperCase()).join(', ')}
+        </Badge>
+        {activePartner.iataCode && (
+          <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground">
+            IATA: {activePartner.iataCode}
+          </Badge>
+        )}
       </div>
 
       {/* ── KPI Strip ───────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-        <KPI label="Total Guías" value={resumen.totalGuias} icon={<Package className="w-3.5 h-3.5 text-primary" />} />
+        <KPI label="Total Guías" value={resumen.totalGuias.toLocaleString()} icon={<Package className="w-3.5 h-3.5 text-primary" />} />
         <KPI label="Listo" value={resumen.verde} icon={<CheckCircle2 className="w-3.5 h-3.5 text-success" />}
           onClick={() => { setFiltroSemaforo('verde'); setPaginaActual(0); }} />
         <KPI label="Falta Permiso" value={resumen.amarillo} icon={<AlertTriangle className="w-3.5 h-3.5 text-warning" />}
           onClick={() => { setFiltroSemaforo('amarillo'); setPaginaActual(0); }} />
-        <KPI label="Error Valor" value={resumen.rojo} icon={<ShieldAlert className="w-3.5 h-3.5 text-destructive" />} alert
+        <KPI label="Riesgo Valor" value={resumen.rojo} icon={<ShieldAlert className="w-3.5 h-3.5 text-destructive" />} alert
           onClick={() => { setFiltroSemaforo('rojo'); setPaginaActual(0); }} />
         <KPI label="DAI 0% Tech" value={resumen.exentosTecnologia} icon={<Zap className="w-3.5 h-3.5 text-primary" />} />
         <KPI label="Permisos" value={resumen.requierenPermiso} icon={<AlertTriangle className="w-3.5 h-3.5 text-warning" />} />
         <KPI label="Valor Total" value={`$${resumen.valorTotalUSD.toLocaleString()}`} icon={<BarChart3 className="w-3.5 h-3.5 text-primary" />} />
       </div>
 
-      {/* ── Panel Zod: Alertas de Fraude ─────────────── */}
+      {/* ── Panel Zod: Alertas de Cumplimiento ────────── */}
       {alertasFraude.length > 0 && (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-destructive">
               <Shield className="w-4 h-4" />
-              Panel Zod — Auditoría de Valor ({alertasFraude.length} alertas)
+              Zod Integrity — Auditoría de Valor ({alertasFraude.length} hallazgos)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
+            <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin">
               {alertasFraude.slice(0, 10).map(a => (
                 <div key={a.guia.id} className="flex items-start gap-2 p-2 rounded bg-destructive/5 border border-destructive/20">
                   <ShieldAlert className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono font-medium text-foreground">{a.guia.trackingNumber}</span>
-                      <Badge variant="outline" className="text-[8px] bg-destructive/10 text-destructive border-destructive/20">FRAUDE</Badge>
+                      <Badge variant="outline" className="text-[8px] bg-destructive/10 text-destructive border-destructive/20">RIESGO</Badge>
                     </div>
                     <p className="text-xs text-foreground/70 mt-0.5">{a.alertaFraudeDetalle}</p>
                     <div className="flex items-center gap-1.5 mt-1">
@@ -275,7 +346,7 @@ export default function CourierHubDashboard() {
                 </div>
               ))}
               {alertasFraude.length > 10 && (
-                <p className="text-[10px] text-muted-foreground text-center">+{alertasFraude.length - 10} alertas más</p>
+                <p className="text-[10px] text-muted-foreground text-center">+{alertasFraude.length - 10} hallazgos más</p>
               )}
             </div>
           </CardContent>
@@ -297,14 +368,14 @@ export default function CourierHubDashboard() {
             </div>
 
             <Select value={filtroSemaforo} onValueChange={v => { setFiltroSemaforo(v); setPaginaActual(0); }}>
-              <SelectTrigger className="w-[140px] h-8 text-xs">
-                <SelectValue placeholder="Semáforo" />
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="Estado Cumplimiento" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="verde">🟢 Listo</SelectItem>
-                <SelectItem value="amarillo">🟡 Permiso</SelectItem>
-                <SelectItem value="rojo">🔴 Error</SelectItem>
+                <SelectItem value="amarillo">🟡 Falta Permiso</SelectItem>
+                <SelectItem value="rojo">🔴 Riesgo de Valor</SelectItem>
               </SelectContent>
             </Select>
 
@@ -333,7 +404,7 @@ export default function CourierHubDashboard() {
             )}
 
             <Badge variant="outline" className="text-[10px] ml-auto">
-              {filtrados.length} / {analisis.length} guías
+              {filtrados.length.toLocaleString()} / {analisis.length.toLocaleString()} guías
             </Badge>
           </div>
         </CardContent>
@@ -413,7 +484,7 @@ export default function CourierHubDashboard() {
           {/* Paginación */}
           <div className="flex items-center justify-between px-4 py-2 border-t border-border/50">
             <span className="text-[10px] text-muted-foreground">
-              Pág. {paginaActual + 1} de {totalPages} · Mostrando {paginados.length} de {filtrados.length}
+              Pág. {paginaActual + 1} de {totalPages} · Mostrando {paginados.length} de {filtrados.length.toLocaleString()}
             </span>
             <div className="flex items-center gap-1">
               <Button
@@ -513,13 +584,20 @@ export default function CourierHubDashboard() {
                   <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/20">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Sparkles className="w-3.5 h-3.5 text-destructive" />
-                      <span className="text-xs font-medium text-destructive">Stella — Alerta</span>
+                      <span className="text-xs font-medium text-destructive">Stella — Alerta de Cumplimiento</span>
                     </div>
                     <p className="text-xs text-foreground/70 leading-relaxed">
                       {detalleAbierto.stellaMensaje}
                     </p>
                   </div>
                 )}
+
+                {/* Partner info */}
+                <div className="p-2 rounded bg-muted/50 border border-border/50">
+                  <p className="text-[10px] text-muted-foreground">
+                    Exportación configurada para <span className="font-medium text-foreground">{activePartner.name}</span> · {activePartner.erpSystemName}
+                  </p>
+                </div>
               </div>
             </>
           )}
