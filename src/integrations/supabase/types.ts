@@ -296,6 +296,72 @@ export type Database = {
         }
         Relationships: []
       }
+      corredores_acreditados: {
+        Row: {
+          cedula: string
+          created_at: string
+          email: string | null
+          empresa: string | null
+          estado: string
+          estado_fianza: string
+          fianza_vencimiento: string | null
+          firma_clave_publica: string | null
+          firma_digital_habilitada: boolean
+          id: string
+          licencia_ana: string
+          licencia_vencimiento: string
+          monto_fianza: number
+          nombre_completo: string
+          notas: string | null
+          telefono: string | null
+          tipo_fianza: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cedula: string
+          created_at?: string
+          email?: string | null
+          empresa?: string | null
+          estado?: string
+          estado_fianza?: string
+          fianza_vencimiento?: string | null
+          firma_clave_publica?: string | null
+          firma_digital_habilitada?: boolean
+          id?: string
+          licencia_ana: string
+          licencia_vencimiento: string
+          monto_fianza?: number
+          nombre_completo: string
+          notas?: string | null
+          telefono?: string | null
+          tipo_fianza?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cedula?: string
+          created_at?: string
+          email?: string | null
+          empresa?: string | null
+          estado?: string
+          estado_fianza?: string
+          fianza_vencimiento?: string | null
+          firma_clave_publica?: string | null
+          firma_digital_habilitada?: boolean
+          id?: string
+          licencia_ana?: string
+          licencia_vencimiento?: string
+          monto_fianza?: number
+          nombre_completo?: string
+          notas?: string | null
+          telefono?: string | null
+          tipo_fianza?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       embarques_orion: {
         Row: {
           afc_alerta_perecedero_emitida: boolean
