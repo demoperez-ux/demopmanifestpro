@@ -59,6 +59,56 @@ export type Database = {
         }
         Relationships: []
       }
+      aprobaciones_cliente: {
+        Row: {
+          aprobado: boolean | null
+          cliente_email: string | null
+          cliente_nombre: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: string | null
+          pre_factura_id: string
+          token: string
+          used_at: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          aprobado?: boolean | null
+          cliente_email?: string | null
+          cliente_nombre?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          pre_factura_id: string
+          token: string
+          used_at?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          aprobado?: boolean | null
+          cliente_email?: string | null
+          cliente_nombre?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          pre_factura_id?: string
+          token?: string
+          used_at?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aprobaciones_cliente_pre_factura_id_fkey"
+            columns: ["pre_factura_id"]
+            isOneToOne: false
+            referencedRelation: "pre_facturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -371,6 +421,7 @@ export type Database = {
           afc_prioridad_periferia: boolean
           afc_sello_facilitacion: boolean
           ata: string | null
+          billing_status: string
           bultos: number | null
           buque_vuelo: string | null
           consignatario: string
@@ -418,6 +469,7 @@ export type Database = {
           afc_prioridad_periferia?: boolean
           afc_sello_facilitacion?: boolean
           ata?: string | null
+          billing_status?: string
           bultos?: number | null
           buque_vuelo?: string | null
           consignatario: string
@@ -465,6 +517,7 @@ export type Database = {
           afc_prioridad_periferia?: boolean
           afc_sello_facilitacion?: boolean
           ata?: string | null
+          billing_status?: string
           bultos?: number | null
           buque_vuelo?: string | null
           consignatario?: string
@@ -845,6 +898,129 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pre_facturas: {
+        Row: {
+          aprobado_por_cliente: boolean | null
+          billing_status: string
+          cliente_aprobacion_ip: string | null
+          cliente_aprobacion_nombre: string | null
+          cliente_aprobacion_timestamp: string | null
+          consignatario: string
+          corredor_id: string | null
+          created_at: string
+          doc_num: string
+          embarque_id: string
+          id: string
+          itbms: number
+          lineas: Json
+          mawb: string
+          moneda: string
+          operador_id: string
+          razon_social: string | null
+          rechazado: boolean | null
+          rechazo_motivo: string | null
+          rechazo_por: string | null
+          rechazo_timestamp: string | null
+          ruc: string | null
+          sap_exportado: boolean | null
+          sap_exportado_at: string | null
+          sap_exportado_por: string | null
+          soportes_terceros: Json
+          subtotal: number
+          token_aprobacion: string | null
+          token_expiracion: string | null
+          total: number
+          updated_at: string
+          zod_hash_integridad: string | null
+          zod_validado: boolean | null
+        }
+        Insert: {
+          aprobado_por_cliente?: boolean | null
+          billing_status?: string
+          cliente_aprobacion_ip?: string | null
+          cliente_aprobacion_nombre?: string | null
+          cliente_aprobacion_timestamp?: string | null
+          consignatario: string
+          corredor_id?: string | null
+          created_at?: string
+          doc_num: string
+          embarque_id: string
+          id?: string
+          itbms?: number
+          lineas?: Json
+          mawb: string
+          moneda?: string
+          operador_id: string
+          razon_social?: string | null
+          rechazado?: boolean | null
+          rechazo_motivo?: string | null
+          rechazo_por?: string | null
+          rechazo_timestamp?: string | null
+          ruc?: string | null
+          sap_exportado?: boolean | null
+          sap_exportado_at?: string | null
+          sap_exportado_por?: string | null
+          soportes_terceros?: Json
+          subtotal?: number
+          token_aprobacion?: string | null
+          token_expiracion?: string | null
+          total?: number
+          updated_at?: string
+          zod_hash_integridad?: string | null
+          zod_validado?: boolean | null
+        }
+        Update: {
+          aprobado_por_cliente?: boolean | null
+          billing_status?: string
+          cliente_aprobacion_ip?: string | null
+          cliente_aprobacion_nombre?: string | null
+          cliente_aprobacion_timestamp?: string | null
+          consignatario?: string
+          corredor_id?: string | null
+          created_at?: string
+          doc_num?: string
+          embarque_id?: string
+          id?: string
+          itbms?: number
+          lineas?: Json
+          mawb?: string
+          moneda?: string
+          operador_id?: string
+          razon_social?: string | null
+          rechazado?: boolean | null
+          rechazo_motivo?: string | null
+          rechazo_por?: string | null
+          rechazo_timestamp?: string | null
+          ruc?: string | null
+          sap_exportado?: boolean | null
+          sap_exportado_at?: string | null
+          sap_exportado_por?: string | null
+          soportes_terceros?: Json
+          subtotal?: number
+          token_aprobacion?: string | null
+          token_expiracion?: string | null
+          total?: number
+          updated_at?: string
+          zod_hash_integridad?: string | null
+          zod_validado?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pre_facturas_corredor_id_fkey"
+            columns: ["corredor_id"]
+            isOneToOne: false
+            referencedRelation: "corredores_acreditados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_facturas_embarque_id_fkey"
+            columns: ["embarque_id"]
+            isOneToOne: false
+            referencedRelation: "embarques_orion"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
