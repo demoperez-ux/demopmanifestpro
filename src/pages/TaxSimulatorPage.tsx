@@ -7,14 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Calculator, Info, ShieldCheck, AlertTriangle, FileText, Sparkles } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Calculator, Info, ShieldCheck, AlertTriangle, FileText, Sparkles, Scale } from 'lucide-react';
 import { calcularLiquidacionOficial } from '@/lib/liquidacion/calculadoraOficial';
 import { CONSTANTES_ANA } from '@/types/declaracionOficial';
 import { useTradeAdvisor, type EstrategiaFiscal } from '@/hooks/useTradeAdvisor';
 import { TradeAdvisorPanel } from '@/components/trade/TradeAdvisorPanel';
+import { ValuationAssistant, type ValuationResult } from '@/components/zenith/ValuationAssistant';
 import { toast } from '@/hooks/use-toast';
 
-// DAI presets by common HS categories
+// ── Presets ──
+
 const DAI_PRESETS = [
   { label: 'Exento (0%)', value: 0 },
   { label: '3%', value: 3 },
@@ -55,6 +58,8 @@ const PAISES_COMUNES = [
   { label: 'Corea del Sur', value: 'KR' },
   { label: 'Otro', value: '' },
 ];
+
+// ── Helpers ──
 
 function formatBalboas(amount: number): string {
   return `B/. ${amount.toLocaleString('es-PA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -99,15 +104,26 @@ function getStellaInsight(daiPercent: number, itbmPercent: number, iscPercent: n
   return parts.join('\n\n');
 }
 
+// ── Page ──
+
 export default function TaxSimulatorPage() {
+  // Input mode: manual or ICC valuation assistant
+  const [inputMode, setInputMode] = useState<'manual' | 'icc'>('manual');
+
+  // Manual mode values
   const [fob, setFob] = useState<string>('');
   const [freight, setFreight] = useState<string>('');
   const [insurance, setInsurance] = useState<string>('');
+  const [autoInsurance, setAutoInsurance] = useState(false);
+
+  // ICC Valuation Assistant result
+  const [valuationResult, setValuationResult] = useState<ValuationResult | null>(null);
+
+  // Tax config
   const [daiPercent, setDaiPercent] = useState<number>(10);
   const [itbmPercent, setItbmPercent] = useState<number>(7);
   const [iscPercent, setIscPercent] = useState<number>(0);
   const [incluirTasa, setIncluirTasa] = useState(true);
-  const [autoInsurance, setAutoInsurance] = useState(false);
 
   // Trade Advisor fields
   const [hsCode, setHsCode] = useState<string>('');
@@ -116,10 +132,14 @@ export default function TaxSimulatorPage() {
 
   const { estrategias, loading, buscado, buscarEstrategias, limpiar } = useTradeAdvisor();
 
-  const numFob = parseFloat(fob) || 0;
-  const numFreight = parseFloat(freight) || 0;
-  const rawInsurance = parseFloat(insurance) || 0;
-  const numInsurance = autoInsurance ? numFob * (CONSTANTES_ANA.SEGURO_TEORICO_PERCENT / 100) : rawInsurance;
+  // Resolve effective FOB/Freight/Insurance based on mode
+  const numFob = inputMode === 'icc' && valuationResult ? valuationResult.fob : (parseFloat(fob) || 0);
+  const numFreight = inputMode === 'icc' && valuationResult ? valuationResult.flete : (parseFloat(freight) || 0);
+  const numInsurance = inputMode === 'icc' && valuationResult
+    ? valuationResult.seguro
+    : autoInsurance
+      ? (parseFloat(fob) || 0) * (CONSTANTES_ANA.SEGURO_TEORICO_PERCENT / 100)
+      : (parseFloat(insurance) || 0);
 
   const effectiveDai = estrategiaAplicada ? estrategiaAplicada.acuerdo.arancel_preferencial : daiPercent;
 
@@ -135,6 +155,10 @@ export default function TaxSimulatorPage() {
 
   const categoria = getCategoria(result?.valorCIF ?? 0);
   const stellaInsight = getStellaInsight(effectiveDai, itbmPercent, iscPercent, result?.valorCIF ?? 0);
+
+  const handleValuationChange = useCallback((res: ValuationResult) => {
+    setValuationResult(res);
+  }, []);
 
   const handleOptimizar = useCallback(() => {
     if (!hsCode.trim() || numFob <= 0) {
@@ -163,7 +187,7 @@ export default function TaxSimulatorPage() {
   }, [limpiar]);
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto space-y-6">
+    <div className="p-6 max-w-[1600px] mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -176,6 +200,12 @@ export default function TaxSimulatorPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {valuationResult && inputMode === 'icc' && (
+            <Badge variant="outline" className="text-[10px] gap-1 bg-primary/5 border-primary/20">
+              <Scale className="w-3 h-3" />
+              {valuationResult.incoterm} — {valuationResult.metodoValoracion}
+            </Badge>
+          )}
           {estrategiaAplicada && (
             <Badge variant="outline" className="text-[10px] bg-success-light text-success border-success/20 gap-1">
               <Sparkles className="w-3 h-3" />
@@ -191,48 +221,68 @@ export default function TaxSimulatorPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Column 1 — Input */}
+        {/* Column 1 — Input (Tabs: Manual / ICC Valuation) */}
         <div className="space-y-4">
-          <Card className="border border-border">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold text-foreground">Valores de Importación</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Valor FOB (USD)</Label>
-                <Input type="number" placeholder="0.00" value={fob} onChange={e => setFob(e.target.value)} className="font-mono text-sm" min="0" step="0.01" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">Flete (USD)</Label>
-                <Input type="number" placeholder="0.00" value={freight} onChange={e => setFreight(e.target.value)} className="font-mono text-sm" min="0" step="0.01" />
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-medium text-muted-foreground">Seguro (USD)</Label>
-                  <div className="flex items-center gap-1.5">
-                    <Switch checked={autoInsurance} onCheckedChange={setAutoInsurance} className="scale-75" />
-                    <span className="text-[10px] text-muted-foreground">Teórico ({CONSTANTES_ANA.SEGURO_TEORICO_PERCENT}%)</span>
-                  </div>
-                </div>
-                {autoInsurance ? (
-                  <div className="h-10 flex items-center px-3 rounded-md border border-input bg-muted/50 font-mono text-sm text-muted-foreground">
-                    {numInsurance.toFixed(2)}
-                  </div>
-                ) : (
-                  <Input type="number" placeholder="0.00" value={insurance} onChange={e => setInsurance(e.target.value)} className="font-mono text-sm" min="0" step="0.01" />
-                )}
-              </div>
-              {result && (
-                <div className="pt-2 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground">Valor CIF</span>
-                    <span className="text-sm font-semibold font-mono text-foreground">{formatBalboas(result.valorCIF)}</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'manual' | 'icc')}>
+            <TabsList className="w-full grid grid-cols-2 h-9">
+              <TabsTrigger value="manual" className="text-xs">Manual</TabsTrigger>
+              <TabsTrigger value="icc" className="text-xs gap-1">
+                <Scale className="w-3 h-3" />
+                ICC 2020
+              </TabsTrigger>
+            </TabsList>
 
+            <TabsContent value="manual" className="space-y-4 mt-4">
+              <Card className="border border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold text-foreground">Valores de Importación</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Valor FOB (USD)</Label>
+                    <Input type="number" placeholder="0.00" value={fob} onChange={e => setFob(e.target.value)} className="font-mono text-sm" min="0" step="0.01" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">Flete (USD)</Label>
+                    <Input type="number" placeholder="0.00" value={freight} onChange={e => setFreight(e.target.value)} className="font-mono text-sm" min="0" step="0.01" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-medium text-muted-foreground">Seguro (USD)</Label>
+                      <div className="flex items-center gap-1.5">
+                        <Switch checked={autoInsurance} onCheckedChange={setAutoInsurance} className="scale-75" />
+                        <span className="text-[10px] text-muted-foreground">Teórico ({CONSTANTES_ANA.SEGURO_TEORICO_PERCENT}%)</span>
+                      </div>
+                    </div>
+                    {autoInsurance ? (
+                      <div className="h-10 flex items-center px-3 rounded-md border border-input bg-muted/50 font-mono text-sm text-muted-foreground">
+                        {numInsurance.toFixed(2)}
+                      </div>
+                    ) : (
+                      <Input type="number" placeholder="0.00" value={insurance} onChange={e => setInsurance(e.target.value)} className="font-mono text-sm" min="0" step="0.01" />
+                    )}
+                  </div>
+                  {result && (
+                    <div className="pt-2 border-t border-border">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">Valor CIF</span>
+                        <span className="text-sm font-semibold font-mono text-foreground">{formatBalboas(result.valorCIF)}</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="icc" className="mt-4">
+              <ValuationAssistant
+                onValuationChange={handleValuationChange}
+                currentFob={parseFloat(fob) || undefined}
+              />
+            </TabsContent>
+          </Tabs>
+
+          {/* Tax Config — always visible */}
           <Card className="border border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold text-foreground">Configuración Tributaria</CardTitle>
@@ -425,6 +475,26 @@ export default function TaxSimulatorPage() {
 
         {/* Column 4 — Stella & Zod */}
         <div className="space-y-4">
+          {/* Stella Valuation Citation (ICC mode) */}
+          {inputMode === 'icc' && valuationResult && valuationResult.stellaCitation && (
+            <Card className="border-l-4 border-l-primary bg-info-light">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-primary" />
+                  Stella — Expediente de Valoración OMC
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2.5">
+                  {valuationResult.stellaCitation.split('\n\n').map((paragraph, i) => (
+                    <p key={i} className="text-xs text-foreground/80 leading-relaxed">{paragraph}</p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Stella Standard Insights */}
           <Card className="border border-primary/15 bg-info-light">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -446,6 +516,23 @@ export default function TaxSimulatorPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Zod ICC Alerts */}
+          {inputMode === 'icc' && valuationResult && valuationResult.zodAlertas.length > 0 && (
+            <Card className="border border-warning/20 bg-warning-light">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-warning" />
+                  Zod — Integridad de Valoración
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {valuationResult.zodAlertas.map((alerta, i) => (
+                  <p key={i} className="text-xs text-foreground/80 leading-relaxed">{alerta}</p>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {result && categoria.desc && (
             <Card className="border border-border">
@@ -485,7 +572,8 @@ export default function TaxSimulatorPage() {
   );
 }
 
-// Subcomponents
+// ── Subcomponents ──
+
 function Row({ label, value, bold, muted, highlight }: { label: string; value: string; bold?: boolean; muted?: boolean; highlight?: boolean }) {
   return (
     <div className="flex items-center justify-between">
