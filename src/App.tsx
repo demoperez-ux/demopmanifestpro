@@ -40,6 +40,7 @@ import DataIntegrityPage from "./pages/DataIntegrityPage";
 import IdentityCommandPage from "./pages/IdentityCommandPage";
 import SystemHealthPage from "./pages/SystemHealthPage";
 import ResiliencePage from "./pages/ResiliencePage";
+import FeatureCatalogPage from "./pages/FeatureCatalogPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -200,6 +201,7 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } />
               <Route path="/about" element={<ProtectedWithLayout><AboutZenithPage /></ProtectedWithLayout>} />
+              <Route path="/feature-catalog" element={<ProtectedWithLayout><FeatureCatalogPage /></ProtectedWithLayout>} />
 
               {/* Administración */}
               <Route path="/onboarding-corredor" element={

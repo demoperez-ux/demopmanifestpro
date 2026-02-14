@@ -88,6 +88,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Facturación', to: '/enterprise-billing', icon: Receipt, allowedRoles: ['master_admin'] },
       { label: 'Licenciamiento', to: '/licenciamiento-aca', icon: Award },
       { label: 'About ZENITH', to: '/about', icon: Info },
+      { label: 'Feature Catalog', to: '/feature-catalog', icon: BookOpen },
     ],
   },
 ];
