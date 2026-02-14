@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { getArticlesForRoute, serializeKnowledgeForAI } from '@/lib/stella/StellaKnowledgeBase';
+import { ENDPOINTS, SUPABASE_PUBLISHABLE_KEY } from '@/lib/constants';
 
 export interface StellaMessage {
   id: string;
@@ -25,7 +26,7 @@ export interface StellaContext {
   alerts?: string[];
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stella-help`;
+const CHAT_URL = ENDPOINTS.STELLA_HELP;
 
 export function useStellaHelp() {
   const [messages, setMessages] = useState<StellaMessage[]>([]);
@@ -81,7 +82,7 @@ export function useStellaHelp() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: allMessages,
