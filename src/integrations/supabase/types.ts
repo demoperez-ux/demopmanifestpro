@@ -835,6 +835,57 @@ export type Database = {
         }
         Relationships: []
       }
+      nexus_traffic_logs: {
+        Row: {
+          created_at: string
+          direction: string
+          endpoint: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          payload_hash: string
+          payload_size: number | null
+          source_domain: string | null
+          source_ip: string | null
+          transaction_id: string
+          verification_status: string
+          zod_findings: Json | null
+          zod_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          endpoint?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          payload_hash: string
+          payload_size?: number | null
+          source_domain?: string | null
+          source_ip?: string | null
+          transaction_id: string
+          verification_status: string
+          zod_findings?: Json | null
+          zod_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          endpoint?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          payload_hash?: string
+          payload_size?: number | null
+          source_domain?: string | null
+          source_ip?: string | null
+          transaction_id?: string
+          verification_status?: string
+          zod_findings?: Json | null
+          zod_score?: number | null
+        }
+        Relationships: []
+      }
       onboarding_audit_trail: {
         Row: {
           accion: string

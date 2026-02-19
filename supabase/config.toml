@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.stella-help]
 verify_jwt = false
+
+[functions.nexus-bridge]
+verify_jwt = false
