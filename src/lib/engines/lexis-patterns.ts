@@ -1,7 +1,7 @@
 /**
- * LEXIS — Extraction Patterns & Prompts
+ * LEXIS — Extraction Patterns & Prompts (Regional)
  * Defines regex patterns for document identification and field extraction.
- * This file replaces lexis-prompts.json with typed TypeScript patterns.
+ * Supports PA, CR, GT document types including DUCA-F and DUCA-T.
  */
 
 export interface DocumentPattern {
@@ -12,13 +12,15 @@ export interface DocumentPattern {
 }
 
 export interface DocumentIdentifier {
-  type: 'INVOICE' | 'BL' | 'CP' | 'MANIFEST' | 'PACKING_LIST';
+  type: 'INVOICE' | 'BL' | 'CP' | 'MANIFEST' | 'PACKING_LIST' | 'DUCA_F' | 'DUCA_T' | 'DUA' | 'FEL';
   keywords: string[];
   weight: number;
+  /** Regions where this document type is applicable */
+  regions?: ('PA' | 'CR' | 'GT')[];
 }
 
 export const LEXIS_PATTERNS = {
-  // ── Document Type Identification ──────────────────────────
+  // ── Document Type Identification (Regional) ───────────────
   documentIdentifiers: [
     {
       type: 'INVOICE' as const,
@@ -44,6 +46,46 @@ export const LEXIS_PATTERNS = {
       type: 'PACKING_LIST' as const,
       keywords: ['PACKING LIST', 'LISTA DE EMPAQUE', 'PACK LIST', 'P/L'],
       weight: 8,
+    },
+    // ── Central American Regional Documents ──────────────────
+    {
+      type: 'DUCA_F' as const,
+      keywords: [
+        'DUCA-F', 'DUCA F', 'DECLARACION UNICA CENTROAMERICANA',
+        'DECLARACIÓN ÚNICA CENTROAMERICANA', 'FORMULARIO ADUANERO',
+        'FACTURA Y DECLARACION', 'SIECA', 'DUCA FORMATO F',
+      ],
+      weight: 12,
+      regions: ['CR', 'GT'],
+    },
+    {
+      type: 'DUCA_T' as const,
+      keywords: [
+        'DUCA-T', 'DUCA T', 'DUCA TRANSITO', 'DUCA TRÁNSITO',
+        'TRANSITO ADUANERO', 'TRÁNSITO ADUANERO',
+        'DECLARACION DE TRANSITO', 'DECLARACIÓN DE TRÁNSITO',
+        'TRANSITO TERRESTRE', 'TRÁNSITO TERRESTRE',
+      ],
+      weight: 12,
+      regions: ['CR', 'GT'],
+    },
+    {
+      type: 'DUA' as const,
+      keywords: [
+        'DUA', 'DECLARACION UNICA ADUANERA', 'DECLARACIÓN ÚNICA ADUANERA',
+        'DECLARACION DE IMPORTACION', 'FORMULARIO DUA',
+      ],
+      weight: 10,
+      regions: ['PA'],
+    },
+    {
+      type: 'FEL' as const,
+      keywords: [
+        'FEL', 'FACTURA ELECTRONICA EN LINEA', 'FACTURA ELECTRÓNICA EN LÍNEA',
+        'DTE', 'DOCUMENTO TRIBUTARIO ELECTRONICO', 'SAT GUATEMALA',
+      ],
+      weight: 10,
+      regions: ['GT'],
     },
   ] as DocumentIdentifier[],
 
@@ -126,29 +168,126 @@ export const LEXIS_PATTERNS = {
         { regex: '(?:HAWB|HOUSE\\s*AWB)[.:\\s]*([A-Z0-9\\-]{5,20})', confidence: 90, type: 'string' },
       ],
     },
+    // ── DUCA-F (Factura y Declaración Centroamericana) ──────
+    DUCA_F: {
+      declarationNumber: [
+        { regex: '(?:NO\\.?\\s*DUCA|DUCA\\s*NO|NÚMERO\\s*DUCA)[.:\\s]*([A-Z0-9\\-/]{5,25})', confidence: 92, type: 'string', sqlColumn: 'referencia' },
+      ],
+      exporter: [
+        { regex: '(?:EXPORTADOR|EXPORTER|REMITENTE)[:\\s]*([^\\n]{5,80})', confidence: 85, type: 'string', sqlColumn: 'shipper' },
+      ],
+      importer: [
+        { regex: '(?:IMPORTADOR|CONSIGNATARIO|DESTINATARIO)[:\\s]*([^\\n]{5,80})', confidence: 85, type: 'string', sqlColumn: 'consignatario' },
+      ],
+      nit: [
+        { regex: '(?:NIT|RTN|CÉDULA\\s*JURÍDICA)[.:\\s]*([\\d\\-Kk]{5,15})', confidence: 88, type: 'string', sqlColumn: 'consignatario_ruc' },
+      ],
+      aduanaDestino: [
+        { regex: '(?:ADUANA\\s*(?:DE\\s*)?DESTINO|CUSTOMS\\s*OFFICE)[:\\s]*([^\\n]{3,50})', confidence: 82, type: 'string', sqlColumn: 'recinto_destino' },
+      ],
+      aduanaOrigen: [
+        { regex: '(?:ADUANA\\s*(?:DE\\s*)?ORIGEN|ADUANA\\s*(?:DE\\s*)?PARTIDA)[:\\s]*([^\\n]{3,50})', confidence: 82, type: 'string' },
+      ],
+      regimen: [
+        { regex: '(?:RÉGIMEN|REGIMEN|MODALIDAD)[:\\s]*([^\\n]{3,40})', confidence: 80, type: 'string' },
+      ],
+      pesoNeto: [
+        { regex: '(?:PESO\\s*NETO|NET\\s*WEIGHT)[:\\s]*([\\d,.]+)\\s*(?:KG|KGS)?', confidence: 85, type: 'number' },
+      ],
+      pesoBruto: [
+        { regex: '(?:PESO\\s*BRUTO|GROSS\\s*WEIGHT)[:\\s]*([\\d,.]+)\\s*(?:KG|KGS)?', confidence: 85, type: 'number' },
+      ],
+      fob: [
+        { regex: '(?:FOB|VALOR\\s*FOB)[:\\s]*\\$?\\s*([\\d,]+\\.?\\d*)', confidence: 85, type: 'number', sqlColumn: 'valor_fob' },
+      ],
+      cif: [
+        { regex: '(?:CIF|VALOR\\s*CIF|TOTAL\\s*CIF)[:\\s]*\\$?\\s*([\\d,]+\\.?\\d*)', confidence: 90, type: 'number', sqlColumn: 'valor_cif' },
+      ],
+      partida: [
+        { regex: '(?:PARTIDA|INCISO|SAC|CÓDIGO\\s*ARANCELARIO)[.:\\s]*(\\d{4}[.\\s]?\\d{2}[.\\s]?\\d{2}[.\\s]?\\d{0,2})', confidence: 88, type: 'string' },
+      ],
+    },
+    // ── DUCA-T (Tránsito Terrestre Centroamericano) ─────────
+    DUCA_T: {
+      declarationNumber: [
+        { regex: '(?:NO\\.?\\s*DUCA|DUCA\\s*(?:T|TRÁNSITO)\\s*NO)[.:\\s]*([A-Z0-9\\-/]{5,25})', confidence: 92, type: 'string', sqlColumn: 'referencia' },
+      ],
+      transportista: [
+        { regex: '(?:TRANSPORTISTA|CARRIER|PORTEADOR)[:\\s]*([^\\n]{5,80})', confidence: 85, type: 'string', sqlColumn: 'shipper' },
+      ],
+      conductor: [
+        { regex: '(?:CONDUCTOR|DRIVER|PILOTO)[:\\s]*([^\\n]{5,60})', confidence: 80, type: 'string' },
+      ],
+      placaVehiculo: [
+        { regex: '(?:PLACA|MATRÍCULA|PLATE)[:\\s]*([A-Z0-9\\-]{4,12})', confidence: 85, type: 'string' },
+      ],
+      aduanaPartida: [
+        { regex: '(?:ADUANA\\s*(?:DE\\s*)?PARTIDA|ORIGIN\\s*CUSTOMS)[:\\s]*([^\\n]{3,50})', confidence: 82, type: 'string' },
+      ],
+      aduanaDestino: [
+        { regex: '(?:ADUANA\\s*(?:DE\\s*)?DESTINO|DESTINATION\\s*CUSTOMS)[:\\s]*([^\\n]{3,50})', confidence: 82, type: 'string', sqlColumn: 'recinto_destino' },
+      ],
+      aduanasTransito: [
+        { regex: '(?:ADUANAS?\\s*(?:DE\\s*)?TRÁNSITO|TRANSIT\\s*CUSTOMS)[:\\s]*([^\\n]{3,80})', confidence: 78, type: 'string' },
+      ],
+      rutaAutorizada: [
+        { regex: '(?:RUTA|ROUTE|ITINERARIO)[:\\s]*([^\\n]{5,100})', confidence: 75, type: 'string' },
+      ],
+      precintos: [
+        { regex: '(?:PRECINTO|SELLO|SEAL)[:\\s]*([A-Z0-9\\-]{3,20})', confidence: 85, type: 'string' },
+      ],
+      pesoBruto: [
+        { regex: '(?:PESO\\s*BRUTO|GROSS\\s*WEIGHT)[:\\s]*([\\d,.]+)\\s*(?:KG|KGS)?', confidence: 85, type: 'number' },
+      ],
+      bultos: [
+        { regex: '(?:BULTOS|PACKAGES|COLLI)[:\\s]*(\\d+)', confidence: 85, type: 'number' },
+      ],
+    },
+    // ── FEL Guatemala ───────────────────────────────────────
+    FEL: {
+      autorizacion: [
+        { regex: '(?:AUTORIZACIÓN|NÚMERO\\s*DE\\s*AUTORIZACIÓN|UUID)[.:\\s]*([A-F0-9\\-]{32,40})', confidence: 92, type: 'string' },
+      ],
+      serie: [
+        { regex: '(?:SERIE)[.:\\s]*([A-Z0-9]{1,10})', confidence: 85, type: 'string' },
+      ],
+      numero: [
+        { regex: '(?:NÚMERO\\s*DTE|DTE\\s*NO)[.:\\s]*(\\d{5,15})', confidence: 88, type: 'string', sqlColumn: 'referencia' },
+      ],
+      nitEmisor: [
+        { regex: '(?:NIT\\s*(?:DEL\\s*)?EMISOR)[.:\\s]*([\\d\\-Kk]{5,15})', confidence: 90, type: 'string', sqlColumn: 'shipper' },
+      ],
+      nitReceptor: [
+        { regex: '(?:NIT\\s*(?:DEL\\s*)?RECEPTOR)[.:\\s]*([\\d\\-Kk]{5,15})', confidence: 90, type: 'string', sqlColumn: 'consignatario_ruc' },
+      ],
+    },
   } as Record<string, Record<string, DocumentPattern[]>>,
 
-  // ── AI Prompts for OCR Enhancement ────────────────────────
+  // ── AI Prompts for OCR Enhancement (Regional) ─────────────
   aiPrompts: {
-    documentClassification: `You are LEXIS, an intelligent document classifier for customs operations in Panama. 
-Analyze the text and determine the document type: INVOICE, BL (Bill of Lading), CP (Air Waybill/Carta Porte), MANIFEST, or PACKING_LIST.
-Return a JSON with: { type, confidence, reasoning }`,
+    documentClassification: `You are LEXIS, an intelligent document classifier for customs operations in Central America (Panama, Costa Rica, Guatemala). 
+Analyze the text and determine the document type: INVOICE, BL (Bill of Lading), CP (Air Waybill/Carta Porte), MANIFEST, PACKING_LIST, DUCA_F (Factura y Declaración Centroamericana), DUCA_T (Tránsito Terrestre), DUA (Declaración Única Aduanera), or FEL (Factura Electrónica Guatemala).
+Return a JSON with: { type, confidence, reasoning, region }`,
 
-    fieldExtraction: `You are LEXIS, an intelligent data extractor for international trade documents.
+    fieldExtraction: `You are LEXIS, an intelligent data extractor for international trade documents in Central America.
 Extract the following fields from the document:
 - Supplier/Shipper (name, address, country)
-- Consignee/Buyer (name, RUC/ID, address)
-- Invoice Number and Date
+- Consignee/Buyer (name, RUC/NIT/Cédula Jurídica, address)
+- Invoice/Declaration Number and Date
 - Incoterm (EXW, FOB, CIF, etc.)
-- Line Items (description, quantity, unit price, total)
+- Line Items (description, quantity, unit price, total, SAC/HTS code)
 - FOB Value, Freight, Insurance, CIF Value
 - Currency
 - Country of Origin
-- Transport details (MAWB/HAWB/BL number, vessel/flight)
+- Transport details (MAWB/HAWB/BL number, vessel/flight, truck plate)
+- For DUCA: Aduana de origen/destino, régimen, precintos
 Return structured JSON. Flag any missing critical fields.`,
 
     cifValidation: `Verify the CIF calculation: CIF = FOB + Freight + Insurance.
-If insurance is missing, apply the 1.5% theoretical insurance per Panama customs regulation.
+Apply the regional theoretical insurance rate if insurance is missing:
+- Panama: 1.5%
+- Costa Rica: 1.75%
+- Guatemala: 1.5%
 Flag any mathematical discrepancies.`,
   },
 } as const;

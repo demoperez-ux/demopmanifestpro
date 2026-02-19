@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { COMPANY_INFO, PLATFORM_INFO } from '@/lib/companyConfig';
+import { JurisdictionSelector } from './JurisdictionSelector';
 import { useAuth, type AppRole, ROLE_DISPLAY_NAMES } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -310,6 +311,11 @@ export function AppSidebar() {
           </Badge>
         </div>
       )}
+
+      {/* Jurisdiction Selector */}
+      <div className="px-1.5 pt-1.5">
+        <JurisdictionSelector collapsed={collapsed} />
+      </div>
 
       {/* AI Status */}
       <AIStatusIndicator collapsed={collapsed} />

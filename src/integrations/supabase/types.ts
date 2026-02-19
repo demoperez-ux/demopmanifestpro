@@ -164,6 +164,7 @@ export type Database = {
         Row: {
           action: string
           changes: Json | null
+          country_code: string
           created_at: string
           entity_id: string | null
           entity_type: string
@@ -178,6 +179,7 @@ export type Database = {
         Insert: {
           action: string
           changes?: Json | null
+          country_code?: string
           created_at?: string
           entity_id?: string | null
           entity_type: string
@@ -192,6 +194,7 @@ export type Database = {
         Update: {
           action?: string
           changes?: Json | null
+          country_code?: string
           created_at?: string
           entity_id?: string | null
           entity_type?: string
@@ -555,6 +558,7 @@ export type Database = {
           buque_vuelo: string | null
           consignatario: string
           consignatario_ruc: string | null
+          country_code: string
           created_at: string
           customs_clearance_required: boolean
           descripcion_carga: string | null
@@ -603,6 +607,7 @@ export type Database = {
           buque_vuelo?: string | null
           consignatario: string
           consignatario_ruc?: string | null
+          country_code?: string
           created_at?: string
           customs_clearance_required?: boolean
           descripcion_carga?: string | null
@@ -651,6 +656,7 @@ export type Database = {
           buque_vuelo?: string | null
           consignatario?: string
           consignatario_ruc?: string | null
+          country_code?: string
           created_at?: string
           customs_clearance_required?: boolean
           descripcion_carga?: string | null
@@ -837,6 +843,7 @@ export type Database = {
       }
       nexus_traffic_logs: {
         Row: {
+          country_code: string
           created_at: string
           direction: string
           endpoint: string | null
@@ -853,6 +860,7 @@ export type Database = {
           zod_score: number | null
         }
         Insert: {
+          country_code?: string
           created_at?: string
           direction: string
           endpoint?: string | null
@@ -869,6 +877,7 @@ export type Database = {
           zod_score?: number | null
         }
         Update: {
+          country_code?: string
           created_at?: string
           direction?: string
           endpoint?: string | null
@@ -1088,6 +1097,7 @@ export type Database = {
           cliente_aprobacion_timestamp: string | null
           consignatario: string
           corredor_id: string | null
+          country_code: string
           created_at: string
           doc_num: string
           embarque_id: string
@@ -1123,6 +1133,7 @@ export type Database = {
           cliente_aprobacion_timestamp?: string | null
           consignatario: string
           corredor_id?: string | null
+          country_code?: string
           created_at?: string
           doc_num: string
           embarque_id: string
@@ -1158,6 +1169,7 @@ export type Database = {
           cliente_aprobacion_timestamp?: string | null
           consignatario?: string
           corredor_id?: string | null
+          country_code?: string
           created_at?: string
           doc_num?: string
           embarque_id?: string

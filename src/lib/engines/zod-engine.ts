@@ -1,20 +1,105 @@
 /**
  * ╔═══════════════════════════════════════════════════════════════╗
  * ║  ZOD — The Integrity Engine                                   ║
- * ║  Validador Forense de Integridad Aduanera                     ║
+ * ║  Validador Forense de Integridad Aduanera Regional            ║
  * ║  © IPL / Orion Freight System — ZENITH Platform               ║
  * ╚═══════════════════════════════════════════════════════════════╝
  *
  * ZOD es el guardián inmutable de la verdad documental.
- * Reglas de validación basadas en legislación aduanera de Panamá:
- *   - Decreto Ley 1 de 2008 (Ley General de Aduanas)
- *   - CAUCA IV / RECAUCA
- *   - Resoluciones ANA vigentes
+ * Soporta validación fiscal para tres jurisdicciones:
+ *   - PA: Panamá — ITBMS 7%, Decreto Ley 1/2008, CAUCA IV
+ *   - CR: Costa Rica — IVA 13%, Ley General de Aduanas 7557
+ *   - GT: Guatemala — IVA 12%, Ley Aduanera Nacional (SAT)
  *
- * Principio: CIF = FOB + Flete + Seguro (inmutable)
+ * Principio: CIF = FOB + Flete + Seguro (inmutable, universal)
  */
 
 import CryptoJS from 'crypto-js';
+
+// ═══════════════════════════════════════════════════════════════
+// REGIONAL CONFIGURATION
+// ═══════════════════════════════════════════════════════════════
+
+export type ZodRegion = 'PA' | 'CR' | 'GT';
+
+export interface RegionalTaxConfig {
+  code: ZodRegion;
+  name: string;
+  vatRate: number;
+  vatName: string;
+  insuranceRate: number;
+  systemFee: number;
+  legalBasis: {
+    cif: string;
+    vat: string;
+    valuation: string;
+    general: string;
+  };
+  fiscalIdPatterns: { name: string; regex: RegExp; example: string }[];
+  customsAuthority: string;
+}
+
+export const REGIONAL_TAX_CONFIG: Record<ZodRegion, RegionalTaxConfig> = {
+  PA: {
+    code: 'PA',
+    name: 'Panamá',
+    vatRate: 0.07,
+    vatName: 'ITBMS',
+    insuranceRate: 0.015,
+    systemFee: 3.00,
+    legalBasis: {
+      cif: 'Decreto Ley 1 de 2008, Art. 60 — Valor en Aduana',
+      vat: 'Código Fiscal de Panamá, Art. 1057-V (ITBMS 7%)',
+      valuation: 'CAUCA IV Art. 45 — Determinación del Valor en Aduana',
+      general: 'Decreto Ley 1 de 2008 — Ley General de Aduanas',
+    },
+    fiscalIdPatterns: [
+      { name: 'Cédula', regex: /^\d{1,2}-\d{1,4}-\d{1,6}$/, example: '8-814-52' },
+      { name: 'RUC (Persona Jurídica)', regex: /^\d{1,7}-\d{1,4}-\d{1,6}(?: DV\d{2})?$/, example: '155608832-2-2015' },
+      { name: 'Pasaporte', regex: /^[A-Z]{1,2}\d{6,9}$/, example: 'PE123456' },
+    ],
+    customsAuthority: 'ANA (Autoridad Nacional de Aduanas)',
+  },
+  CR: {
+    code: 'CR',
+    name: 'Costa Rica',
+    vatRate: 0.13,
+    vatName: 'IVA',
+    insuranceRate: 0.0175,
+    systemFee: 2.50,
+    legalBasis: {
+      cif: 'Ley General de Aduanas 7557, Art. 252 — Valor en Aduana',
+      vat: 'Ley del Impuesto al Valor Agregado 9635, Art. 2 (IVA 13%)',
+      valuation: 'CAUCA IV Art. 45 — Determinación del Valor en Aduana',
+      general: 'Ley General de Aduanas 7557 y Reglamento RECAUCA',
+    },
+    fiscalIdPatterns: [
+      { name: 'Cédula Física', regex: /^\d{1}-\d{4}-\d{4}$/, example: '1-0234-0567' },
+      { name: 'Cédula Jurídica', regex: /^3-\d{3}-\d{6}$/, example: '3-101-123456' },
+      { name: 'DIMEX', regex: /^\d{11,12}$/, example: '15560883212' },
+    ],
+    customsAuthority: 'DGA (Dirección General de Aduanas — Ministerio de Hacienda)',
+  },
+  GT: {
+    code: 'GT',
+    name: 'Guatemala',
+    vatRate: 0.12,
+    vatName: 'IVA',
+    insuranceRate: 0.015,
+    systemFee: 0,
+    legalBasis: {
+      cif: 'CAUCA IV Art. 45 — Determinación del Valor en Aduana',
+      vat: 'Ley del IVA, Decreto 27-92, Art. 10 (IVA 12%)',
+      valuation: 'Reglamento del CAUCA (RECAUCA) Art. 323',
+      general: 'Ley Aduanera Nacional y Código Aduanero Uniforme Centroamericano',
+    },
+    fiscalIdPatterns: [
+      { name: 'NIT', regex: /^\d{6,9}-?[0-9Kk]$/, example: '1234567-K' },
+      { name: 'CUI/DPI', regex: /^\d{4}\s?\d{5}\s?\d{4}$/, example: '1234 56789 0101' },
+    ],
+    customsAuthority: 'SAT (Superintendencia de Administración Tributaria)',
+  },
+};
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -33,6 +118,7 @@ export interface ZodFinding {
   actual?: string | number;
   legalBasis?: string;
   autoCorrection?: { field: string; value: string | number };
+  region?: ZodRegion;
 }
 
 export interface ZodValidationResult {
@@ -41,10 +127,11 @@ export interface ZodValidationResult {
   hash: string;
   previousHash: string | null;
   isValid: boolean;
-  score: number; // 0-100
+  score: number;
   findings: ZodFinding[];
   correctionsMade: number;
   blockingIssues: number;
+  region: ZodRegion;
 }
 
 export interface ZodCIFInput {
@@ -68,7 +155,7 @@ export interface ZodDeclarationInput {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ZOD ENGINE (Immutable Rules)
+// ZOD ENGINE (Immutable Rules — Regional)
 // ═══════════════════════════════════════════════════════════════
 
 export class ZodEngine {
@@ -76,13 +163,8 @@ export class ZodEngine {
   private findingCounter = 0;
   private lastHash: string | null = null;
   private validationHistory: ZodValidationResult[] = [];
+  private _currentRegion: ZodRegion = 'PA';
 
-  /** Theoretical insurance rate per ANA regulation when not declared */
-  private static readonly INSURANCE_RATE = 0.015;
-  /** System fee per ANA */
-  private static readonly SYSTEM_FEE = 3.00;
-  /** ITBMS standard rate */
-  private static readonly ITBMS_RATE = 0.07;
   /** Tolerance for rounding differences (USD) */
   private static readonly TOLERANCE = 0.02;
 
@@ -95,25 +177,79 @@ export class ZodEngine {
     return ZodEngine.instance;
   }
 
-  // ── CIF Validation (Core Rule) ───────────────────────────
+  // ── Region Management ───────────────────────────────────
+
+  get currentRegion(): ZodRegion {
+    return this._currentRegion;
+  }
+
+  setRegion(region: ZodRegion): void {
+    this._currentRegion = region;
+  }
+
+  getRegionConfig(): RegionalTaxConfig {
+    return REGIONAL_TAX_CONFIG[this._currentRegion];
+  }
+
+  // ── Fiscal ID Validation (Regional) ─────────────────────
+
+  validateFiscalId(id: string, region?: ZodRegion): ZodFinding[] {
+    const findings: ZodFinding[] = [];
+    const config = REGIONAL_TAX_CONFIG[region || this._currentRegion];
+    const trimmedId = id.trim();
+
+    if (!trimmedId) {
+      findings.push(this.createFinding({
+        rule: 'ZOD-FISCAL-001',
+        severity: 'blocking',
+        message: `ID fiscal vacío — ${config.customsAuthority}`,
+        detail: `Se requiere un identificador fiscal válido para operar en ${config.name}.`,
+        field: 'fiscal_id',
+        legalBasis: config.legalBasis.general,
+        region: config.code,
+      }));
+      return findings;
+    }
+
+    const matched = config.fiscalIdPatterns.some(p => p.regex.test(trimmedId));
+    if (!matched) {
+      const examples = config.fiscalIdPatterns.map(p => `${p.name}: ${p.example}`).join(', ');
+      findings.push(this.createFinding({
+        rule: 'ZOD-FISCAL-002',
+        severity: 'critical',
+        message: `ID fiscal inválido para ${config.name}`,
+        detail: `"${trimmedId}" no coincide con los formatos aceptados en ${config.name}: ${examples}.`,
+        field: 'fiscal_id',
+        actual: trimmedId,
+        legalBasis: config.legalBasis.general,
+        region: config.code,
+      }));
+    }
+
+    return findings;
+  }
+
+  // ── CIF Validation (Core Rule — Universal) ──────────────
 
   validateCIF(input: ZodCIFInput): ZodFinding[] {
     const findings: ZodFinding[] = [];
+    const config = this.getRegionConfig();
     let insurance = input.insurance;
 
-    // Rule 1: If insurance is null/zero, apply theoretical 1.5%
+    // Rule 1: If insurance is null/zero, apply theoretical rate
     if (insurance === null || insurance === 0) {
-      insurance = input.fob * ZodEngine.INSURANCE_RATE;
+      insurance = input.fob * config.insuranceRate;
       findings.push(this.createFinding({
         rule: 'ZOD-CIF-001',
         severity: 'info',
-        message: 'Seguro teórico aplicado (1.5% FOB)',
-        detail: `Seguro no declarado. Se aplica seguro teórico de $${insurance.toFixed(2)} (1.5% sobre FOB $${input.fob.toFixed(2)}) conforme al Decreto Ley 1/2008 Art. 60.`,
+        message: `Seguro teórico aplicado (${(config.insuranceRate * 100).toFixed(1)}% FOB)`,
+        detail: `Seguro no declarado. Se aplica seguro teórico de $${insurance.toFixed(2)} (${(config.insuranceRate * 100).toFixed(1)}% sobre FOB $${input.fob.toFixed(2)}) conforme a ${config.legalBasis.cif}.`,
         field: 'insurance',
         expected: insurance,
         actual: input.insurance ?? 0,
-        legalBasis: 'Decreto Ley 1 de 2008, Art. 60 — Valor en Aduana',
+        legalBasis: config.legalBasis.cif,
         autoCorrection: { field: 'insurance', value: insurance },
+        region: config.code,
       }));
     }
 
@@ -130,8 +266,9 @@ export class ZodEngine {
         field: 'cif',
         expected: calculatedCIF,
         actual: input.declaredCIF,
-        legalBasis: 'CAUCA IV Art. 45 — Determinación del Valor en Aduana',
+        legalBasis: config.legalBasis.valuation,
         autoCorrection: { field: 'cif', value: calculatedCIF },
+        region: config.code,
       }));
     }
 
@@ -143,6 +280,7 @@ export class ZodEngine {
         message: 'Valores negativos detectados en componentes CIF',
         detail: 'FOB, Flete y Seguro deben ser valores positivos. Documento bloqueado.',
         legalBasis: 'RECAUCA Art. 323 — Declaración de Valor',
+        region: config.code,
       }));
     }
 
@@ -154,22 +292,24 @@ export class ZodEngine {
         message: 'Posible subvaluación detectada',
         detail: `FOB declarado ($${input.fob.toFixed(2)}) es sospechosamente bajo. Requiere verificación manual.`,
         field: 'fob',
-        legalBasis: 'Decreto Ley 1/2008 Art. 63 — Métodos de Valoración',
+        legalBasis: config.legalBasis.valuation,
+        region: config.code,
       }));
     }
 
     return findings;
   }
 
-  // ── Tax Cascade Validation ───────────────────────────────
+  // ── Tax Cascade Validation (Regional) ───────────────────
 
   validateTaxCascade(input: ZodDeclarationInput): ZodFinding[] {
     const findings: ZodFinding[] = [];
+    const config = this.getRegionConfig();
 
     const expectedDAI = input.cif * (input.daiPercent / 100);
     const expectedISC = (input.cif + expectedDAI) * (input.iscPercent / 100);
-    const expectedITBMS = (input.cif + expectedDAI + expectedISC) * (input.itbmsPercent / 100);
-    const expectedTotal = input.cif + expectedDAI + expectedISC + expectedITBMS + ZodEngine.SYSTEM_FEE;
+    const expectedVAT = (input.cif + expectedDAI + expectedISC) * config.vatRate;
+    const expectedTotal = input.cif + expectedDAI + expectedISC + expectedVAT + config.systemFee;
 
     if (input.declaredDAI !== undefined) {
       const daiDiff = Math.abs(expectedDAI - input.declaredDAI);
@@ -180,23 +320,25 @@ export class ZodEngine {
           message: `DAI: Δ $${daiDiff.toFixed(2)}`,
           detail: `DAI declarado ($${input.declaredDAI.toFixed(2)}) ≠ esperado ($${expectedDAI.toFixed(2)})`,
           field: 'dai', expected: expectedDAI, actual: input.declaredDAI,
-          legalBasis: 'Arancel Nacional de Importación de Panamá',
+          legalBasis: `Arancel Nacional de Importación — ${config.name}`,
           autoCorrection: { field: 'dai', value: expectedDAI },
+          region: config.code,
         }));
       }
     }
 
     if (input.declaredITBMS !== undefined) {
-      const itbmsDiff = Math.abs(expectedITBMS - input.declaredITBMS);
-      if (itbmsDiff > ZodEngine.TOLERANCE) {
+      const vatDiff = Math.abs(expectedVAT - input.declaredITBMS);
+      if (vatDiff > ZodEngine.TOLERANCE) {
         findings.push(this.createFinding({
           rule: 'ZOD-TAX-002',
           severity: 'critical',
-          message: `ITBMS: Δ $${itbmsDiff.toFixed(2)}`,
-          detail: `ITBMS declarado ($${input.declaredITBMS.toFixed(2)}) ≠ esperado ($${expectedITBMS.toFixed(2)}). Base: CIF + DAI + ISC.`,
-          field: 'itbms', expected: expectedITBMS, actual: input.declaredITBMS,
-          legalBasis: 'Código Fiscal de Panamá, Art. 1057-V (ITBMS 7%)',
-          autoCorrection: { field: 'itbms', value: expectedITBMS },
+          message: `${config.vatName}: Δ $${vatDiff.toFixed(2)}`,
+          detail: `${config.vatName} declarado ($${input.declaredITBMS.toFixed(2)}) ≠ esperado ($${expectedVAT.toFixed(2)}). Base: CIF + DAI + ISC. Tasa: ${(config.vatRate * 100).toFixed(0)}%.`,
+          field: 'itbms', expected: expectedVAT, actual: input.declaredITBMS,
+          legalBasis: config.legalBasis.vat,
+          autoCorrection: { field: 'itbms', value: expectedVAT },
+          region: config.code,
         }));
       }
     }
@@ -204,12 +346,14 @@ export class ZodEngine {
     if (input.declaredTotal !== undefined) {
       const totalDiff = Math.abs(expectedTotal - input.declaredTotal);
       if (totalDiff > ZodEngine.TOLERANCE) {
+        const feeNote = config.systemFee > 0 ? ` Incluye Tasa de Sistema $${config.systemFee.toFixed(2)}.` : '';
         findings.push(this.createFinding({
           rule: 'ZOD-TAX-003',
           severity: 'warning',
           message: `Total liquidación: Δ $${totalDiff.toFixed(2)}`,
-          detail: `Total declarado ($${input.declaredTotal.toFixed(2)}) ≠ esperado ($${expectedTotal.toFixed(2)}). Incluye Tasa de Sistema B/. ${ZodEngine.SYSTEM_FEE.toFixed(2)}.`,
+          detail: `Total declarado ($${input.declaredTotal.toFixed(2)}) ≠ esperado ($${expectedTotal.toFixed(2)}).${feeNote}`,
           field: 'total', expected: expectedTotal, actual: input.declaredTotal,
+          region: config.code,
         }));
       }
     }
@@ -226,7 +370,9 @@ export class ZodEngine {
 
   // ── Full Validation Pipeline ─────────────────────────────
 
-  validate(documentId: string, data: Record<string, unknown>): ZodValidationResult {
+  validate(documentId: string, data: Record<string, unknown>, region?: ZodRegion): ZodValidationResult {
+    if (region) this.setRegion(region);
+
     const hash = this.generateIntegrityHash(data);
     const allFindings: ZodFinding[] = [];
 
@@ -247,6 +393,11 @@ export class ZodEngine {
       allFindings.push(...this.validateTaxCascade(data as unknown as ZodDeclarationInput));
     }
 
+    // Run fiscal ID validation if applicable
+    if ('fiscalId' in data && typeof data.fiscalId === 'string') {
+      allFindings.push(...this.validateFiscalId(data.fiscalId as string));
+    }
+
     const blockingIssues = allFindings.filter(f => f.severity === 'blocking').length;
     const correctionsMade = allFindings.filter(f => f.autoCorrection).length;
     const score = this.calculateScore(allFindings);
@@ -261,6 +412,7 @@ export class ZodEngine {
       findings: allFindings,
       correctionsMade,
       blockingIssues,
+      region: this._currentRegion,
     };
 
     this.lastHash = hash;
