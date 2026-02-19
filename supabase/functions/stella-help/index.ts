@@ -77,8 +77,37 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    // Jurisdiction-specific legal context
+    const JURISDICTION_PROMPTS: Record<string, string> = {
+      PA: `\n## JURISDICCIÓN ACTIVA: PANAMÁ
+- Autoridad: ANA (Autoridad Nacional de Aduanas)
+- Legislación: Decreto Ley 1/2008, CAUCA IV/RECAUCA
+- Sistema: SIGA (CrimsonLogic)
+- ITBMS: 7% (Art. 1057-V Código Fiscal)
+- ID Fiscal: RUC / Cédula panameña`,
+      CR: `\n## JURISDICCIÓN ACTIVA: COSTA RICA
+- Autoridad: DGA (Dirección General de Aduanas — Ministerio de Hacienda)
+- Legislación: Ley General de Aduanas 7557, Ley 9635 (IVA)
+- Sistema: TICA
+- IVA: 13% (Ley 9635)
+- ID Fiscal: Cédula Jurídica (3-XXX-XXXXXX), DIMEX
+- Documentos regionales: DUCA-F, DUCA-T`,
+      GT: `\n## JURISDICCIÓN ACTIVA: GUATEMALA
+- Autoridad: SAT (Superintendencia de Administración Tributaria)
+- Legislación: Ley Aduanera Nacional, Decreto 27-92 (IVA)
+- Sistema: SAQB'E, DUCA electrónica
+- IVA: 12% (Decreto 27-92 Art. 10)
+- ID Fiscal: NIT
+- Documentos: FEL (Factura Electrónica en Línea), DUCA-F, DUCA-T`,
+    };
+
     // Build context-enriched system prompt
     let enrichedPrompt = SYSTEM_PROMPT;
+
+    // Apply jurisdiction context
+    const jurisdiction = context?.jurisdiction || 'PA';
+    enrichedPrompt += JURISDICTION_PROMPTS[jurisdiction] || JURISDICTION_PROMPTS['PA'];
+
     if (context) {
       enrichedPrompt += `\n\n## CONTEXTO ACTIVO DE LA SESIÓN\n`;
       if (context.currentRoute) enrichedPrompt += `- Página actual: ${context.currentRoute}\n`;
@@ -86,14 +115,14 @@ serve(async (req) => {
       if (context.totalPackages) enrichedPrompt += `- Total de paquetes: ${context.totalPackages}\n`;
       if (context.consignatario) enrichedPrompt += `- Consignatario: ${context.consignatario}\n`;
       if (context.operationType) enrichedPrompt += `- Tipo de operación: ${context.operationType}\n`;
+      if (context.countryCode) enrichedPrompt += `- País de operación: ${context.countryCode}\n`;
       if (context.alerts && context.alerts.length > 0) {
         enrichedPrompt += `- Alertas activas: ${context.alerts.join(', ')}\n`;
       }
-      // Inject knowledge base articles relevant to user's context
       if (context.knowledgeContext) {
-        enrichedPrompt += `\n## BASE DE CONOCIMIENTO RELEVANTE (usa esta información para responder con mayor precisión)\n`;
+        enrichedPrompt += `\n## BASE DE CONOCIMIENTO RELEVANTE\n`;
         enrichedPrompt += context.knowledgeContext;
-        enrichedPrompt += `\n\nUsa la información anterior de la Base de Conocimiento de ZENITH para dar respuestas más precisas y contextuales. Si la pregunta del usuario se relaciona con alguno de estos artículos, referéncialo directamente.`;
+        enrichedPrompt += `\nUsa la información anterior para dar respuestas más precisas y contextuales.`;
       }
     }
 

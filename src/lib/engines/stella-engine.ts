@@ -1,20 +1,17 @@
 /**
  * ╔═══════════════════════════════════════════════════════════════╗
- * ║  STELLA — The Compliance Copilot                              ║
+ * ║  STELLA — The Compliance Copilot (Regional)                   ║
  * ║  Asistente Proactivo de Inteligencia Aduanera                 ║
  * ║  © IPL / Orion Freight System — ZENITH Platform               ║
  * ╚═══════════════════════════════════════════════════════════════╝
  *
- * Stella es la capa de inteligencia conversacional de ZENITH.
- * Aprende de las correcciones que ZOD hace sobre los documentos
- * que LEXIS procesa, generando una "memoria operativa" que
- * mejora la precisión del sistema con cada iteración.
- *
- * Identidad: Asesora Senior de Cumplimiento
- * Tono: Profesional, preciso, data-driven
+ * Stella adapts her compliance advice based on the active jurisdiction:
+ *   PA → ANA, Decreto Ley 1/2008, CAUCA IV
+ *   CR → DGA, Ley 7557, TICA, Ministerio de Hacienda
+ *   GT → SAT, Ley Aduanera Nacional, FEL
  */
 
-import type { ZodFinding, ZodValidationResult } from './zod-engine';
+import type { ZodFinding, ZodValidationResult, ZodRegion } from './zod-engine';
 import type { LexisExtractionResult, LexisMemoryEntry } from './lexis-engine';
 
 // ═══════════════════════════════════════════════════════════════
@@ -34,6 +31,7 @@ export interface StellaInsight {
   priority: 'low' | 'medium' | 'high' | 'critical';
   timestamp: string;
   acknowledged: boolean;
+  region?: ZodRegion;
 }
 
 export interface StellaMemoryLayer {
@@ -69,7 +67,7 @@ interface OperatorPreference {
 
 interface RegulatoryAlert {
   id: string;
-  jurisdiction: 'PA' | 'CR' | 'GT';
+  jurisdiction: ZodRegion;
   title: string;
   effectiveDate: string;
   description: string;
@@ -81,7 +79,40 @@ export interface StellaContext {
   activeDocument?: string;
   userRole?: string;
   recentActions: string[];
+  jurisdiction?: ZodRegion;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// JURISDICTION-SPECIFIC SYSTEM PROMPTS
+// ═══════════════════════════════════════════════════════════════
+
+export const STELLA_JURISDICTION_PROMPTS: Record<ZodRegion, string> = {
+  PA: `Jurisdicción activa: PANAMÁ.
+Autoridad: Autoridad Nacional de Aduanas (ANA).
+Legislación principal: Decreto Ley 1 de 2008 (Ley General de Aduanas), CAUCA IV / RECAUCA.
+Sistema electrónico: SIGA (Sistema Integrado de Gestión Aduanera — CrimsonLogic).
+Impuesto al consumo: ITBMS 7% (Art. 1057-V Código Fiscal).
+Identificación fiscal: RUC / Cédula panameña.
+Particularidades: Zona Libre de Colón (ZLC), Régimen de Áreas Económicas Especiales, AFC.`,
+
+  CR: `Jurisdicción activa: COSTA RICA.
+Autoridad: Dirección General de Aduanas (DGA) — Ministerio de Hacienda.
+Legislación principal: Ley General de Aduanas 7557, CAUCA IV / RECAUCA, Ley 9635 (IVA).
+Sistema electrónico: TICA (Tecnología de Información para el Control Aduanero).
+Impuesto al consumo: IVA 13% (Ley 9635).
+Identificación fiscal: Cédula Jurídica (3-XXX-XXXXXX), Cédula Física (X-XXXX-XXXX), DIMEX.
+Particularidades: Zona Franca Regímenes Especiales, PROCOMER, requisitos fitosanitarios SENASA.
+Documentos regionales: DUCA-F (Declaración Única Centroamericana — Factura), DUCA-T (Tránsito).`,
+
+  GT: `Jurisdicción activa: GUATEMALA.
+Autoridad: Superintendencia de Administración Tributaria (SAT).
+Legislación principal: Ley Aduanera Nacional, CAUCA IV / RECAUCA, Decreto 27-92 (Ley del IVA).
+Sistema electrónico: SAQB'E (portal SAT), sistema DUCA electrónica.
+Impuesto al consumo: IVA 12% (Decreto 27-92 Art. 10).
+Identificación fiscal: NIT (Número de Identificación Tributaria), CUI/DPI.
+Particularidades: Factura Electrónica en Línea (FEL) obligatoria, ZDEEP (Zonas de Desarrollo Económico Especial Público).
+Documentos regionales: DUCA-F, DUCA-T, FEL (DTE).`,
+};
 
 // ═══════════════════════════════════════════════════════════════
 // STELLA ENGINE
@@ -91,6 +122,7 @@ export class StellaEngine {
   private static instance: StellaEngine | null = null;
   private insights: StellaInsight[] = [];
   private insightCounter = 0;
+  private _currentJurisdiction: ZodRegion = 'PA';
 
   private memory: StellaMemoryLayer = {
     zodCorrections: [],
@@ -109,6 +141,33 @@ export class StellaEngine {
       StellaEngine.instance = new StellaEngine();
     }
     return StellaEngine.instance;
+  }
+
+  // ── Jurisdiction Management ─────────────────────────────
+
+  get currentJurisdiction(): ZodRegion {
+    return this._currentJurisdiction;
+  }
+
+  setJurisdiction(region: ZodRegion): void {
+    this._currentJurisdiction = region;
+    this.addInsight({
+      type: 'compliance',
+      title: `Jurisdicción cambiada: ${this.getJurisdictionLabel(region)}`,
+      message: `Stella ahora referencia la legislación y autoridad de ${this.getJurisdictionLabel(region)}.`,
+      source: 'proactive',
+      priority: 'low',
+      region,
+    });
+  }
+
+  getJurisdictionLabel(region: ZodRegion): string {
+    const labels: Record<ZodRegion, string> = { PA: 'Panamá', CR: 'Costa Rica', GT: 'Guatemala' };
+    return labels[region];
+  }
+
+  getSystemPromptForJurisdiction(region?: ZodRegion): string {
+    return STELLA_JURISDICTION_PROMPTS[region || this._currentJurisdiction];
   }
 
   // ── Learning from ZOD Corrections ────────────────────────
@@ -135,7 +194,6 @@ export class StellaEngine {
           });
         }
 
-        // Generate proactive insight if pattern is recurring
         if (existing && existing.occurrences >= 3) {
           this.addInsight({
             type: 'learning',
@@ -143,12 +201,12 @@ export class StellaEngine {
             message: `El campo "${finding.field}" ha sido corregido ${existing.occurrences} veces. ${existing.suggestion}`,
             source: 'zod_correction',
             priority: existing.occurrences >= 10 ? 'high' : 'medium',
+            region: zodResult.region,
           });
         }
       }
     }
 
-    // Learn from LEXIS extraction quality
     if (lexisResult) {
       const patternExists = this.memory.lexisPatterns.find(
         p => p.documentType === lexisResult.documentType && p.supplierPattern === lexisResult.supplier.value
@@ -174,12 +232,11 @@ export class StellaEngine {
 
   getContextualAdvice(context: StellaContext): StellaInsight[] {
     const advice: StellaInsight[] = [];
+    const jurisdiction = context.jurisdiction || this._currentJurisdiction;
 
-    // Route-specific advice
     const routeAdvice = this.getRouteAdvice(context.currentRoute);
     if (routeAdvice) advice.push(routeAdvice);
 
-    // Check for recurring corrections
     const highFreqCorrections = this.memory.zodCorrections
       .filter(c => c.occurrences >= 5)
       .slice(0, 3);
@@ -191,11 +248,12 @@ export class StellaEngine {
         message: corr.suggestion,
         source: 'pattern_analysis',
         priority: 'medium',
+        region: jurisdiction,
       }));
     }
 
-    // Regulatory alerts
     const activeAlerts = this.memory.regulatoryAlerts.filter(a => {
+      if (a.jurisdiction !== jurisdiction) return false;
       const effective = new Date(a.effectiveDate);
       const now = new Date();
       const daysBefore = 30;
@@ -208,8 +266,9 @@ export class StellaEngine {
         title: `📋 ${alert.title}`,
         message: alert.description,
         source: 'regulatory_update',
-        legalReference: `Jurisdicción: ${alert.jurisdiction}`,
+        legalReference: `Jurisdicción: ${this.getJurisdictionLabel(alert.jurisdiction)}`,
         priority: alert.impactLevel === 'high' ? 'critical' : 'medium',
+        region: alert.jurisdiction,
       }));
     }
 
@@ -223,15 +282,15 @@ export class StellaEngine {
       '/': [
         { step: 1, title: 'Bienvenido al Centro de Comando', instruction: 'Este es el punto de partida. Desde aquí puedes cargar manifiestos usando el área de carga inteligente.' },
         { step: 2, title: 'Carga tu primer manifiesto', instruction: 'Arrastra un archivo Excel (.xlsx) al área designada. LEXIS detectará automáticamente las columnas.' },
-        { step: 3, title: 'Revisión y Transmisión', instruction: 'Una vez procesado, Zod validará la integridad y podrás transmitir al SIGA.' },
+        { step: 3, title: 'Revisión y Transmisión', instruction: 'Una vez procesado, Zod validará la integridad y podrás transmitir al sistema aduanero.' },
       ],
       '/lexis-ingress': [
-        { step: 1, title: 'Portal de Ingreso LEXIS', instruction: 'Área A: Manifiesto (CSV/XLSX). Área B: Guía Master (PDF). Área C: Documentos de soporte (hasta 1,000 archivos).' },
+        { step: 1, title: 'Portal de Ingreso LEXIS', instruction: 'Área A: Manifiesto (CSV/XLSX). Área B: Guía Master (PDF). Área C: Documentos de soporte (hasta 1,000 archivos). Soporta DUCA-F y DUCA-T para operaciones centroamericanas.' },
         { step: 2, title: 'Procesamiento Automático', instruction: 'LEXIS identificará automáticamente cada documento y lo vinculará con las guías del manifiesto.' },
       ],
       '/aranceles': [
         { step: 1, title: 'Buscador Arancelario', instruction: 'Ingresa una descripción de producto o código HS para buscar la partida arancelaria correcta.' },
-        { step: 2, title: 'Resultado con tasas', instruction: 'El sistema mostrará DAI%, ISC%, ITBMS% y la autoridad anuente correspondiente.' },
+        { step: 2, title: 'Resultado con tasas', instruction: 'El sistema mostrará DAI%, ISC%, y el impuesto al consumo según la jurisdicción activa.' },
       ],
     };
 
@@ -249,6 +308,7 @@ export class StellaEngine {
       message: `Stella ha detectado un riesgo crítico: ${reason}. Acción bloqueada hasta verificación manual.`,
       source: 'proactive',
       priority: 'critical',
+      region: this._currentJurisdiction,
     });
   }
 
@@ -297,11 +357,13 @@ export class StellaEngine {
   private generateSuggestion(finding: ZodFinding): string {
     switch (finding.rule) {
       case 'ZOD-CIF-001':
-        return 'Considere incluir el seguro en la factura comercial para evitar la aplicación automática del seguro teórico (1.5%).';
+        return 'Considere incluir el seguro en la factura comercial para evitar la aplicación automática del seguro teórico.';
       case 'ZOD-CIF-002':
         return 'Verifique que la factura incluya un desglose correcto de FOB + Flete + Seguro = CIF.';
       case 'ZOD-CIF-004':
         return 'Se recomienda solicitar facturas con precios de mercado documentados para evitar alertas de subvaluación.';
+      case 'ZOD-FISCAL-002':
+        return 'Verifique el formato de identificación fiscal del consignatario según la jurisdicción activa.';
       default:
         return 'Revise el documento fuente y corrija el campo indicado.';
     }
@@ -310,7 +372,7 @@ export class StellaEngine {
   private getRouteAdvice(route: string): StellaInsight | null {
     const adviceMap: Record<string, { title: string; message: string }> = {
       '/siga-gateway': {
-        title: 'Transmisión SIGA',
+        title: 'Transmisión Electrónica',
         message: 'Antes de transmitir, verifique que todos los documentos tengan el sello Zod ✓ y que la firma digital esté vigente.',
       },
       '/horizonte-carga': {
@@ -350,12 +412,28 @@ export class StellaEngine {
         impactLevel: 'medium',
       },
       {
+        id: 'REG-CR-2026-02',
+        jurisdiction: 'CR',
+        title: 'DUCA electrónica obligatoria',
+        effectiveDate: '2026-04-01',
+        description: 'Ministerio de Hacienda exige DUCA-F y DUCA-T electrónicas para todo tránsito centroamericano.',
+        impactLevel: 'high',
+      },
+      {
         id: 'REG-GT-2026-01',
         jurisdiction: 'GT',
         title: 'SAT Guatemala — Factura Electrónica FEL',
         effectiveDate: '2026-03-01',
         description: 'Guatemala exige Factura Electrónica en Línea para todas las importaciones de valor > Q10,000.',
         impactLevel: 'medium',
+      },
+      {
+        id: 'REG-GT-2026-02',
+        jurisdiction: 'GT',
+        title: 'SAT — Validación NIT obligatoria',
+        effectiveDate: '2026-02-01',
+        description: 'SAT exige validación electrónica de NIT en cada declaración aduanera. Integración con servicio SAT requerida.',
+        impactLevel: 'high',
       },
     ];
   }
