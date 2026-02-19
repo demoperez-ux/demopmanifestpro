@@ -41,6 +41,7 @@ import IdentityCommandPage from "./pages/IdentityCommandPage";
 import SystemHealthPage from "./pages/SystemHealthPage";
 import ResiliencePage from "./pages/ResiliencePage";
 import FeatureCatalogPage from "./pages/FeatureCatalogPage";
+import ROIDashboardPage from "./pages/ROIDashboardPage";
 import NotFound from "./pages/NotFound";
 import { ProtectorDatos } from "@/lib/seguridad/encriptacion";
 
@@ -202,6 +203,11 @@ const App: React.FC = () => {
               } />
               <Route path="/about" element={<ProtectedWithLayout><AboutZenithPage /></ProtectedWithLayout>} />
               <Route path="/feature-catalog" element={<ProtectedWithLayout><FeatureCatalogPage /></ProtectedWithLayout>} />
+              <Route path="/roi-dashboard" element={
+                <ProtectedRoute allowedRoles={['master_admin', 'senior_broker']}>
+                  <AppLayout><ROIDashboardPage /></AppLayout>
+                </ProtectedRoute>
+              } />
 
               {/* Administración */}
               <Route path="/onboarding-corredor" element={
