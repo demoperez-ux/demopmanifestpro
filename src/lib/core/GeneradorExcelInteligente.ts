@@ -804,7 +804,7 @@ export async function descargarExcelInteligente(
   
   const mawbClean = (datos.mawb || 'Manifiesto').replace(/[^a-zA-Z0-9-]/g, '_');
   const fecha = format(new Date(), 'yyyyMMdd_HHmm');
-  const nombreArchivo = `IPL_Customs_${mawbClean}_${fecha}.xlsx`;
+  const nombreArchivo = `ZENITH_Export_${mawbClean}_${fecha}.xlsx`;
   
   saveAs(resultado.blob, nombreArchivo);
   

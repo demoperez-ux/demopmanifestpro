@@ -618,10 +618,10 @@ const BLOCKS: FeatureBlock[] = [
       },
       {
         id: 'orion-wms',
-        name: 'Orion WMS — Sincronización Freight System',
-        description: 'Integración con Orion WMS para sincronización automática de embarques. Endpoint orion-listener recibe webhooks con datos de embarque y los almacena en embarques_orion. Sincronización GS1↔HTS por GTIN para auto-completar descripciones y restricciones.',
+        name: 'WMS — Sincronización de Embarques',
+        description: 'Integración con sistemas WMS externos para sincronización automática de embarques. Endpoint orion-listener recibe webhooks con datos de embarque y los almacena en embarques_orion. Sincronización GS1↔HTS por GTIN para auto-completar descripciones y restricciones.',
         status: 'implemented',
-        legalBasis: 'Protocolo Orion Freight System v3',
+        legalBasis: 'Protocolo de Integración WMS v3',
         engine: 'orion-listener (Edge Function) + embarques_orion',
         icon: Cloud,
         edgeFunctions: ['orion-listener'],

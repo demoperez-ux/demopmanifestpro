@@ -32,7 +32,7 @@ export default function ZenithPulsePage() {
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p className="font-display tracking-wide">ZENITH — Copiloto de Inteligencia Aduanera</p>
           <p className="text-xs text-muted-foreground/50 mt-1">
-            Zenith Pulse — Panel Financiero y Operativo — Powered by Orion Freight System
+            Zenith Pulse — Panel Financiero y Operativo
           </p>
         </div>
       </footer>

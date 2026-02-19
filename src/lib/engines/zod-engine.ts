@@ -2,7 +2,7 @@
  * ╔═══════════════════════════════════════════════════════════════╗
  * ║  ZOD — The Integrity Engine                                   ║
  * ║  Validador Forense de Integridad Aduanera Regional            ║
- * ║  © IPL / Orion Freight System — ZENITH Platform               ║
+ * ║  ZENITH Customs Intelligence Platform                         ║
  * ╚═══════════════════════════════════════════════════════════════╝
  *
  * ZOD es el guardián inmutable de la verdad documental.

@@ -543,7 +543,7 @@ function ComplianceCertificate({ resumen, financials, onClose }: {
         {/* Footer */}
         <div className="border-t border-border p-4 flex items-center justify-between bg-muted/30">
           <p className="text-[10px] text-muted-foreground">
-            ZENITH Compliance Platform · Powered by Orion Freight System
+            ZENITH Customs Intelligence Platform
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="text-xs gap-1" onClick={onClose}>

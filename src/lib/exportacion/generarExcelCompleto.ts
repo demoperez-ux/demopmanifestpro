@@ -114,7 +114,7 @@ export async function generarExcelCompleto(
     ['GS1 Compliance:', 'GTIN/GLN validados — Checksum GS1 verificado'],
     ['ICC Incoterms® 2020:', 'Valoración CIF según reglas ICC'],
     [''],
-    ['Powered by Orion Freight System — ZENITH v3.0 | GS1 Compliant | ICC Incoterms® 2020']
+    ['ZENITH Customs Intelligence Platform v3.0 | GS1 Compliant | ICC Incoterms® 2020']
   ];
 
   const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);

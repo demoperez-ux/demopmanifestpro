@@ -2,7 +2,7 @@
  * ╔═══════════════════════════════════════════════════════════════╗
  * ║  NEXUS BRIDGE — Secure Inter-System Communication Tunnel     ║
  * ║  HMAC-SHA256 Signed Payload Exchange: ORIÓN ↔ ZENITH         ║
- * ║  © IPL / Orion Freight System — ZENITH Platform              ║
+ * ║  ZENITH Customs Intelligence Platform                        ║
  * ╚═══════════════════════════════════════════════════════════════╝
  *
  * Security Protocol:

@@ -2,7 +2,7 @@
  * ╔═══════════════════════════════════════════════════════════════╗
  * ║  THE TRINITY — ZENITH Core Engines (Regional)                 ║
  * ║  LEXIS · ZOD · STELLA                                        ║
- * ║  © IPL / Orion Freight System                                 ║
+ * ║  ZENITH Customs Intelligence Platform                         ║
  * ╚═══════════════════════════════════════════════════════════════╝
  *
  * Architecture: LEXIS extracts → ZOD validates → STELLA learns

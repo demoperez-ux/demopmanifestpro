@@ -1,7 +1,6 @@
-// ZENITH - Copiloto de Inteligencia Aduanera
+// ZENITH — Copiloto de Inteligencia Aduanera
 // "La cumbre del control aduanero"
-// Powered by Orion Freight System
-// Developed by DemoPerez © 2025
+// ZENITH Customs Intelligence Platform
 
 export const COMPANY_INFO = {
   name: 'ZENITH',
@@ -27,7 +26,7 @@ export const PLATFORM_INFO = {
   fullName: 'ZENITH — Copiloto de Inteligencia Aduanera',
   version: '5.0',
   description: 'Sistema de apoyo al corredor de aduanas licenciado',
-  poweredBy: 'Powered by Orion Freight System',
+  poweredBy: 'ZENITH Customs Intelligence Platform',
   standard: 'Gold Standard — OEA & BASC v6-2022',
   role: 'Copiloto — El corredor licenciado da el Aprobado Final',
   engines: {
@@ -57,8 +56,8 @@ export const PLATFORM_INFO = {
 };
 
 export const DEVELOPER_INFO = {
-  name: 'DemoPerez',
-  year: 2025,
+  name: 'Core Development Team',
+  year: 2026,
   version: '3.0',
 };
 
