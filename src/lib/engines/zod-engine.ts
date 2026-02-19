@@ -510,6 +510,131 @@ export class ZodEngine {
     return Math.max(0, score);
   }
 
+  // ── MarginGuardian — Revenue Leakage Detection ───────────
+
+  /**
+   * ZOD MarginGuardian: Validates profitability per shipment/expediente.
+   * Emits ZOD-MARGIN-LOW if margin falls below threshold (default 15%).
+   * Revenue Leakage = costs exceed acceptable ratio vs. revenue.
+   */
+  validateMargin(input: {
+    ingresos: number;
+    costos: number;
+    expedienteId: string;
+    umbralMinimo?: number;
+  }): ZodFinding[] {
+    const findings: ZodFinding[] = [];
+    const config = this.getRegionConfig();
+    const umbral = input.umbralMinimo ?? 15;
+
+    if (input.ingresos <= 0) {
+      findings.push(this.createFinding({
+        rule: 'ZOD-MARGIN-ERR',
+        severity: 'blocking',
+        message: 'Ingresos nulos o negativos — imposible calcular margen',
+        detail: `Expediente ${input.expedienteId}: ingresos declarados $${input.ingresos.toFixed(2)}. No se puede proceder sin ingresos positivos.`,
+        field: 'ingresos',
+        actual: input.ingresos,
+        region: config.code,
+      }));
+      return findings;
+    }
+
+    const margen = ((input.ingresos - input.costos) / input.ingresos) * 100;
+    const deficit = input.costos - (input.ingresos * (1 - umbral / 100));
+
+    if (margen < 0) {
+      findings.push(this.createFinding({
+        rule: 'ZOD-MARGIN-NEG',
+        severity: 'critical',
+        message: `Margen negativo: ${margen.toFixed(1)}% — Pérdida operativa`,
+        detail: `Expediente ${input.expedienteId}: Ingresos $${input.ingresos.toFixed(2)} vs Costos $${input.costos.toFixed(2)}. Pérdida neta: $${Math.abs(input.ingresos - input.costos).toFixed(2)}.`,
+        field: 'margen',
+        expected: umbral,
+        actual: margen,
+        legalBasis: `Política de rentabilidad mínima — ${config.name}`,
+        region: config.code,
+      }));
+    } else if (margen < umbral) {
+      findings.push(this.createFinding({
+        rule: 'ZOD-MARGIN-LOW',
+        severity: 'warning',
+        message: `Margen bajo: ${margen.toFixed(1)}% (mínimo: ${umbral}%)`,
+        detail: `Expediente ${input.expedienteId}: Ingresos $${input.ingresos.toFixed(2)}, Costos $${input.costos.toFixed(2)}, Margen $${(input.ingresos - input.costos).toFixed(2)} (${margen.toFixed(1)}%). Se requiere ajuste de $${deficit.toFixed(2)} para alcanzar rentabilidad mínima.`,
+        field: 'margen',
+        expected: umbral,
+        actual: margen,
+        legalBasis: `Resolución 222/2025 — Honorarios mínimos del corredor. ${config.name}`,
+        region: config.code,
+      }));
+    } else {
+      findings.push(this.createFinding({
+        rule: 'ZOD-MARGIN-OK',
+        severity: 'info',
+        message: `Margen saludable: ${margen.toFixed(1)}%`,
+        detail: `Expediente ${input.expedienteId}: Rentabilidad $${(input.ingresos - input.costos).toFixed(2)} (${margen.toFixed(1)}%) supera el umbral de ${umbral}%.`,
+        field: 'margen',
+        region: config.code,
+      }));
+    }
+
+    return findings;
+  }
+
+  /**
+   * Batch margin analysis across multiple expedientes.
+   * Returns aggregate leakage metrics.
+   */
+  analyzeRevenueLeakage(expedientes: Array<{
+    id: string;
+    ingresos: number;
+    costos: number;
+  }>): {
+    findings: ZodFinding[];
+    totalIngresos: number;
+    totalCostos: number;
+    margenPromedio: number;
+    expedientesEnRiesgo: number;
+    fugaEstimada: number;
+  } {
+    const allFindings: ZodFinding[] = [];
+    let totalIngresos = 0;
+    let totalCostos = 0;
+    let enRiesgo = 0;
+    let fugaTotal = 0;
+
+    for (const exp of expedientes) {
+      totalIngresos += exp.ingresos;
+      totalCostos += exp.costos;
+      const findings = this.validateMargin({
+        ingresos: exp.ingresos,
+        costos: exp.costos,
+        expedienteId: exp.id,
+      });
+      allFindings.push(...findings);
+
+      const margen = exp.ingresos > 0 ? ((exp.ingresos - exp.costos) / exp.ingresos) * 100 : 0;
+      if (margen < 15) {
+        enRiesgo++;
+        const minIngreso = exp.costos / 0.85;
+        fugaTotal += Math.max(0, minIngreso - exp.ingresos);
+      }
+    }
+
+    const margenPromedio = totalIngresos > 0
+      ? ((totalIngresos - totalCostos) / totalIngresos) * 100
+      : 0;
+
+    return {
+      findings: allFindings,
+      totalIngresos,
+      totalCostos,
+      margenPromedio,
+      expedientesEnRiesgo: enRiesgo,
+      fugaEstimada: fugaTotal,
+    };
+  }
+
   // ── Queries ──────────────────────────────────────────────
 
   getHistory(): ZodValidationResult[] {
