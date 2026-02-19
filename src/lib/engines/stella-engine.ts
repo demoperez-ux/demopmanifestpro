@@ -13,6 +13,7 @@
 
 import type { ZodFinding, ZodValidationResult, ZodRegion } from './zod-engine';
 import type { LexisExtractionResult, LexisMemoryEntry } from './lexis-engine';
+import { PrecedentEngine, type PrecedentValidation } from './precedent-engine';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -297,6 +298,61 @@ export class StellaEngine {
     return trainingMap[route] || [
       { step: 1, title: 'Stella está aquí para ayudar', instruction: 'Pregúntame cualquier duda sobre esta pantalla o sobre procedimientos aduaneros.' },
     ];
+  }
+
+  // ── Precedent-Based Advisory ──────────────────────────────
+
+  /**
+   * Generates a Stella insight citing a legal precedent or GRI rule.
+   * Called when ZOD detects a classification discrepancy.
+   */
+  async advisePrecedent(
+    hsCode: string,
+    productDescription: string,
+    region?: ZodRegion
+  ): Promise<StellaInsight> {
+    const jurisdiction = region || this._currentJurisdiction;
+    const precedentEngine = PrecedentEngine.getInstance();
+    precedentEngine.setRegion(jurisdiction);
+
+    const validation = await precedentEngine.validateByPrecedent(hsCode, productDescription, jurisdiction);
+    const citation = precedentEngine.formatStellaAdvisory(validation);
+
+    return this.addInsight({
+      type: validation.found ? 'compliance' : 'recommendation',
+      title: validation.found
+        ? `Precedente Legal: ${validation.precedent?.rulingId || 'GRI'}`
+        : `Análisis GRI para partida ${hsCode}`,
+      message: citation,
+      source: 'pattern_analysis',
+      legalReference: validation.legalCitation,
+      priority: validation.found ? 'medium' : 'low',
+      region: jurisdiction,
+    });
+  }
+
+  /**
+   * Formats a finding explanation with precedent citation for the operator/broker
+   */
+  async explainWithPrecedent(finding: ZodFinding): Promise<string> {
+    if (!finding.field || finding.field !== 'hs_code') {
+      return finding.detail;
+    }
+
+    const hsCode = String(finding.expected || finding.actual || '');
+    if (!hsCode) return finding.detail;
+
+    try {
+      const precedentEngine = PrecedentEngine.getInstance();
+      const validation = await precedentEngine.validateByPrecedent(
+        hsCode,
+        finding.detail,
+        finding.region
+      );
+      return `${finding.detail}\n\n${precedentEngine.formatStellaAdvisory(validation)}`;
+    } catch {
+      return finding.detail;
+    }
   }
 
   // ── Emergency Protocol ───────────────────────────────────

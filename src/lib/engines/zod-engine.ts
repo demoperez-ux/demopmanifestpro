@@ -15,6 +15,7 @@
  */
 
 import CryptoJS from 'crypto-js';
+import { PrecedentEngine } from './precedent-engine';
 
 // ═══════════════════════════════════════════════════════════════
 // REGIONAL CONFIGURATION
@@ -366,6 +367,78 @@ export class ZodEngine {
   generateIntegrityHash(data: Record<string, unknown>): string {
     const canonical = JSON.stringify(data, Object.keys(data).sort());
     return CryptoJS.SHA256(canonical).toString();
+  }
+
+  // ── Precedent Validation Step ─────────────────────────────
+
+  /**
+   * Validates an HS code against the PrecedentEngine before emitting a blocking finding.
+   * If a ruling supports the declared code, downgrades severity to 'info'.
+   */
+  async validateByPrecedent(
+    declaredHsCode: string,
+    productDescription: string,
+    region?: ZodRegion
+  ): Promise<ZodFinding[]> {
+    const findings: ZodFinding[] = [];
+    const config = REGIONAL_TAX_CONFIG[region || this._currentRegion];
+
+    try {
+      const precedentEngine = PrecedentEngine.getInstance();
+      precedentEngine.setRegion(region || this._currentRegion);
+      const validation = await precedentEngine.validateByPrecedent(declaredHsCode, productDescription, region);
+
+      if (validation.found && validation.precedent) {
+        const p = validation.precedent;
+        if (p.hsCode === declaredHsCode) {
+          findings.push(this.createFinding({
+            rule: 'ZOD-PREC-001',
+            severity: 'info',
+            message: `Clasificación avalada por precedente: ${p.rulingId}`,
+            detail: validation.legalCitation,
+            field: 'hs_code',
+            legalBasis: `Resolución Anticipada ${p.rulingId} — ${p.authority}`,
+            region: config.code,
+          }));
+        } else {
+          findings.push(this.createFinding({
+            rule: 'ZOD-PREC-002',
+            severity: 'warning',
+            message: `Precedente sugiere partida ${p.hsCode} (declarado: ${declaredHsCode})`,
+            detail: validation.legalCitation,
+            field: 'hs_code',
+            expected: p.hsCode,
+            actual: declaredHsCode,
+            legalBasis: `Resolución ${p.rulingId} — ${p.authority}. ${config.legalBasis.general}`,
+            region: config.code,
+          }));
+        }
+      } else {
+        const griInfo = validation.griAnalysis
+          ? ` Sustentación por ${validation.griAnalysis.appliedRule} (confianza: ${Math.round(validation.griAnalysis.confidence * 100)}%).`
+          : '';
+        findings.push(this.createFinding({
+          rule: 'ZOD-PREC-003',
+          severity: 'info',
+          message: `Sin precedente registrado para ${declaredHsCode}`,
+          detail: `No se encontró resolución anticipada en ${config.customsAuthority}.${griInfo}`,
+          field: 'hs_code',
+          legalBasis: config.legalBasis.general,
+          region: config.code,
+        }));
+      }
+    } catch {
+      // Non-blocking: precedent search failure should not halt validation
+      findings.push(this.createFinding({
+        rule: 'ZOD-PREC-ERR',
+        severity: 'info',
+        message: 'Búsqueda de precedentes no disponible',
+        detail: 'No se pudo consultar la base de precedentes. La validación continúa sin verificación de resoluciones anticipadas.',
+        region: config.code,
+      }));
+    }
+
+    return findings;
   }
 
   // ── Full Validation Pipeline ─────────────────────────────

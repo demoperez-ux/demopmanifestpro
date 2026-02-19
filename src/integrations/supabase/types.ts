@@ -544,6 +544,63 @@ export type Database = {
         }
         Relationships: []
       }
+      customs_precedents: {
+        Row: {
+          activo: boolean
+          authority: string
+          country_code: string
+          created_at: string
+          description_keywords: string[]
+          effective_date: string
+          expiration_date: string | null
+          gri_applied: string | null
+          hs_code: string
+          id: string
+          legal_rationale: string
+          product_description: string | null
+          ruling_id: string
+          ruling_type: string
+          source_document: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          authority: string
+          country_code?: string
+          created_at?: string
+          description_keywords?: string[]
+          effective_date: string
+          expiration_date?: string | null
+          gri_applied?: string | null
+          hs_code: string
+          id?: string
+          legal_rationale: string
+          product_description?: string | null
+          ruling_id: string
+          ruling_type?: string
+          source_document?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          authority?: string
+          country_code?: string
+          created_at?: string
+          description_keywords?: string[]
+          effective_date?: string
+          expiration_date?: string | null
+          gri_applied?: string | null
+          hs_code?: string
+          id?: string
+          legal_rationale?: string
+          product_description?: string | null
+          ruling_id?: string
+          ruling_type?: string
+          source_document?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       embarques_orion: {
         Row: {
           afc_alerta_perecedero_emitida: boolean
