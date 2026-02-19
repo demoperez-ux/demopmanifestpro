@@ -485,7 +485,7 @@ export class CustomsShieldEngine {
     const lines = [
       '═══════════════════════════════════════════════════════════',
       '  REPORTE DE ALERTA DE SEGURIDAD — CUSTOMS SHIELD',
-      '  ZENITH Compliance Platform · Powered by Orion Freight',
+      '  ZENITH Customs Intelligence Platform',
       '═══════════════════════════════════════════════════════════',
       '',
       `Fecha: ${fecha.toLocaleDateString('es-PA', { dateStyle: 'long' })}`,

@@ -2,7 +2,7 @@
  * ╔═══════════════════════════════════════════════════════════════╗
  * ║  STELLA — The Compliance Copilot (Regional)                   ║
  * ║  Asistente Proactivo de Inteligencia Aduanera                 ║
- * ║  © IPL / Orion Freight System — ZENITH Platform               ║
+ * ║  ZENITH Customs Intelligence Platform                         ║
  * ╚═══════════════════════════════════════════════════════════════╝
  *
  * Stella adapts her compliance advice based on the active jurisdiction:

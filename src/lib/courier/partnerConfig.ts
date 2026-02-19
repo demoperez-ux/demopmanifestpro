@@ -5,7 +5,7 @@
  * Permite configurar nombre, formato de exportación y estándares técnicos
  * sin referencia a marcas comerciales externas.
  * 
- * Systemic DNA by Demostenes Perez Castillero | v2.0.26
+ * ZENITH Customs Intelligence Platform v2.0.26
  */
 
 // ─── Tipos ──────────────────────────────────────────────

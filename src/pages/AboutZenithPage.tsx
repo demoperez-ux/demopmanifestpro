@@ -1,11 +1,11 @@
 /**
  * ABOUT ZENITH — Executive Brochure Page
  * 
- * Founder identity, AI pillar cards, and compliance governance footer.
+ * Platform overview, AI pillar cards, and compliance governance footer.
  * Design: Pure white background, Cobalt Blue (#002D62) accents, Slate Gray text.
  */
 
-import { Brain, Shield, Sparkles, Globe, Scale, Award, ArrowLeft } from 'lucide-react';
+import { Brain, Shield, Sparkles, Globe, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
 
@@ -35,7 +35,7 @@ const PILLARS = [
     subtitle: 'Compliance Advisor',
     icon: Sparkles,
     description:
-      'The senior strategic advisor. Stella performs compliance triage — routing shipments through Green, Amber, and Red lanes. She monitors cash flow exposure, regulatory permit requirements, and provides proactive alerts on volume anomalies and ANA credit line management.',
+      'The senior strategic advisor. Stella performs compliance triage — routing shipments through Green, Amber, and Red lanes. She monitors cash flow exposure, regulatory permit requirements, and provides proactive alerts on volume anomalies and credit line management.',
     color: 'text-[#1D4ED8]',
     bg: 'bg-[#1D4ED8]/5',
     border: 'border-[#1D4ED8]/15',
@@ -94,77 +94,48 @@ export default function AboutZenithPage() {
 
       <Separator className="max-w-5xl mx-auto" style={{ backgroundColor: '#E2E8F0' }} />
 
-      {/* Founder Section */}
+      {/* Architecture Section */}
       <section className="max-w-5xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-12 items-start">
-          {/* Left — Profile Placeholder */}
-          <div className="flex flex-col items-center md:items-start">
-            <div
-              className="w-56 h-56 rounded-2xl flex items-center justify-center"
-              style={{
-                backgroundColor: '#F1F5F9',
-                border: '1px solid #E2E8F0',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-              }}
+        <div className="space-y-5">
+          <div>
+            <p
+              className="text-xs font-semibold uppercase tracking-[0.25em] mb-2"
+              style={{ color: '#002D62' }}
             >
-              <div className="text-center space-y-2">
-                <div
-                  className="w-16 h-16 rounded-full mx-auto flex items-center justify-center"
-                  style={{ backgroundColor: '#002D62' }}
-                >
-                  <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Inter' }}>
-                    DP
-                  </span>
-                </div>
-                <p className="text-xs" style={{ color: '#94A3B8' }}>
-                  Professional Portrait
-                </p>
-              </div>
-            </div>
+              System Architecture
+            </p>
+            <h2
+              className="text-2xl font-bold"
+              style={{ color: '#1E293B', fontFamily: 'Inter' }}
+            >
+              Designed for Compliance at Scale
+            </h2>
           </div>
 
-          {/* Right — Bio */}
-          <div className="space-y-5">
-            <div>
-              <h2
-                className="text-2xl font-bold"
-                style={{ color: '#1E293B', fontFamily: 'Inter' }}
-              >
-                Demostenes Perez Castillero
-              </h2>
-              <p
-                className="text-sm font-medium mt-1"
-                style={{ color: '#002D62' }}
-              >
-                Founder & Chief Visionary Officer
-              </p>
-            </div>
+          <p
+            className="text-base leading-relaxed max-w-3xl"
+            style={{ color: '#475569' }}
+          >
+            ZENITH bridges the gap between international trade law (WCO/WTO) and 
+            modern technological excellence. Built by a dedicated engineering team, the platform 
+            serves customs brokers across Panama, Costa Rica, and Guatemala with 
+            AI-driven automation, forensic integrity validation, and proactive compliance advisory.
+          </p>
 
-            <p
-              className="text-base leading-relaxed"
-              style={{ color: '#475569' }}
-            >
-              Architect of the ZENITH ecosystem. A pioneer in transforming traditional customs
-              brokerage into a high-velocity, AI-driven digital fortress. Under his leadership,
-              ZENITH bridges the gap between international trade law (WCO/WTO) and 2026
-              technological excellence.
-            </p>
-
-            <div className="flex flex-wrap gap-2 pt-2">
-              {['AI Architecture', 'Customs Law', 'Trade Compliance', 'Digital Transformation'].map(tag => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 rounded-full text-xs font-medium"
-                  style={{
-                    color: '#002D62',
-                    backgroundColor: 'rgba(0,45,98,0.06)',
-                    border: '1px solid rgba(0,45,98,0.12)',
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2 pt-2">
+            {['AI Architecture', 'Customs Law', 'Trade Compliance', 'Digital Transformation'].map(tag => (
+              <span
+                key={tag}
+                className="px-3 py-1 rounded-full text-xs font-medium"
+                style={{
+                  color: '#002D62',
+                  backgroundColor: 'rgba(0,45,98,0.06)',
+                  border: '1px solid rgba(0,45,98,0.12)',
+                }}
+              >
+                {tag}
+              </span>
+            ))}
           </div>
         </div>
       </section>
@@ -266,10 +237,10 @@ export default function AboutZenithPage() {
         style={{ backgroundColor: '#F1F5F9', borderTop: '1px solid #E2E8F0' }}
       >
         <p style={{ color: '#94A3B8', fontSize: '9px', fontFamily: 'Inter, sans-serif', letterSpacing: '0.05em' }}>
-          Systemic DNA by Demostenes Perez Castillero | v2.0.26
+          ZENITH Customs Intelligence Platform v2.0.26
         </p>
         <p style={{ color: '#CBD5E1', fontSize: '8px', fontFamily: 'Inter, sans-serif', marginTop: '4px' }}>
-          ZENITH Customs Intelligence Platform · Powered by Lexis AI Architecture · © 2026
+          Powered by Lexis AI Architecture · © 2026 All Rights Reserved
         </p>
       </footer>
     </div>

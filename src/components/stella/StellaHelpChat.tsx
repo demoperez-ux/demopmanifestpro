@@ -274,7 +274,7 @@ export function StellaHelpChat() {
               )}
             </div>
             <p className="text-[9px] text-muted-foreground/50 mt-1.5 text-center">
-              Stella Help · ZENITH — Systemic DNA by Demostenes Perez Castillero
+              Stella Help · ZENITH Customs Intelligence Platform
             </p>
           </form>
         </>

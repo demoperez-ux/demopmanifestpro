@@ -52,7 +52,7 @@ export default function PortalCorredorPage() {
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p className="font-display tracking-wide">ZENITH — Copiloto de Inteligencia Aduanera</p>
           <p className="text-xs text-muted-foreground/50 mt-1">
-            Fase 10% — Veredicto Profesional del Corredor — Powered by Orion Freight System
+            Fase 10% — Veredicto Profesional del Corredor
           </p>
         </div>
       </footer>

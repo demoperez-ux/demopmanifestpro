@@ -51,7 +51,7 @@ export const APP_CONFIG = {
   NAME: 'ZENITH',
   VERSION: '2.0.26',
   DESCRIPTION: 'La cumbre del control aduanero',
-  AUTHOR: 'Demostenes Perez Castillero',
+  AUTHOR: 'Core Development Team',
   /** Timeout para conexiones al SIGA/ANA (ms) */
   SIGA_TIMEOUT_MS: 10_000,
   /** Intervalo de reintentos del Circuit Breaker (ms) */

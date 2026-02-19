@@ -1,6 +1,6 @@
 /**
  * ZENITH Console Signature
- * Prints architectural branding on app initialization.
+ * Prints platform branding on app initialization.
  */
 
 export function printZenithSignature() {
@@ -22,11 +22,11 @@ export function printZenithSignature() {
   ].join(';');
 
   console.log(
-    '%cZENITH v2.0 | Conceived & Directed by Demostenes Perez Castillero | Powered by Lexis AI Architecture.',
+    '%cZENITH v2.0 | Customs Intelligence Platform | Powered by Lexis AI Architecture.',
     styles
   );
   console.log(
-    '%cSystemic DNA by Demostenes Perez Castillero | v2.0.26 | © 2026 All Rights Reserved',
+    '%cZENITH Platform v2.0.26 | Core Development Team | © 2026 All Rights Reserved',
     subtitleStyles
   );
 }

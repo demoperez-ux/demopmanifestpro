@@ -2,7 +2,7 @@
  * ╔═══════════════════════════════════════════════════════════════╗
  * ║  LEXIS — The Intelligent Scribe                              ║
  * ║  Motor de Ingesto Autónomo de Documentos Comerciales          ║
- * ║  © IPL / Orion Freight System — ZENITH Platform               ║
+ * ║  ZENITH Customs Intelligence Platform                         ║
  * ╚═══════════════════════════════════════════════════════════════╝
  *
  * LEXIS procesa Facturas Comerciales, Conocimientos de Embarque (BL/CP)

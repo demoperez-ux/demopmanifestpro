@@ -11,7 +11,7 @@ export default function StellaInboxPage() {
       <footer className="border-t border-border mt-auto py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p className="font-display tracking-wide">ZENITH — Copiloto de Inteligencia Aduanera</p>
-          <p className="text-xs text-muted-foreground/50 mt-1">Powered by Orion Freight System</p>
+          <p className="text-xs text-muted-foreground/50 mt-1">ZENITH Customs Intelligence Platform</p>
         </div>
       </footer>
     </div>

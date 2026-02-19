@@ -497,7 +497,7 @@ export default function ERPSyncHistoryDashboard() {
 
       {/* Footer */}
       <p className="text-[9px] text-muted-foreground/40 text-center">
-        Systemic DNA by Demostenes Perez Castillero | v2.0.26 · ZENITH — Powered by Orion Freight System
+        ZENITH Customs Intelligence Platform v2.0.26
       </p>
     </div>
   );
