@@ -495,19 +495,15 @@ export class StellaEngine {
   }
 
   private loadMemory(): void {
-    try {
-      const stored = localStorage.getItem('stella-memory');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        this.memory = { ...this.memory, ...parsed };
-      }
-    } catch { /* fresh start */ }
+    // Memory is now loaded from Supabase audit_logs / clasificaciones_validadas
+    // No localStorage dependency — compatible with CloudFront/edge deployment
   }
 
   private saveMemory(): void {
-    try {
-      localStorage.setItem('stella-memory', JSON.stringify(this.memory));
-    } catch { /* non-critical */ }
+    // Memory persistence is handled by Supabase tables
+    // zodCorrections → clasificaciones_validadas
+    // lexisPatterns → audit_logs
+    // No localStorage dependency
   }
 
   destroy(): void {

@@ -1,29 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Allowed origins for CORS - restrict to known application domains
-const ALLOWED_ORIGINS = [
-  'https://lovable.dev',
-  'https://www.lovable.dev',
-  'http://localhost:5173',
-  'http://localhost:8080',
-];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
 
 interface ClasificacionRequest {
   descripcion: string;
   lineItemsFactura?: string[];
   peso?: number;
   valor?: number;
+  jurisdiction?: string;
+  precedents?: string[];
 }
 
 interface ClasificacionResponse {
@@ -46,15 +36,7 @@ interface ClasificacionResponse {
   }>;
 }
 
-const SYSTEM_PROMPT = `Eres un experto clasificador arancelario para la Autoridad Nacional de Aduanas de Panamá (ANA).
-Tu trabajo es analizar descripciones de productos y asignar códigos HTS (Sistema Armonizado) precisos.
-
-REGLAS DE CLASIFICACIÓN:
-1. Analiza la descripción completa incluyendo líneas de factura si están disponibles
-2. Identifica materiales, función, uso previsto del producto
-3. Detecta términos sensibles que requieran permisos especiales
-4. Asigna el código HTS de 8-10 dígitos más específico posible
-5. Si la descripción es genérica o ambigua, indica que requiere revisión manual
+const SYSTEM_PROMPT = `You are an expert customs tariff classifier with deep knowledge of the Harmonized System (HS/SAC). Apply the 6 General Rules of Interpretation (GRI) in strict order. For each classification request, provide: (1) the 10-digit HS code, (2) the GRI rule applied, (3) confidence score 0-100, (4) legal justification, (5) applicable DAI/ISC/VAT rates for PA/CR/GT.
 
 CÓDIGOS HTS COMUNES PANAMÁ:
 - 9503: Juguetes (9503.00.99 genérico)
@@ -65,37 +47,23 @@ CÓDIGOS HTS COMUNES PANAMÁ:
 - 8528: Monitores/TV (8528.52.01)
 - 3304: Cosméticos (3304.99.00)
 - 3004: Medicamentos (3004.90.99)
-- 0901: Café (0901.21.00 tostado)
-- 2106: Suplementos alimenticios (2106.90.99)
 
 AUTORIDADES REGULADORAS:
 - MINSA: Productos médicos, farmacéuticos, alimentos, cosméticos
 - MIDA: Productos agrícolas, plantas, semillas
 - MINGOB: Armas, explosivos, equipos de seguridad
 - ASEP: Equipos de radio, telecomunicaciones
-- APA: Productos pesqueros
-- ACODECO: Productos de consumo regulados
 
-TÉRMINOS DE ALTO RIESGO (siempre marcar revisión):
-- Baterías de litio, productos químicos, farmacéuticos
-- Dispositivos inalámbricos, drones, GPS
-- Armas, munición, explosivos
-- Sustancias controladas
-
-Responde SIEMPRE en formato JSON válido.`;
+Respond ALWAYS in valid JSON format (Spanish).`;
 
 serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
-  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // === AUTHENTICATION CHECK ===
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.log('[clasificar-hts-ai] Rechazado: Sin header de autorización');
       return new Response(
         JSON.stringify({ error: 'Autenticación requerida' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -110,17 +78,13 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     if (authError || !user) {
-      console.log('[clasificar-hts-ai] Rechazado: Usuario no autenticado', authError?.message);
       return new Response(
         JSON.stringify({ error: 'No autorizado' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[clasificar-hts-ai] Usuario autenticado:', user.id);
-    // === END AUTHENTICATION CHECK ===
-
-    const { descripcion, lineItemsFactura, peso, valor } = await req.json() as ClasificacionRequest;
+    const { descripcion, lineItemsFactura, peso, valor, jurisdiction, precedents } = await req.json() as ClasificacionRequest;
     
     if (!descripcion) {
       return new Response(
@@ -129,74 +93,48 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY no configurada');
+    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY no configurada');
     }
 
-    // Construir prompt con toda la información disponible
-    let userPrompt = `Clasifica el siguiente producto para importación a Panamá:
-
-DESCRIPCIÓN DEL MANIFIESTO:
-"${descripcion}"`;
+    let userPrompt = `Clasifica el siguiente producto para importación (jurisdicción: ${jurisdiction || 'PA'}):\n\nDESCRIPCIÓN: "${descripcion}"`;
 
     if (lineItemsFactura && lineItemsFactura.length > 0) {
-      userPrompt += `
-
-LÍNEAS DE FACTURA COMERCIAL:
-${lineItemsFactura.map((l, i) => `${i + 1}. ${l}`).join('\n')}`;
+      userPrompt += `\n\nLÍNEAS DE FACTURA:\n${lineItemsFactura.map((l, i) => `${i + 1}. ${l}`).join('\n')}`;
+    }
+    if (peso) userPrompt += `\n\nPESO: ${peso} kg`;
+    if (valor) userPrompt += `\nVALOR DECLARADO: USD ${valor}`;
+    if (precedents && precedents.length > 0) {
+      userPrompt += `\n\nPRECEDENTES EXISTENTES:\n${precedents.join('\n')}`;
     }
 
-    if (peso) {
-      userPrompt += `\n\nPESO: ${peso} kg`;
-    }
-
-    if (valor) {
-      userPrompt += `\nVALOR DECLARADO: USD ${valor}`;
-    }
-
-    userPrompt += `
-
-Responde en JSON con esta estructura exacta:
+    userPrompt += `\n\nResponde en JSON con esta estructura exacta:
 {
   "hsCode": "código HTS de 8-10 dígitos",
   "descripcionArancelaria": "descripción oficial del código",
   "confianza": número 0-100,
-  "razonamiento": "explicación breve de por qué se asigna este código",
-  "terminosSensibles": [
-    {
-      "termino": "palabra detectada",
-      "categoria": "salud|seguridad|electronico|quimico|regulado",
-      "riesgo": "alto|medio|bajo",
-      "autoridad": "MINSA|MIDA|MINGOB|ASEP|etc (si aplica)"
-    }
-  ],
+  "razonamiento": "explicación con GRI aplicada",
+  "terminosSensibles": [{ "termino": "...", "categoria": "salud|seguridad|electronico|quimico|regulado", "riesgo": "alto|medio|bajo", "autoridad": "MINSA|MIDA|etc" }],
   "requiereRevision": true/false,
   "motivoRevision": "razón si requiere revisión",
-  "sugerenciasAlternativas": [
-    {
-      "hsCode": "código alternativo",
-      "descripcion": "descripción",
-      "confianza": número 0-100
-    }
-  ]
+  "sugerenciasAlternativas": [{ "hsCode": "...", "descripcion": "...", "confianza": 0-100 }]
 }`;
 
     console.log('[clasificar-hts-ai] Procesando:', descripcion.substring(0, 50));
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userPrompt }
-        ],
-        // Note: temperature parameter removed as it's not supported by Gemini 2.5
+        model: 'claude-sonnet-4-5-20250514',
+        max_tokens: 2048,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userPrompt }],
       }),
     });
 
@@ -209,31 +147,28 @@ Responde en JSON con esta estructura exacta:
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: 'Créditos insuficientes en Lovable AI' }),
+          JSON.stringify({ error: 'Créditos insuficientes en Anthropic' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       const errorText = await response.text();
-      console.error('[clasificar-hts-ai] Error AI Gateway:', response.status, errorText);
-      throw new Error(`Error del gateway AI: ${response.status}`);
+      console.error('[clasificar-hts-ai] Anthropic error:', response.status, errorText);
+      throw new Error(`Anthropic API error: ${response.status}`);
     }
 
     const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content;
+    const content = aiResponse.content?.[0]?.text;
 
     if (!content) {
       throw new Error('Respuesta vacía del modelo AI');
     }
 
-    console.log('[clasificar-hts-ai] Respuesta raw:', content.substring(0, 200));
-
-    // Extraer JSON de la respuesta (puede venir con markdown)
+    // Extract JSON from response
     let jsonStr = content;
     const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
       jsonStr = jsonMatch[1];
     } else {
-      // Intentar encontrar JSON directo
       const startIdx = content.indexOf('{');
       const endIdx = content.lastIndexOf('}');
       if (startIdx !== -1 && endIdx !== -1) {
@@ -242,7 +177,6 @@ Responde en JSON con esta estructura exacta:
     }
 
     const clasificacion: ClasificacionResponse = JSON.parse(jsonStr);
-
     console.log('[clasificar-hts-ai] Clasificado:', clasificacion.hsCode, 'confianza:', clasificacion.confianza);
 
     return new Response(
@@ -255,7 +189,6 @@ Responde en JSON con esta estructura exacta:
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Error desconocido',
-        // Fallback con clasificación genérica
         hsCode: '9999.99.99',
         descripcionArancelaria: 'CLASIFICACIÓN PENDIENTE',
         confianza: 0,

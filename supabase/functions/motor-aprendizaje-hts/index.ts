@@ -1,28 +1,16 @@
 // ============================================
-// MOTOR DE APRENDIZAJE HTS CON LOVABLE AI
+// MOTOR DE APRENDIZAJE HTS CON CLAUDE (ANTHROPIC)
 // Clasificación evolutiva basada en correcciones
 // ============================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Allowed origins for CORS - restrict to known application domains
-const ALLOWED_ORIGINS = [
-  'https://lovable.dev',
-  'https://www.lovable.dev',
-  'http://localhost:5173',
-  'http://localhost:8080',
-];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
 
 interface ClasificacionRequest {
   descripcion: string;
@@ -46,53 +34,36 @@ interface ClasificacionValidada {
 }
 
 serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
-  
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // ============================================
-    // AUTHENTICATION CHECK - Use anon key with RLS
-    // ============================================
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('[Motor Aprendizaje] No authorization header provided');
-      return new Response(
-        JSON.stringify({ error: 'Autenticación requerida' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Autenticación requerida' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY is not configured');
     }
 
-    // Use anon key with user's auth header to respect RLS policies
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Verify user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      console.error('[Motor Aprendizaje] Authentication failed:', authError?.message);
-      return new Response(
-        JSON.stringify({ error: 'No autorizado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     console.log(`[Motor Aprendizaje] Usuario autenticado: ${user.id}`);
 
     const { descripcion, valorUSD, peso, guia, mawb } = await req.json() as ClasificacionRequest;
-
     console.log(`[Motor Aprendizaje] Procesando: "${descripcion.substring(0, 50)}..." valor: $${valorUSD}`);
 
     // ═══════════════════════════════════════════════════════
@@ -105,10 +76,7 @@ serve(async (req) => {
       .from('clasificaciones_validadas')
       .select('*')
       .eq('activo', true)
-      .textSearch('descripcion_normalizada', descripcionNormalizada, {
-        type: 'websearch',
-        config: 'spanish'
-      })
+      .textSearch('descripcion_normalizada', descripcionNormalizada, { type: 'websearch', config: 'spanish' })
       .order('usos_exitosos', { ascending: false })
       .limit(5);
 
@@ -116,14 +84,12 @@ serve(async (req) => {
       console.log('[Motor Aprendizaje] Error buscando clasificaciones:', searchError.message);
     }
 
-    // Si encontramos una clasificación validada con alta confianza
     if (clasificacionesExistentes && clasificacionesExistentes.length > 0) {
       const mejorMatch = clasificacionesExistentes[0] as ClasificacionValidada;
       
       if (mejorMatch.confianza >= 85) {
         console.log(`[Motor Aprendizaje] ✓ Usando clasificación aprendida: ${mejorMatch.hts_code}`);
         
-        // Incrementar contador de usos exitosos
         await supabase
           .from('clasificaciones_validadas')
           .update({ usos_exitosos: mejorMatch.usos_exitosos + 1 })
@@ -142,128 +108,93 @@ serve(async (req) => {
             confianza: mejorMatch.confianza,
             usosExitosos: mejorMatch.usos_exitosos + 1
           }
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
     }
 
     // ═══════════════════════════════════════════════════════
-    // PASO 2: USAR LOVABLE AI PARA CLASIFICACIÓN
+    // PASO 2: USAR CLAUDE PARA CLASIFICACIÓN
     // ═══════════════════════════════════════════════════════
     
-    console.log('[Motor Aprendizaje] Consultando Lovable AI...');
+    console.log('[Motor Aprendizaje] Consultando Claude...');
 
-    const systemPrompt = `Eres un experto clasificador arancelario para la Autoridad Nacional de Aduanas de Panamá.
-Tu tarea es clasificar productos según el Sistema Armonizado (HTS) de Panamá.
+    const systemPrompt = `You are an expert customs tariff classifier for Panama's National Customs Authority (ANA).
+Your task is to classify products according to Panama's Harmonized System (HTS).
 
-REGLAS CRÍTICAS:
-1. El código HTS debe tener formato XXXX.XX.XX (8 dígitos con puntos)
-2. Para valor < $100 USD, clasificar como "De Minimis" (no requiere impuestos)
-3. Detectar si requiere permiso de MINSA, APA, AUPSA, MIDA u otra autoridad
-4. Identificar productos farmacéuticos, cosméticos, alimentos, veterinarios
+CRITICAL RULES:
+1. HTS code must be format XXXX.XX.XX (8 digits with dots)
+2. For value < $100 USD, classify as "De Minimis" (no taxes required)
+3. Detect if requires permit from MINSA, APA, AUPSA, MIDA or other authority
+4. Identify pharmaceutical, cosmetic, food, veterinary products
 
-CATEGORÍAS ESPECIALES:
-- Vitaminas/Suplementos: Capítulo 21 o 30
-- Cosméticos: Capítulo 33
-- Medicamentos: Capítulo 30
-- Alimentos: Capítulos 16-22
-- Electrónicos: Capítulos 84-85
-- Textiles: Capítulos 61-63
+Respond ONLY with valid JSON.`;
 
-Responde SOLO con JSON válido.`;
+    const userPrompt = `Classify this product for import to Panama:
 
-    const userPrompt = `Clasifica este producto para importación a Panamá:
+DESCRIPTION: ${descripcion}
+DECLARED VALUE: $${valorUSD} USD
+WEIGHT: ${peso || 'Not specified'} LB
+GUIDE: ${guia || 'N/A'}
 
-DESCRIPCIÓN: ${descripcion}
-VALOR DECLARADO: $${valorUSD} USD
-PESO: ${peso || 'No especificado'} LB
-GUÍA: ${guia || 'N/A'}
-
-Responde con este formato JSON exacto:
+Respond with this exact JSON format:
 {
   "hsCode": "XXXX.XX.XX",
-  "descripcionArancelaria": "Descripción oficial",
+  "descripcionArancelaria": "Official description",
   "daiPercent": 0-15,
   "iscPercent": 0-25,
   "itbmsPercent": 7,
-  "autoridadAnuente": "MINSA/APA/AUPSA/MIDA o null",
+  "autoridadAnuente": "MINSA/APA/AUPSA/MIDA or null",
   "esFarmaceutico": true/false,
   "esRestringido": true/false,
   "confianza": 0-100,
-  "notas": "Observaciones adicionales"
+  "notas": "Additional observations"
 }`;
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json'
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        tools: [{
-          type: 'function',
-          function: {
-            name: 'clasificar_producto',
-            description: 'Clasificar producto según Sistema Armonizado de Panamá',
-            parameters: {
-              type: 'object',
-              properties: {
-                hsCode: { type: 'string', description: 'Código HTS formato XXXX.XX.XX' },
-                descripcionArancelaria: { type: 'string' },
-                daiPercent: { type: 'number' },
-                iscPercent: { type: 'number' },
-                itbmsPercent: { type: 'number' },
-                autoridadAnuente: { type: 'string', nullable: true },
-                esFarmaceutico: { type: 'boolean' },
-                esRestringido: { type: 'boolean' },
-                confianza: { type: 'number' },
-                notas: { type: 'string' }
-              },
-              required: ['hsCode', 'descripcionArancelaria', 'daiPercent', 'itbmsPercent', 'confianza']
-            }
-          }
-        }],
-        tool_choice: { type: 'function', function: { name: 'clasificar_producto' } }
-      })
+        model: 'claude-sonnet-4-5-20250514',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
     });
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ 
-          error: 'Rate limit exceeded. Please try again later.' 
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ 
-          error: 'Payment required. Please add credits to your workspace.' 
-        }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        return new Response(JSON.stringify({ error: 'Payment required. Please add credits.' }), { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      throw new Error(`AI Gateway error: ${aiResponse.status}`);
+      const errText = await aiResponse.text();
+      throw new Error(`Anthropic API error: ${aiResponse.status} - ${errText}`);
     }
 
     const aiData = await aiResponse.json();
-    console.log('[Motor Aprendizaje] Respuesta AI recibida');
+    const content = aiData.content?.[0]?.text;
 
-    // Extraer clasificación del tool call
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) {
-      throw new Error('No se recibió clasificación del AI');
+    if (!content) {
+      throw new Error('No classification received from AI');
     }
 
-    const clasificacion = JSON.parse(toolCall.function.arguments);
-    console.log(`[Motor Aprendizaje] AI clasificó: ${clasificacion.hsCode} (confianza: ${clasificacion.confianza}%)`);
+    // Parse JSON from response
+    let jsonStr = content;
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) jsonStr = jsonMatch[1];
+    else {
+      const si = content.indexOf('{');
+      const ei = content.lastIndexOf('}');
+      if (si !== -1 && ei !== -1) jsonStr = content.substring(si, ei + 1);
+    }
+
+    const clasificacion = JSON.parse(jsonStr.trim());
+    console.log(`[Motor Aprendizaje] Claude clasificó: ${clasificacion.hsCode} (confianza: ${clasificacion.confianza}%)`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -280,31 +211,20 @@ Responde con este formato JSON exacto:
         confianza: clasificacion.confianza,
         notas: clasificacion.notas
       }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
     console.error('[Motor Aprendizaje] Error:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
-
-// ═══════════════════════════════════════════════════════
-// UTILIDADES
-// ═══════════════════════════════════════════════════════
 
 function normalizarDescripcion(descripcion: string): string {
   return descripcion
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-    .replace(/[^a-z0-9\s]/g, ' ')    // Solo alfanuméricos
-    .replace(/\s+/g, ' ')             // Espacios múltiples
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }

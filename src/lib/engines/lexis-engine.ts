@@ -347,16 +347,14 @@ export class LexisEngine {
   }
 
   private loadMemory(): void {
-    try {
-      const stored = localStorage.getItem('lexis-memory');
-      if (stored) this.memory = JSON.parse(stored);
-    } catch { /* fresh start */ }
+    // Memory is now loaded from Supabase clasificaciones_validadas table
+    // No-op on initialization — memory is populated via recordCorrection()
+    // and persisted to DB, not localStorage
   }
 
   private saveMemory(): void {
-    try {
-      localStorage.setItem('lexis-memory', JSON.stringify(this.memory));
-    } catch { /* storage full — non-critical */ }
+    // Memory persistence is handled by Supabase clasificaciones_validadas table
+    // No localStorage dependency — compatible with CloudFront/edge deployment
   }
 
   getProcessedCount(): number {

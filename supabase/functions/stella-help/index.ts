@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Eres STELLA HELP — Consultora Normativa Senior y Enciclopedia Operativa Viva del sistema ZENITH, especializada en comercio exterior y aduanas de Panamá.
+const SYSTEM_PROMPT = `You are STELLA, a Senior Customs Compliance Advisor for ZENITH platform. You operate across three jurisdictions: Panama (PA), Costa Rica (CR), and Guatemala (GT). You provide proactive, legally-grounded customs compliance advice. For PA: reference Código Fiscal, Decreto de Gabinete No. 41/2002, Decreto Ley 1/2008, Resoluciones ANA. For CR: reference Ley General de Aduanas 7557, Boletines MH-DGA-RES, Sistema TICA. For GT: reference Código Aduanero, Resoluciones SAT-IAD. Always cite specific legal precedents when available. When compliance risks are detected, issue clear blocking recommendations. Respond in the same language as the user query.
 
 ## IDENTIDAD
 - Nombre: Stella Help
@@ -26,11 +26,6 @@ const SYSTEM_PROMPT = `Eres STELLA HELP — Consultora Normativa Senior y Encicl
 
 ## MODO TRAINING (GUÍA PASO A PASO)
 Cuando el usuario pida ayuda con un proceso específico, guíalo paso a paso con instrucciones claras y numeradas.
-- Usa el contexto de la pantalla actual para personalizar la guía.
-- Si el usuario está en la pantalla de carga (/), guíalo para subir manifiestos y facturas.
-- Si está en el dashboard, guíalo para interpretar alertas de Zod y corregir valores.
-- Si está en SIGA Gateway, guíalo para transmitir con firma electrónica.
-- Siempre indica qué botón presionar, dónde hacer clic, y qué esperar como resultado.
 
 ## FÓRMULAS DE CÁLCULO (DOCUMENTADAS)
 Cuando el usuario pregunte por cálculos, siempre muestra la fórmula completa:
@@ -39,32 +34,18 @@ Cuando el usuario pregunte por cálculos, siempre muestra la fórmula completa:
 - **ITBMS** = (CIF + DAI) × 7% (excepto medicamentos y canasta básica)
 - **ISC** = (CIF + DAI) × % ISC (solo para bienes específicos: alcohol, tabaco, vehículos)
 - **Total Liquidación** = DAI + ITBMS + ISC + Tasas AFC
-- Cita siempre la base legal: Art. 60 DL 1/2008 para base imponible CIF, Ley 8/2010 para ITBMS.
 
 ## PROTOCOLO DE EMERGENCIA
 Si detectas que el usuario intenta hacer algo riesgoso:
 - Transmitir sin firma electrónica → ADVIERTE que es obligatorio (Ley 51/2008).
 - Declarar sin validar RUC → ADVIERTE que puede causar retención.
 - Clasificar sin revisar alertas de Zod → ADVIERTE sobre sanciones.
-- Pagar sin reconciliar → ADVIERTE sobre discrepancias fiscales.
 Usa el formato: "⚠️ DETENTE. [razón]. [acción correctiva]."
 
 ## FORMATO DE RESPUESTA
 - Responde en español profesional.
 - Usa viñetas y estructura clara.
 - Cita artículos de ley cuando sea relevante.
-- Si sugieres una partida arancelaria, incluye: código HTS, descripción arancelaria, DAI%, ISC%, ITBMS%.
-- Si detectas riesgo, advierte con claridad el impacto legal y fiscal.
-- Cuando sea posible, finaliza con una recomendación accionable.
-- Para guías paso a paso, usa formato numerado con instrucciones claras.
-
-## CONTEXTO DEL USUARIO
-Si el usuario proporciona contexto de operación (manifiesto, guías, consignatario), úsalo para dar respuestas personalizadas.
-Siempre prioriza la seguridad jurídica del corredor de aduanas licenciado.
-
-## RESTRICCIONES
-- NO inventes códigos arancelarios. Si no estás seguro, indícalo y sugiere verificar con el Arancel Nacional.
-- NO des asesoría legal definitiva. Siempre recomienda la validación del Corredor de Aduanas Licenciado (Idóneo).
 - Firma tus respuestas como: "— Stella Help | ZENITH"`;
 
 serve(async (req) => {
@@ -74,8 +55,8 @@ serve(async (req) => {
 
   try {
     const { messages, context } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
 
     // Jurisdiction-specific legal context
     const JURISDICTION_PROMPTS: Record<string, string> = {
@@ -103,8 +84,6 @@ serve(async (req) => {
 
     // Build context-enriched system prompt
     let enrichedPrompt = SYSTEM_PROMPT;
-
-    // Apply jurisdiction context
     const jurisdiction = context?.jurisdiction || 'PA';
     enrichedPrompt += JURISDICTION_PROMPTS[jurisdiction] || JURISDICTION_PROMPTS['PA'];
 
@@ -126,24 +105,27 @@ serve(async (req) => {
       }
     }
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: enrichedPrompt },
-            ...messages,
-          ],
-          stream: true,
-        }),
-      }
-    );
+    // Convert OpenAI-style messages to Anthropic format
+    const anthropicMessages = messages.map((msg: { role: string; content: string }) => ({
+      role: msg.role === 'assistant' ? 'assistant' : 'user',
+      content: msg.content,
+    }));
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-5-20250514",
+        max_tokens: 4096,
+        system: enrichedPrompt,
+        messages: anthropicMessages,
+        stream: true,
+      }),
+    });
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -159,14 +141,69 @@ serve(async (req) => {
         );
       }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("Anthropic API error:", response.status, t);
       return new Response(
         JSON.stringify({ error: "Error en el servicio de inteligencia artificial" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    return new Response(response.body, {
+    // Transform Anthropic SSE stream to OpenAI-compatible SSE stream
+    // so the frontend doesn't need any changes
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        let buffer = "";
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              // Send [DONE] in OpenAI format
+              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              controller.close();
+              break;
+            }
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const jsonStr = line.slice(6).trim();
+              if (!jsonStr) continue;
+
+              try {
+                const event = JSON.parse(jsonStr);
+                // Anthropic content_block_delta → OpenAI delta format
+                if (event.type === "content_block_delta" && event.delta?.text) {
+                  const openAIChunk = {
+                    choices: [{
+                      delta: { content: event.delta.text },
+                      index: 0,
+                      finish_reason: null,
+                    }],
+                  };
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAIChunk)}\n\n`));
+                }
+                if (event.type === "message_stop") {
+                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                  controller.close();
+                  return;
+                }
+              } catch { /* skip non-JSON lines */ }
+            }
+          }
+        } catch (e) {
+          console.error("Stream transform error:", e);
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
